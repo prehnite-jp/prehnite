@@ -1,0 +1,11 @@
+[package]
+name = "prehnite"
+version = "0.0.0"
+edition = "2024"
+license = "Zlib"
+authors = ["saku-shirakura<saku@sakushira.com>"]
+description = "Coming soon"
+
+[dependencies]
+
+
