@@ -110,6 +110,7 @@ CREATE TABLE draft
 (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
     paragraph_id INTEGER NOT NULL REFERENCES paragraph (id) ON DELETE CASCADE,
+    title        TEXT    NOT NULL,
     body         TEXT    NOT NULL,
     created_at   INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at   INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -187,7 +188,8 @@ CREATE TABLE background_references_list
 (
     id                 INTEGER PRIMARY KEY AUTOINCREMENT,
     background_info_id INTEGER NOT NULL REFERENCES background_info (id) ON DELETE CASCADE,
-    bibliography_id    INTEGER NOT NULL REFERENCES bibliographies (id) ON DELETE CASCADE
+    bibliography_id    INTEGER NOT NULL REFERENCES bibliographies (id) ON DELETE CASCADE,
+    location           TEXT    NOT NULL -- ページ数・行数等
 );
 
 -- アイテム単位の参考文献リスト
@@ -195,7 +197,8 @@ CREATE TABLE item_references_list
 (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     item_id         INTEGER NOT NULL REFERENCES items (id) ON DELETE CASCADE,
-    bibliography_id INTEGER NOT NULL REFERENCES bibliographies (id) ON DELETE CASCADE
+    bibliography_id INTEGER NOT NULL REFERENCES bibliographies (id) ON DELETE CASCADE,
+    location        TEXT    NOT NULL -- ページ数・行数等
 );
 
 -- アイテムに付与されているタグ
