@@ -3,8 +3,8 @@ CREATE TABLE background_info
 (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     body       TEXT    NOT NULL,
-    created_at INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+    updated_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
 
 -- 背景情報の最終更新時刻を更新
@@ -15,7 +15,7 @@ CREATE TRIGGER update_at_background_info
     FOR EACH ROW
 BEGIN
     UPDATE background_info
-    SET updated_at = CURRENT_TIMESTAMP
+    SET updated_at = (unixepoch())
     WHERE ROWID = NEW.ROWID;
 END;
 
@@ -35,8 +35,8 @@ CREATE TABLE bibliographies
     title      TEXT    NOT NULL,
     detail     TEXT,
     author     TEXT,
-    created_at INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+    updated_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
 
 -- 文献の最終更新時刻を更新
@@ -47,7 +47,7 @@ CREATE TRIGGER update_at_bibliographies
     FOR EACH ROW
 BEGIN
     UPDATE bibliographies
-    SET updated_at = CURRENT_TIMESTAMP
+    SET updated_at = (unixepoch())
     WHERE ROWID = NEW.ROWID;
 END;
 
@@ -55,7 +55,7 @@ END;
 CREATE TABLE items
 (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    created_at INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at INTEGER NOT NULL DEFAULT (unixepoch()),
     item_type  TEXT    NOT NULL CHECK ( item_type = 'headline' OR item_type = 'paragraph' ),
     title      TEXT    NOT NULL
 );
@@ -71,9 +71,10 @@ END;
 -- 見出し
 CREATE TABLE headlines
 (
-    id        INTEGER PRIMARY KEY AUTOINCREMENT,
-    item_id   INTEGER NOT NULL REFERENCES items (id) ON DELETE CASCADE,
-    parent_id INTEGER REFERENCES headlines (id) ON DELETE RESTRICT,
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_id      INTEGER NOT NULL REFERENCES items (id) ON DELETE CASCADE,
+    parent_id    INTEGER REFERENCES headlines (id) ON DELETE RESTRICT,
+    headline_pos INTEGER, -- 同一の親間での子見出し同士での順序。小さいほど上、大きいほど下。 NULLの場合は最上。
     UNIQUE (item_id)
 );
 
@@ -99,10 +100,12 @@ END;
 -- 段落
 CREATE TABLE paragraph
 (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    item_id     INTEGER NOT NULL REFERENCES items (id) ON DELETE CASCADE,
-    headline_id INTEGER NOT NULL REFERENCES headlines (id) ON DELETE CASCADE,
-    UNIQUE (item_id)
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_id       INTEGER NOT NULL REFERENCES items (id) ON DELETE CASCADE,
+    headline_id   INTEGER NOT NULL REFERENCES headlines (id) ON DELETE CASCADE,
+    paragraph_pos INTEGER, -- 段落の見出し内での位置。小さいほど上、大きいほど下。 NULLの場合は最上。
+    UNIQUE (item_id),
+    UNIQUE (headline_id, paragraph_pos)
 );
 
 -- 段落の下書き
@@ -110,10 +113,12 @@ CREATE TABLE draft
 (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
     paragraph_id INTEGER NOT NULL REFERENCES paragraph (id) ON DELETE CASCADE,
+    draft_pos    INTEGER, -- 段落の中での下書きの位置。小さいほど左、大きいほど右。 NULLの場合は最左。
     title        TEXT    NOT NULL,
     body         TEXT    NOT NULL,
-    created_at   INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at   INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at   INTEGER NOT NULL DEFAULT (unixepoch()),
+    updated_at   INTEGER NOT NULL DEFAULT (unixepoch()),
+    UNIQUE (paragraph_id, draft_pos)
 );
 
 -- 下書きの最終更新時刻を更新
@@ -123,7 +128,7 @@ CREATE TRIGGER update_at_draft
     ON draft
     FOR EACH ROW
 BEGIN
-    UPDATE draft SET updated_at = CURRENT_TIMESTAMP WHERE ROWID = NEW.ROWID;
+    UPDATE draft SET updated_at = (unixepoch()) WHERE ROWID = NEW.ROWID;
 END;
 
 -- 段落に採用された下書きの列を追加 (相互参照)
@@ -170,8 +175,8 @@ CREATE TABLE paragraph_summaries
     paragraph_id INTEGER NOT NULL REFERENCES paragraph (id) ON DELETE CASCADE,
     title        TEXT    NOT NULL,
     detail       TEXT    NOT NULL,
-    created_at   INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at   INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at   INTEGER NOT NULL DEFAULT (unixepoch()),
+    updated_at   INTEGER NOT NULL DEFAULT (unixepoch())
 );
 
 -- 下書きの最終更新時刻を更新
@@ -180,7 +185,7 @@ CREATE TRIGGER update_at_paragraph_summaries
     ON paragraph_summaries
     FOR EACH ROW
 BEGIN
-    UPDATE paragraph_summaries SET updated_at = CURRENT_TIMESTAMP WHERE ROWID = NEW.ROWID;
+    UPDATE paragraph_summaries SET updated_at = (unixepoch()) WHERE ROWID = NEW.ROWID;
 END;
 
 -- 背景情報の参考文献リスト

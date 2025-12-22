@@ -31,6 +31,17 @@ CREATE TABLE global_default_bibliographies
     title      TEXT    NOT NULL,
     detail     TEXT,
     author     TEXT,
-    created_at INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+    updated_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
+
+CREATE TRIGGER update_at_global_default_bibliographies
+    AFTER
+        UPDATE
+    ON global_default_bibliographies
+    FOR EACH ROW
+BEGIN
+    UPDATE global_default_bibliographies
+    SET updated_at = (unixepoch())
+    WHERE ROWID = NEW.ROWID;
+END;
