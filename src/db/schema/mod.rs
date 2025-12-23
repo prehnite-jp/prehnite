@@ -30,9 +30,16 @@ pub struct Bibliography {
     pub url: Option<String>,
     pub title: String,
     pub detail: Option<String>,
-    pub author: Option<String>,
+    pub authors: Vec<BibliographyAuthor>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Default, Clone, FromRow)]
+pub struct BibliographyAuthor {
+    pub id: i64,
+    pub name: String,
+    pub memo: Option<String>,
 }
 
 #[derive(Clone)]

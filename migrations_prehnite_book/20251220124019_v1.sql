@@ -39,6 +39,22 @@ CREATE TABLE bibliographies
     updated_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
 
+-- 同姓同名は同一人物として扱う。あくまで索引である。
+CREATE TABLE bibliography_authors
+(
+    id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    memo TEXT
+);
+
+CREATE TABLE rel_bibliography_authors
+(
+    id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+    bibliography_id        INTEGER NOT NULL REFERENCES bibliographies (id) ON DELETE CASCADE,
+    bibliography_author_id INTEGER NOT NULL REFERENCES bibliography_authors (id) ON DELETE CASCADE,
+    UNIQUE (bibliography_id, bibliography_author_id)
+);
+
 -- 文献の最終更新時刻を更新
 CREATE TRIGGER update_at_bibliographies
     AFTER

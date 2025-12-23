@@ -21,7 +21,7 @@ impl PrefixedDeserializer {
             url: row.try_get(p.prefix("url"))?,
             title: row.try_get(p.prefix("title"))?,
             detail: row.try_get(p.prefix("detail"))?,
-            author: row.try_get(p.prefix("author"))?,
+            authors: vec![],
             created_at: row.try_get(p.prefix("created_at"))?,
             updated_at: row.try_get(p.prefix("updated_at"))?,
         })
@@ -59,7 +59,7 @@ impl PrefixedDeserializer {
                     prefix_headline,
                     prefix_draft,
                 )
-                    .ok(),
+                .ok(),
             ),
         };
 
