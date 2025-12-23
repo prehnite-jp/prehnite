@@ -26,6 +26,22 @@ impl LoadAll for BackgroundInfo {
     }
 }
 
+impl Bibliography {
+    pub async fn load_authors(&mut self, conn: &mut SqliteConnection) -> Result<(), Error> {
+        self.authors = sqlx::query_as::<_, BibliographyAuthor>("")
+            .bind(self.id)
+            .fetch_all(conn)
+            .await?;
+        Ok(())
+    }
+}
+
+impl LoadAll for Bibliography {
+    async fn load_all(&mut self, conn: &mut SqliteConnection) -> Result<(), Error> {
+        self.load_authors(conn).await
+    }
+}
+
 impl Item {
     pub async fn load_references(&mut self, conn: &mut SqliteConnection) -> Result<(), Error> {
         self.references = Some(
