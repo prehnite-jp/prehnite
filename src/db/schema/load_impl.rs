@@ -1,8 +1,12 @@
 use crate::db::schema::{
-    BackgroundInfo, BackgroundReference, Draft, Headline, Item, ItemReference, Paragraph,
-    ParagraphSummary, Tag, Task,
+    BackgroundInfo, BackgroundReference, Bibliography, BibliographyAuthor, Draft, Headline, Item,
+    ItemReference, Paragraph, ParagraphSummary, Tag, Task,
 };
 use sqlx::{Error, Row, SqliteConnection};
+
+pub trait LoadAll {
+    async fn load_all(&mut self, conn: &mut SqliteConnection) -> Result<(), Error>;
+}
 
 impl BackgroundInfo {
     pub async fn load_references(&mut self, conn: &mut SqliteConnection) -> Result<(), Error> {
@@ -14,8 +18,10 @@ impl BackgroundInfo {
         );
         Ok(())
     }
+}
 
-    pub async fn load_all(&mut self, conn: &mut SqliteConnection) -> Result<(), Error> {
+impl LoadAll for BackgroundInfo {
+    async fn load_all(&mut self, conn: &mut SqliteConnection) -> Result<(), Error> {
         self.load_references(conn).await
     }
 }
@@ -63,8 +69,10 @@ impl Item {
         );
         Ok(())
     }
+}
 
-    pub async fn load_all(&mut self, conn: &mut SqliteConnection) -> Result<(), Error> {
+impl LoadAll for Item {
+    async fn load_all(&mut self, conn: &mut SqliteConnection) -> Result<(), Error> {
         self.load_references(conn).await?;
         self.load_tags(conn).await?;
         self.load_background_info_list(conn).await?;
@@ -105,10 +113,10 @@ impl Headline {
                 "SELECT * FROM headlines WHERE id IN ({})",
                 id_list.join(",")
             )
-                .as_str(),
+            .as_str(),
         )
-            .fetch_all(conn)
-            .await
+        .fetch_all(conn)
+        .await
     }
 
     pub async fn load_paragraph(&mut self, conn: &mut SqliteConnection) -> Result<(), Error> {
@@ -120,8 +128,10 @@ impl Headline {
         );
         Ok(())
     }
+}
 
-    pub async fn load_all(&mut self, conn: &mut SqliteConnection) -> Result<(), Error> {
+impl LoadAll for Headline {
+    async fn load_all(&mut self, conn: &mut SqliteConnection) -> Result<(), Error> {
         self.load_children(conn).await?;
         self.load_paragraph(conn).await
     }
@@ -141,8 +151,10 @@ impl Paragraph {
         );
         Ok(())
     }
+}
 
-    pub async fn load_all(&mut self, conn: &mut SqliteConnection) -> Result<(), Error> {
+impl LoadAll for Paragraph {
+    async fn load_all(&mut self, conn: &mut SqliteConnection) -> Result<(), Error> {
         self.load_draft(conn).await?;
         self.load_summary(conn).await
     }
