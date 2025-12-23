@@ -7,7 +7,7 @@ mod prefixed_deserializer;
 use chrono::{DateTime, Utc};
 use sqlx::{Acquire, Connection, Database, FromRow, Row};
 
-#[derive(FromRow)]
+#[derive(Default, Clone, FromRow)]
 pub struct BackgroundInfo {
     pub id: i64,
     pub body: String,
@@ -17,12 +17,13 @@ pub struct BackgroundInfo {
     pub references: Option<Vec<BackgroundReference>>,
 }
 
-#[derive(FromRow)]
+#[derive(Default, Clone, FromRow)]
 pub struct Tag {
     pub id: i64,
     pub name: String,
 }
 
+#[derive(Default, Clone)]
 pub struct Bibliography {
     pub id: i64,
     pub isbn: Option<String>,
@@ -34,11 +35,19 @@ pub struct Bibliography {
     pub updated_at: DateTime<Utc>,
 }
 
+#[derive(Clone)]
 pub enum ItemType {
     Headline(Option<Headline>),
     Paragraph(Option<Paragraph>),
 }
 
+impl Default for ItemType {
+    fn default() -> Self {
+        Self::Headline(None)
+    }
+}
+
+#[derive(Default, Clone)]
 pub struct Item {
     pub id: i64,
     pub created_at: i64,
@@ -50,7 +59,7 @@ pub struct Item {
     pub tasks: Option<Vec<Task>>,
 }
 
-#[derive(FromRow)]
+#[derive(Default, Clone, FromRow)]
 pub struct Headline {
     pub id: i64,
     pub item_id: i64,
@@ -62,7 +71,7 @@ pub struct Headline {
     pub paragraph: Option<Vec<Paragraph>>,
 }
 
-#[derive(FromRow)]
+#[derive(Default, Clone, FromRow)]
 pub struct Draft {
     pub id: i64,
     pub paragraph_id: i64,
@@ -73,6 +82,7 @@ pub struct Draft {
     pub updated_at: DateTime<Utc>,
 }
 
+#[derive(Default, Clone)]
 pub struct Paragraph {
     pub id: i64,
     pub item_id: i64,
@@ -83,7 +93,7 @@ pub struct Paragraph {
     pub summary: Option<Vec<ParagraphSummary>>,
 }
 
-#[derive(FromRow)]
+#[derive(Default, Clone, FromRow)]
 pub struct ParagraphSummary {
     pub id: i64,
     pub title: String,
@@ -92,6 +102,7 @@ pub struct ParagraphSummary {
     pub updated_at: DateTime<Utc>,
 }
 
+#[derive(Default, Clone)]
 pub struct BackgroundReference {
     pub id: i64,
     pub background_info_id: i64,
@@ -99,6 +110,7 @@ pub struct BackgroundReference {
     pub location: String,
 }
 
+#[derive(Default, Clone)]
 pub struct ItemReference {
     pub id: i64,
     pub item_id: i64,
@@ -106,13 +118,14 @@ pub struct ItemReference {
     pub location: String,
 }
 
-#[derive(FromRow)]
+#[derive(Default, Clone, FromRow)]
 pub struct TaskCategory {
     pub id: i64,
     pub name: String,
     pub autocomplete_paragraph_link: bool,
 }
 
+#[derive(Default, Clone)]
 pub struct TaskTemplate {
     pub id: i64,
     pub task_category: Option<TaskCategory>,
@@ -120,6 +133,7 @@ pub struct TaskTemplate {
     pub detail: Option<String>,
 }
 
+#[derive(Default, Clone)]
 pub struct Task {
     pub id: i64,
     pub task_category: Option<TaskCategory>,
@@ -128,6 +142,7 @@ pub struct Task {
     pub is_finished: bool,
 }
 
+#[derive(Default, Clone)]
 pub struct ParagraphLink {
     pub id: i64,
     pub from_paragraph: Paragraph,
