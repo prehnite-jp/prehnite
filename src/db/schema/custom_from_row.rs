@@ -1,5 +1,8 @@
 use crate::db::schema::prefixed_deserializer::PrefixedDeserializer;
-use crate::db::schema::{BackgroundReference, Bibliography, Item, ItemReference, Paragraph, ParagraphLink, Task, TaskTemplate};
+use crate::db::schema::{
+    BackgroundReference, Bibliography, Item, ItemReference, Paragraph, ParagraphLink, Publisher,
+    Task, TaskTemplate,
+};
 use sqlx::sqlite::SqliteRow;
 use sqlx::{Error, FromRow};
 
@@ -8,10 +11,11 @@ const PREFIX_HEADLINE: &'static str = "h_";
 const PREFIX_DRAFT: &'static str = "d_";
 const PREFIX_TASK: &'static str = "t_";
 const PREFIX_REFERENCE: &'static str = "r_";
+const PREFIX_PUBLISHER: &'static str = "pub_";
 const PREFIX_BIBLIOGRAPHY: &'static str = "b_";
 const PREFIX_TASK_CATEGORY: &'static str = "tc_";
-const PREFIX_PARAGRAPH_LINK: &'static str = "pl_";
 const PREFIX_TASK_TEMPLATE: &'static str = "tt_";
+const PREFIX_PARAGRAPH_LINK: &'static str = "pl_";
 const PREFIX_FROM_PARAGRAPH: &'static str = "from_p_";
 const PREFIX_FROM_HEADLINE: &'static str = "from_h_";
 const PREFIX_FROM_DRAFT: &'static str = "from_d_";
@@ -19,9 +23,15 @@ const PREFIX_TO_PARAGRAPH: &'static str = "to_p_";
 const PREFIX_TO_HEADLINE: &'static str = "to_h_";
 const PREFIX_TO_DRAFT: &'static str = "to_d_";
 
+impl FromRow<'_, SqliteRow> for Publisher {
+    fn from_row(row: &'_ SqliteRow) -> Result<Self, Error> {
+        PrefixedDeserializer::publisher(row, "")
+    }
+}
+
 impl FromRow<'_, SqliteRow> for Bibliography {
     fn from_row(row: &'_ SqliteRow) -> Result<Self, Error> {
-        PrefixedDeserializer::bibliography(row, "")
+        PrefixedDeserializer::bibliography(row, "", PREFIX_PUBLISHER)
     }
 }
 
@@ -39,13 +49,13 @@ impl FromRow<'_, SqliteRow> for Paragraph {
 
 impl FromRow<'_, SqliteRow> for BackgroundReference {
     fn from_row(row: &'_ SqliteRow) -> Result<Self, Error> {
-        PrefixedDeserializer::background_reference(row, "", PREFIX_BIBLIOGRAPHY)
+        PrefixedDeserializer::background_reference(row, "", PREFIX_BIBLIOGRAPHY, PREFIX_PUBLISHER)
     }
 }
 
 impl FromRow<'_, SqliteRow> for ItemReference {
     fn from_row(row: &'_ SqliteRow) -> Result<Self, Error> {
-        PrefixedDeserializer::item_reference(row, "", PREFIX_BIBLIOGRAPHY)
+        PrefixedDeserializer::item_reference(row, "", PREFIX_BIBLIOGRAPHY, PREFIX_PUBLISHER)
     }
 }
 

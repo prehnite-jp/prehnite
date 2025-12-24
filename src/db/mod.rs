@@ -1,6 +1,8 @@
 #![allow(unused)]
 pub mod error;
 pub mod schema;
+pub mod app_global_schema;
+mod util;
 
 use sqlx::migrate::Migrator;
 use sqlx::sqlx_macros::migrate;

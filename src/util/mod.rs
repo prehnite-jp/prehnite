@@ -29,8 +29,8 @@ impl Prefixer {
         self.prefix = prefix.into();
     }
 
-    pub fn prefix(&mut self, col_name: impl Into<String>) -> &str {
-        self.result = format!("{}{}", self.prefix, col_name.into());
+    pub fn prefix(&mut self, col_name: impl AsRef<str>) -> &str {
+        self.result = format!("{}{}", self.prefix, col_name.as_ref());
         &self.result
     }
 }

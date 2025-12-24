@@ -1,11 +1,17 @@
 #![allow(unused)]
 
 pub mod custom_from_row;
-mod load_impl;
+pub mod load_impl;
 mod prefixed_deserializer;
+pub mod schema_impl;
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDate, Utc};
 use sqlx::{Acquire, Connection, Database, FromRow, Row};
+
+#[derive(Default, Clone, FromRow)]
+pub struct ReturningId {
+    pub id: i64,
+}
 
 #[derive(Default, Clone, FromRow)]
 pub struct BackgroundInfo {
@@ -24,6 +30,13 @@ pub struct Tag {
 }
 
 #[derive(Default, Clone)]
+pub struct Publisher {
+    pub id: i64,
+    pub name: String,
+    pub memo: Option<String>,
+}
+
+#[derive(Default, Clone)]
 pub struct Bibliography {
     pub id: i64,
     pub isbn: Option<String>,
@@ -31,8 +44,11 @@ pub struct Bibliography {
     pub title: String,
     pub detail: Option<String>,
     pub authors: Vec<BibliographyAuthor>,
+    pub publisher: Option<Publisher>,
+    pub publication_date: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    pub tmp_registration_id: Option<String>,
 }
 
 #[derive(Default, Clone, FromRow)]
@@ -46,12 +62,6 @@ pub struct BibliographyAuthor {
 pub enum ItemType {
     Headline(Option<Headline>),
     Paragraph(Option<Paragraph>),
-}
-
-impl Default for ItemType {
-    fn default() -> Self {
-        Self::Headline(None)
-    }
 }
 
 #[derive(Default, Clone)]
@@ -156,4 +166,11 @@ pub struct ParagraphLink {
     pub to_paragraph: Paragraph,
     pub task: Option<Task>,
     pub comment: Option<String>,
+}
+
+#[derive(Default, Clone, FromRow)]
+pub struct PrehniteBookSetting {
+    pub id: i64,
+    pub setting_key: String,
+    pub setting_value: Option<String>,
 }

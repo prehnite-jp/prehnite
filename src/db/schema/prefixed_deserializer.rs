@@ -1,7 +1,7 @@
 use crate::db::error::ItemTypeDecodeError;
 use crate::db::schema::{
     BackgroundReference, Bibliography, Draft, Headline, Item, ItemReference, ItemType, Paragraph,
-    ParagraphLink, Task, TaskCategory, TaskTemplate,
+    ParagraphLink, Publisher, Task, TaskCategory, TaskTemplate,
 };
 use crate::util::Prefixer;
 use sqlx::sqlite::SqliteRow;
@@ -10,11 +10,24 @@ use sqlx::{Error, Row};
 pub struct PrefixedDeserializer;
 
 impl PrefixedDeserializer {
+    pub fn publisher(
+        row: &'_ SqliteRow,
+        prefix_bibliography_publisher: impl AsRef<str>,
+    ) -> Result<Publisher, Error> {
+        let mut p = Prefixer::with_prefix(prefix_bibliography_publisher.as_ref());
+        Ok(Publisher {
+            id: row.try_get(p.prefix("id"))?,
+            name: row.try_get(p.prefix("name"))?,
+            memo: row.try_get(p.prefix("memo"))?,
+        })
+    }
+
     pub fn bibliography(
         row: &'_ SqliteRow,
-        prefix_bibliography: impl Into<String>,
+        prefix_bibliography: impl AsRef<str>,
+        prefix_bibliography_publisher: impl AsRef<str>,
     ) -> Result<Bibliography, Error> {
-        let mut p = Prefixer::with_prefix(prefix_bibliography);
+        let mut p = Prefixer::with_prefix(prefix_bibliography.as_ref());
         Ok(Bibliography {
             id: row.try_get(p.prefix("id"))?,
             isbn: row.try_get(p.prefix("isbn"))?,
@@ -22,19 +35,22 @@ impl PrefixedDeserializer {
             title: row.try_get(p.prefix("title"))?,
             detail: row.try_get(p.prefix("detail"))?,
             authors: vec![],
+            publisher: Self::publisher(row, prefix_bibliography_publisher).ok(),
+            publication_date: row.try_get(p.prefix("publication_date"))?,
             created_at: row.try_get(p.prefix("created_at"))?,
             updated_at: row.try_get(p.prefix("updated_at"))?,
+            tmp_registration_id: row.try_get(p.prefix("tmp_registration_id"))?,
         })
     }
 
     pub fn item(
         row: &SqliteRow,
-        prefix_item: impl Into<String>,
-        prefix_paragraph: impl Into<String>,
-        prefix_headline: impl Into<String>,
-        prefix_draft: impl Into<String>,
+        prefix_item: impl AsRef<str>,
+        prefix_paragraph: impl AsRef<str>,
+        prefix_headline: impl AsRef<str>,
+        prefix_draft: impl AsRef<str>,
     ) -> Result<Item, Error> {
-        let mut p = Prefixer::with_prefix(prefix_item);
+        let mut p = Prefixer::with_prefix(prefix_item.as_ref());
         let str_item_type: String = row.try_get(p.prefix("item_type"))?;
         // 分類する
         let no_value_item_type = if str_item_type == "headline" {
@@ -76,8 +92,8 @@ impl PrefixedDeserializer {
     }
 
     // 見出しを処理。
-    pub fn headline(row: &SqliteRow, prefix: impl Into<String>) -> Result<Headline, Error> {
-        let mut p = Prefixer::with_prefix(prefix);
+    pub fn headline(row: &SqliteRow, prefix: impl AsRef<str>) -> Result<Headline, Error> {
+        let mut p = Prefixer::with_prefix(prefix.as_ref());
         Ok(Headline {
             id: row.try_get(p.prefix("id"))?,
             item_id: row.try_get(p.prefix("item_id"))?,
@@ -89,8 +105,8 @@ impl PrefixedDeserializer {
     }
 
     // 下書きを処理。
-    pub fn draft(row: &SqliteRow, prefix: impl Into<String>) -> Result<Draft, Error> {
-        let mut p = Prefixer::with_prefix(prefix);
+    pub fn draft(row: &SqliteRow, prefix: impl AsRef<str>) -> Result<Draft, Error> {
+        let mut p = Prefixer::with_prefix(prefix.as_ref());
         Ok(Draft {
             id: row.try_get(p.prefix("id"))?,
             paragraph_id: row.try_get(p.prefix("paragraph_id"))?,
@@ -105,11 +121,11 @@ impl PrefixedDeserializer {
     // 段落を処理。
     pub fn paragraph(
         row: &SqliteRow,
-        prefix_paragraph: impl Into<String>,
-        prefix_headline: impl Into<String>,
-        prefix_draft: impl Into<String>,
+        prefix_paragraph: impl AsRef<str>,
+        prefix_headline: impl AsRef<str>,
+        prefix_draft: impl AsRef<str>,
     ) -> Result<Paragraph, Error> {
-        let mut p = Prefixer::with_prefix(prefix_paragraph);
+        let mut p = Prefixer::with_prefix(prefix_paragraph.as_ref());
         Ok(Paragraph {
             id: row.try_get(p.prefix("id"))?,
             item_id: row.try_get(p.prefix("item_id"))?,
@@ -123,37 +139,47 @@ impl PrefixedDeserializer {
 
     pub fn background_reference(
         row: &'_ SqliteRow,
-        prefix_reference: impl Into<String>,
-        prefix_bibliography: impl Into<String>,
+        prefix_reference: impl AsRef<str>,
+        prefix_bibliography: impl AsRef<str>,
+        prefix_bibliography_publisher: impl AsRef<str>,
     ) -> Result<BackgroundReference, Error> {
-        let mut p = Prefixer::with_prefix(prefix_reference);
+        let mut p = Prefixer::with_prefix(prefix_reference.as_ref());
         Ok(BackgroundReference {
             id: row.try_get(p.prefix("id"))?,
             background_info_id: row.try_get(p.prefix("background_info_id"))?,
-            bibliography: Self::bibliography(row, prefix_bibliography)?,
+            bibliography: Self::bibliography(
+                row,
+                prefix_bibliography,
+                prefix_bibliography_publisher,
+            )?,
             location: row.try_get(p.prefix("location"))?,
         })
     }
 
     pub fn item_reference(
         row: &'_ SqliteRow,
-        prefix_reference: impl Into<String>,
-        prefix_bibliography: impl Into<String>,
+        prefix_reference: impl AsRef<str>,
+        prefix_bibliography: impl AsRef<str>,
+        prefix_bibliography_publisher: impl AsRef<str>,
     ) -> Result<ItemReference, Error> {
-        let mut p = Prefixer::with_prefix(prefix_reference);
+        let mut p = Prefixer::with_prefix(prefix_reference.as_ref());
         Ok(ItemReference {
             id: row.try_get(p.prefix("id"))?,
             item_id: row.try_get(p.prefix("item_id"))?,
-            bibliography: Self::bibliography(row, prefix_bibliography)?,
+            bibliography: Self::bibliography(
+                row,
+                prefix_bibliography,
+                prefix_bibliography_publisher,
+            )?,
             location: row.try_get(p.prefix("location"))?,
         })
     }
 
     pub fn category(
         row: &SqliteRow,
-        prefix_task_category: impl Into<String>,
+        prefix_task_category: impl AsRef<str>,
     ) -> Result<TaskCategory, Error> {
-        let mut p = Prefixer::with_prefix(prefix_task_category);
+        let mut p = Prefixer::with_prefix(prefix_task_category.as_ref());
         Ok(TaskCategory {
             id: row.try_get(p.prefix("id"))?,
             name: row.try_get(p.prefix("name"))?,
@@ -163,10 +189,10 @@ impl PrefixedDeserializer {
 
     pub fn task_template(
         row: &SqliteRow,
-        prefix_task_template: impl Into<String>,
-        prefix_task_category: impl Into<String>,
+        prefix_task_template: impl AsRef<str>,
+        prefix_task_category: impl AsRef<str>,
     ) -> Result<TaskTemplate, Error> {
-        let mut p = Prefixer::with_prefix(prefix_task_template);
+        let mut p = Prefixer::with_prefix(prefix_task_template.as_ref());
         Ok(TaskTemplate {
             id: row.try_get(p.prefix("id"))?,
             task_category: Self::category(row, prefix_task_category).ok(),
@@ -177,10 +203,10 @@ impl PrefixedDeserializer {
 
     pub fn task(
         row: &SqliteRow,
-        prefix_task: impl Into<String>,
-        prefix_task_category: impl Into<String>,
+        prefix_task: impl AsRef<str>,
+        prefix_task_category: impl AsRef<str>,
     ) -> Result<Task, Error> {
-        let mut p = Prefixer::with_prefix(prefix_task);
+        let mut p = Prefixer::with_prefix(prefix_task.as_ref());
         Ok(Task {
             id: row.try_get(p.prefix("id"))?,
             task_category: Self::category(row, prefix_task_category).ok(),
@@ -192,17 +218,17 @@ impl PrefixedDeserializer {
 
     pub fn paragraph_link(
         row: &SqliteRow,
-        prefix_paragraph_link: impl Into<String>,
-        prefix_task: impl Into<String>,
-        prefix_task_category: impl Into<String>,
-        prefix_from_paragraph: impl Into<String>,
-        prefix_from_headline: impl Into<String>,
-        prefix_from_draft: impl Into<String>,
-        prefix_to_paragraph: impl Into<String>,
-        prefix_to_headline: impl Into<String>,
-        prefix_to_draft: impl Into<String>,
+        prefix_paragraph_link: impl AsRef<str>,
+        prefix_task: impl AsRef<str>,
+        prefix_task_category: impl AsRef<str>,
+        prefix_from_paragraph: impl AsRef<str>,
+        prefix_from_headline: impl AsRef<str>,
+        prefix_from_draft: impl AsRef<str>,
+        prefix_to_paragraph: impl AsRef<str>,
+        prefix_to_headline: impl AsRef<str>,
+        prefix_to_draft: impl AsRef<str>,
     ) -> Result<ParagraphLink, Error> {
-        let mut p = Prefixer::with_prefix(prefix_paragraph_link);
+        let mut p = Prefixer::with_prefix(prefix_paragraph_link.as_ref());
         Ok(ParagraphLink {
             id: row.try_get(p.prefix("id"))?,
             from_paragraph: PrefixedDeserializer::paragraph(

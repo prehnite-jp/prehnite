@@ -26,17 +26,27 @@ CREATE TABLE tags
     name TEXT NOT NULL
 );
 
+-- 出版社
+CREATE TABLE publishers
+(
+    id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    memo TEXT
+);
+
 -- 文献
 CREATE TABLE bibliographies
 (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    isbn       TEXT,
-    url        TEXT,
-    title      TEXT    NOT NULL,
-    detail     TEXT,
-    author     TEXT,
-    created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-    updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    isbn                TEXT,
+    url                 TEXT,
+    title               TEXT    NOT NULL,
+    detail              TEXT,
+    publisher_id        INTEGER REFERENCES publishers (id) ON DELETE SET NULL,
+    publication_date    INTEGER,
+    tmp_registration_id INTEGER,
+    created_at          INTEGER NOT NULL DEFAULT (unixepoch()),
+    updated_at          INTEGER NOT NULL DEFAULT (unixepoch())
 );
 
 -- 同姓同名は同一人物として扱う。あくまで索引である。
