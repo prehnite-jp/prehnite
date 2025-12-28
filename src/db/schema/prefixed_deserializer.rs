@@ -3,7 +3,7 @@ use crate::db::schema::{
     BackgroundReference, Bibliography, Draft, Headline, Item, ItemReference, ItemType, Paragraph,
     ParagraphLink, Publisher, Task, TaskCategory, TaskTemplate,
 };
-use crate::util::Prefixer;
+use crate::db::util::Prefixer;
 use sqlx::sqlite::SqliteRow;
 use sqlx::{Error, Row};
 
@@ -211,6 +211,7 @@ impl PrefixedDeserializer {
         let mut p = Prefixer::with_prefix(prefix_task.as_ref());
         Ok(Task {
             id: row.try_get(p.prefix("id"))?,
+            item_id: row.try_get(p.prefix("item_id"))?,
             task_category: Self::category(row, prefix_task_category).ok(),
             title: row.try_get(p.prefix("title"))?,
             detail: row.try_get(p.prefix("detail"))?,

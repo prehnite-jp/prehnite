@@ -3,10 +3,11 @@
 pub mod custom_from_row;
 pub mod load_impl;
 mod prefixed_deserializer;
-pub mod schema_impl;
+mod schema_binder_helper_impl;
+pub mod schema_cud_impl;
 
 use chrono::{DateTime, Utc};
-use sqlx::{Acquire, Connection, Database, FromRow, Row};
+use sqlx::{Acquire, Database, FromRow, Row};
 
 #[derive(Default, Clone, Debug, FromRow)]
 pub struct ReturningId {
@@ -27,6 +28,7 @@ pub struct BackgroundInfo {
 pub struct Tag {
     pub id: i64,
     pub name: String,
+    pub memo: Option<String>,
 }
 
 #[derive(Default, Clone, Debug)]
@@ -45,10 +47,10 @@ pub struct Bibliography {
     pub detail: Option<String>,
     pub authors: Vec<BibliographyAuthor>,
     pub publisher: Option<Publisher>,
-    pub publication_date: Option<DateTime<Utc>>,
+    pub publication_date: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
-    pub tmp_registration_id: Option<usize>,
+    pub tmp_registration_id: Option<usize>
 }
 
 #[derive(Default, Clone, Debug, FromRow)]
@@ -62,6 +64,21 @@ pub struct BibliographyAuthor {
 pub enum ItemType {
     Headline(Option<Headline>),
     Paragraph(Option<Paragraph>),
+}
+
+impl Default for ItemType {
+    fn default() -> Self {
+        Self::Headline(None)
+    }
+}
+
+impl From<ItemType> for String {
+    fn from(value: ItemType) -> Self {
+        String::from(match value {
+            ItemType::Headline(_) => "headline",
+            ItemType::Paragraph(_) => "paragraph",
+        })
+    }
 }
 
 #[derive(Default, Clone, Debug)]
@@ -113,6 +130,7 @@ pub struct Paragraph {
 #[derive(Default, Clone, Debug, FromRow)]
 pub struct ParagraphSummary {
     pub id: i64,
+    pub paragraph_id: i64,
     pub title: String,
     pub detail: String,
     pub created_at: DateTime<Utc>,
@@ -153,6 +171,7 @@ pub struct TaskTemplate {
 #[derive(Default, Clone, Debug)]
 pub struct Task {
     pub id: i64,
+    pub item_id: i64,
     pub task_category: Option<TaskCategory>,
     pub title: String,
     pub detail: Option<String>,
@@ -173,4 +192,25 @@ pub struct PrehniteBookSetting {
     pub id: i64,
     pub setting_key: String,
     pub setting_value: Option<String>,
+}
+
+#[derive(Default, Clone, Debug, FromRow)]
+pub struct RelBibliographyAuthor {
+    pub id: i64,
+    pub bibliography_id: i64,
+    pub bibliography_author_id: i64,
+}
+
+#[derive(Default, Clone, Debug, FromRow)]
+pub struct RelTagAndItem {
+    pub id: i64,
+    pub item_id: i64,
+    pub tag_id: i64,
+}
+
+#[derive(Default, Clone, Debug, FromRow)]
+pub struct RelBackgroundAndItem {
+    pub id: i64,
+    pub item_id: i64,
+    pub background_info_id: i64,
 }
