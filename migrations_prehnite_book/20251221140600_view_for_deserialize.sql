@@ -49,7 +49,7 @@ FROM main.bibliographies
                          ON bibliographies.publisher_id = publishers.id;
 
 CREATE VIEW view_deserializable_background_reference AS
-SELECT background_references_list.*,
+SELECT background_references.*,
        view_deserializable_bibliographies.id                  AS b_id,
        view_deserializable_bibliographies.isbn                AS b_isbn,
        view_deserializable_bibliographies.url                 AS b_url,
@@ -61,12 +61,12 @@ SELECT background_references_list.*,
        view_deserializable_bibliographies.pub_id,
        view_deserializable_bibliographies.pub_name,
        view_deserializable_bibliographies.pub_memo
-FROM background_references_list
+FROM background_references
          LEFT OUTER JOIN view_deserializable_bibliographies
-                         ON background_references_list.bibliography_id = view_deserializable_bibliographies.id;
+                         ON background_references.bibliography_id = view_deserializable_bibliographies.id;
 
 CREATE VIEW view_deserializable_item_reference AS
-SELECT item_references_list.*,
+SELECT item_references.*,
        view_deserializable_bibliographies.id                  AS b_id,
        view_deserializable_bibliographies.isbn                AS b_isbn,
        view_deserializable_bibliographies.url                 AS b_url,
@@ -78,9 +78,9 @@ SELECT item_references_list.*,
        view_deserializable_bibliographies.pub_id,
        view_deserializable_bibliographies.pub_name,
        view_deserializable_bibliographies.pub_memo
-FROM item_references_list
+FROM item_references
          LEFT OUTER JOIN view_deserializable_bibliographies
-                         ON item_references_list.bibliography_id = view_deserializable_bibliographies.id;
+                         ON item_references.bibliography_id = view_deserializable_bibliographies.id;
 
 CREATE VIEW view_deserializable_task_template AS
 SELECT task_templates.*,

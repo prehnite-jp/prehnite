@@ -23,7 +23,8 @@ END;
 CREATE TABLE tags
 (
     id   INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL
+    name TEXT NOT NULL UNIQUE,
+    memo TEXT
 );
 
 -- 出版社
@@ -43,7 +44,7 @@ CREATE TABLE bibliographies
     title               TEXT    NOT NULL,
     detail              TEXT,
     publisher_id        INTEGER REFERENCES publishers (id) ON DELETE SET NULL,
-    publication_date    INTEGER,
+    publication_date    TEXT,
     tmp_registration_id INTEGER,
     created_at          INTEGER NOT NULL DEFAULT (unixepoch()),
     updated_at          INTEGER NOT NULL DEFAULT (unixepoch())
@@ -215,7 +216,7 @@ BEGIN
 END;
 
 -- 背景情報の参考文献リスト
-CREATE TABLE background_references_list
+CREATE TABLE background_references
 (
     id                 INTEGER PRIMARY KEY AUTOINCREMENT,
     background_info_id INTEGER NOT NULL REFERENCES background_info (id) ON DELETE CASCADE,
@@ -224,7 +225,7 @@ CREATE TABLE background_references_list
 );
 
 -- アイテム単位の参考文献リスト
-CREATE TABLE item_references_list
+CREATE TABLE item_references
 (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     item_id         INTEGER NOT NULL REFERENCES items (id) ON DELETE CASCADE,
@@ -237,7 +238,8 @@ CREATE TABLE rel_tag_and_item
 (
     id      INTEGER PRIMARY KEY AUTOINCREMENT,
     item_id INTEGER NOT NULL REFERENCES items (id) ON DELETE CASCADE,
-    tag_id  INTEGER NOT NULL REFERENCES tags (id) ON DELETE CASCADE
+    tag_id  INTEGER NOT NULL REFERENCES tags (id) ON DELETE CASCADE,
+    UNIQUE (item_id, tag_id)
 );
 
 -- 背景情報とアイテムの紐づけ
@@ -245,14 +247,15 @@ CREATE TABLE rel_background_and_item
 (
     id                 INTEGER PRIMARY KEY AUTOINCREMENT,
     item_id            INTEGER NOT NULL REFERENCES items (id) ON DELETE CASCADE,
-    background_info_id INTEGER NOT NULL REFERENCES background_info (id) ON DELETE CASCADE
+    background_info_id INTEGER NOT NULL REFERENCES background_info (id) ON DELETE CASCADE,
+    UNIQUE (item_id, background_info_id)
 );
 
 -- タスクのカテゴリ
 CREATE TABLE task_categories
 (
     id                          INTEGER PRIMARY KEY AUTOINCREMENT,
-    name                        TEXT    NOT NULL,
+    name                        TEXT    NOT NULL UNIQUE,
     -- autocomplete_paragraph_link: 段落リンクに紐づけたとき、自動的に完了としてマークされます。
     autocomplete_paragraph_link INTEGER NOT NULL DEFAULT 0 CHECK (autocomplete_paragraph_link = 0 /* false */ OR
                                                                   autocomplete_paragraph_link = 1 /* true */)
@@ -261,7 +264,7 @@ CREATE TABLE task_categories
 CREATE TABLE task_templates
 (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,
-    task_category_id INTEGER REFERENCES task_categories (id), -- タスクカテゴリ。
+    task_category_id INTEGER REFERENCES task_categories (id) ON DELETE SET NULL, -- タスクカテゴリ。
     title            TEXT NOT NULL,
     detail           TEXT
 );
@@ -271,7 +274,7 @@ CREATE TABLE tasks
 (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,
     item_id          INTEGER NOT NULL REFERENCES items (id) ON DELETE CASCADE,
-    task_category_id INTEGER REFERENCES task_categories (id),
+    task_category_id INTEGER REFERENCES task_categories (id) ON DELETE SET NULL,
     title            TEXT    NOT NULL,
     detail           TEXT,
     is_finished      INTEGER NOT NULL DEFAULT 0 CHECK ( is_finished = 0 /* false */ OR is_finished = 1 /* true */ )

@@ -32,6 +32,14 @@ FROM task_templates
          LEFT OUTER JOIN task_categories
                          ON task_templates.task_category_id = task_categories.id;
 
+-- タグ
+CREATE TABLE tags
+(
+    id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    memo TEXT
+);
+
 -- 出版社
 CREATE TABLE publishers
 (
