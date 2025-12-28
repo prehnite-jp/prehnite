@@ -3,6 +3,10 @@ name = "prehnite"
 version = "0.1.0"
 edition = "2024"
 license = "Zlib"
+authors = ["saku-shirakura<saku@sakushira.com>"]
+description = "Coming soon"
+repository = "https://github.com/saku-shirakura/prehnite"
+homepage = "https://prehnite.jp/"
 build = "build.rs"
 
 [dependencies]
