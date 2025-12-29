@@ -1,0 +1,1 @@
+say-hello = こんにちは、{$name}。
