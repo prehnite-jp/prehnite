@@ -105,3 +105,234 @@ impl BookSearchApi {
         .await
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::db::app_global_schema::book_search_api::BookSearchApi;
+    use crate::db::app_global_schema::book_search_result::BookSearchResult;
+    use rhai::Dynamic;
+    use serde::de::IntoDeserializer;
+    use serde::{Deserialize, Deserializer, Serialize};
+
+    #[derive(Serialize, Clone)]
+    struct Result {
+        isbn: Option<String>,
+        url: Option<String>,
+        title: String,
+        authors: Option<Vec<String>>,
+        detail: Option<String>,
+        publisher: Option<String>,
+        publication_date: Option<String>,
+    }
+
+    #[derive(Serialize, Clone)]
+    struct Object {
+        status: i64,
+        result: Vec<Result>,
+    }
+
+    const MAPPER_TEST_SCRIPT: &str = r#"fn mapper(isbn, search_text, response){
+    let x = [];
+    for result in response.result {
+        x += new_res(
+            result.isbn, // isbn
+            result.url, // url
+            result.title, // title
+            result.detail, // detail
+            result.authors, // authors
+            result.publisher, // publisher
+            result.publication_date, // publication date
+        )
+    }
+    x
+}"#;
+
+    const MAPPER_OPTIONAL_TEST_SCRIPT: &str = r#"fn mapper(isbn, search_text, response){
+    let x = [];
+    x += new_res(
+        (), // isbn
+        (), // url
+        "", // title
+        (), // detail
+        (), // authors
+        (), // publisher
+        (), // publication date
+    );
+    x
+}"#;
+
+    const MAPPER_REQUIRED_TEST_SCRIPT: &str = r#"fn mapper(isbn, search_text, response){
+    let x = [];
+    x += new_res(
+        (), // isbn
+        (), // url
+        (), // title
+        (), // detail
+        (), // authors
+        (), // publisher
+        (), // publication date
+    );
+    x
+}"#;
+
+    #[test]
+    #[should_panic]
+    fn invalid_mapper_required_attr() {
+        BookSearchApi {
+            mapping_script: MAPPER_REQUIRED_TEST_SCRIPT.to_string(),
+            ..Default::default()
+        }
+        .mapper(Default::default(), Default::default(), Default::default())
+        .unwrap();
+    }
+
+    #[test]
+    fn valid_mapper_optional_attr() {
+        assert_eq!(
+            BookSearchApi {
+                mapping_script: MAPPER_OPTIONAL_TEST_SCRIPT.to_string(),
+                ..Default::default()
+            }
+            .mapper(Default::default(), Default::default(), Default::default())
+            .unwrap(),
+            vec![BookSearchResult {
+                isbn: None,
+                url: None,
+                title: "".to_string(),
+                detail: None,
+                authors: vec![],
+                publisher: None,
+                publication_date: None,
+            }]
+        );
+    }
+
+    #[test]
+    fn valid_mapper() {
+        let response = Object {
+            status: 0,
+            result: vec![
+                Result {
+                    isbn: Some("aaaaaaaa".to_string()),
+                    url: None,
+                    title: "bbbbbbbb".to_string(),
+                    authors: Some(vec!["cccccccc".to_string(), "dddddddd".to_string()]),
+                    detail: Some("eeeeeeee".to_string()),
+                    publisher: None,
+                    publication_date: Some("2023-01-01".to_string()),
+                },
+                Result {
+                    isbn: None,
+                    url: Some("ffffffff".to_string()),
+                    title: "gggggggg".to_string(),
+                    authors: None,
+                    detail: None,
+                    publisher: Some("hhhhhhhh".to_string()),
+                    publication_date: None,
+                },
+                Result {
+                    isbn: Some("iiiiiiii".to_string()),
+                    url: Some("jjjjjjjj".to_string()),
+                    title: "kkkkkkkk".to_string(),
+                    authors: Some(vec!["llllllll".to_string()]),
+                    detail: Some("mmmmmmmm".to_string()),
+                    publisher: Some("nnnnnnnn".to_string()),
+                    publication_date: Some("2023-05-10".to_string()),
+                },
+                Result {
+                    isbn: Some("oooooooo".to_string()),
+                    url: None,
+                    title: "pppppppp".to_string(),
+                    authors: Some(vec!["qqqqqqqq".to_string()]),
+                    detail: None,
+                    publisher: None,
+                    publication_date: Some("2022-12-25".to_string()),
+                },
+                Result {
+                    isbn: None,
+                    url: Some("rrrrrrrr".to_string()),
+                    title: "ssssssss".to_string(),
+                    authors: None,
+                    detail: Some("tttttttt".to_string()),
+                    publisher: Some("uuuuuuuu".to_string()),
+                    publication_date: None,
+                },
+                Result {
+                    isbn: Some("vvvvvvvv".to_string()),
+                    url: Some("wwwwwwww".to_string()),
+                    title: "xxxxxxxx".to_string(),
+                    authors: Some(vec!["yyyyyyyy".to_string(), "zzzzzzzz".to_string()]),
+                    detail: Some("aaaaaaaa".to_string()),
+                    publisher: None,
+                    publication_date: Some("2021-07-07".to_string()),
+                },
+                Result {
+                    isbn: None,
+                    url: None,
+                    title: "bbbbbbbb".to_string(),
+                    authors: None,
+                    detail: None,
+                    publisher: Some("cccccccc".to_string()),
+                    publication_date: None,
+                },
+                Result {
+                    isbn: Some("dddddddd".to_string()),
+                    url: Some("eeeeeeee".to_string()),
+                    title: "ffffffff".to_string(),
+                    authors: Some(vec!["gggggggg".to_string()]),
+                    detail: Some("hhhhhhhh".to_string()),
+                    publisher: Some("iiiiiiii".to_string()),
+                    publication_date: Some("2020-01-01".to_string()),
+                },
+                Result {
+                    isbn: Some("jjjjjjjj".to_string()),
+                    url: None,
+                    title: "kkkkkkkk".to_string(),
+                    authors: None,
+                    detail: Some("llllllll".to_string()),
+                    publisher: None,
+                    publication_date: Some("2024-02-29".to_string()),
+                },
+                Result {
+                    isbn: None,
+                    url: Some("mmmmmmmm".to_string()),
+                    title: "nnnnnnnn".to_string(),
+                    authors: Some(vec!["oooooooo".to_string()]),
+                    detail: None,
+                    publisher: Some("pppppppp".to_string()),
+                    publication_date: None,
+                },
+            ],
+        };
+
+        let mapped_result: Vec<BookSearchResult> = response
+            .clone()
+            .result
+            .into_iter()
+            .map(|v| BookSearchResult {
+                isbn: v.isbn,
+                url: v.url,
+                title: v.title,
+                detail: v.detail,
+                authors: v.authors.unwrap_or_default(),
+                publisher: v.publisher,
+                publication_date: v.publication_date,
+            })
+            .collect();
+
+        let api = BookSearchApi {
+            mapping_script: MAPPER_TEST_SCRIPT.to_string(),
+            ..Default::default()
+        };
+
+        assert_eq!(
+            api.mapper(
+                rhai::serde::to_dynamic(response).unwrap(),
+                Dynamic::from(()),
+                Dynamic::from(())
+            )
+            .unwrap(),
+            mapped_result
+        )
+    }
+}

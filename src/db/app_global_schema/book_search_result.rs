@@ -6,6 +6,7 @@ use sqlx::{Acquire, SqliteConnection};
 use std::collections::HashMap;
 
 #[derive(Default, Clone, CustomType, Debug)]
+#[derive(PartialEq)]
 pub struct BookSearchResult {
     pub isbn: Option<String>,
     pub url: Option<String>,
