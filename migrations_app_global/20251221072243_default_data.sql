@@ -31,7 +31,7 @@ VALUES (1, 'Search API Setting Example. do not use.',
             result.detail, // detail
             result.authors, // authors
             (), // publisher (Option::None)
-            result.publication_date, // publication_date Must be of the form `YYYY-MM-DD`, otherwise it will be ignored. 形式は`YYYY-MM-DD`でなければなりません。それ以外は無視されます。
+            result.publication_date, // publication date
         )
     }
     x
