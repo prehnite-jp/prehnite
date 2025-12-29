@@ -1,3 +1,4 @@
+#![allow(unused)]
 #[cfg(target_os = "windows")]
 fn set_icon() {
     extern crate embed_resource;
@@ -9,11 +10,15 @@ fn set_icon() {
     .unwrap();
 }
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(not(any(target_os = "windows")))]
 fn set_icon() {
     println!("Configure software icon skipped.")
 }
 
+#[cfg(not(debug_assertions))]
 fn main() {
     set_icon()
 }
+
+#[cfg(debug_assertions)]
+fn main() {}
