@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 license = "Zlib"
 authors = ["saku-shirakura<saku@sakushira.com>"]
-description = "Coming soon"
+description = "Writing support software that helps you create coherent sentences"
 repository = "https://github.com/saku-shirakura/prehnite"
 homepage = "https://prehnite.jp/"
 build = "build.rs"
@@ -25,6 +25,8 @@ tracing-subscriber = "0.3"
 fluent-bundle = "0.16"
 unic-langid = { version = "0.9", features = ["unic-langid-macros"] }
 intl-memoizer = "0.5"
+paste = "1"
+derive_more = { version = "2", features = ["eq"] }
 
 [target.'cfg(windows)'.build-dependencies]
 embed-resource = "3.0.6"

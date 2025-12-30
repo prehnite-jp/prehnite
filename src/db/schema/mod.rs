@@ -5,40 +5,52 @@ pub mod load_impl;
 mod prefixed_deserializer;
 mod schema_binder_helper_impl;
 pub mod schema_cud_impl;
+#[cfg(test)]
+mod tests;
 
 use chrono::{DateTime, Utc};
 use sqlx::{Acquire, Database, FromRow, Row};
 
-#[derive(Default, Clone, Debug, FromRow)]
+#[derive(Default, Clone, Debug, FromRow, Eq, PartialEq)]
 pub struct ReturningId {
     pub id: i64,
 }
 
-#[derive(Default, Clone, Debug, FromRow)]
+
+//noinspection RsUnnecessaryQualifications: suppress false positive
+//noinspection RsDerivableTraitMembers: suppress false positive
+#[derive(
+    Default, Clone, Debug, FromRow, derive_more::Eq, derive_more::PartialEq,
+)]
 pub struct BackgroundInfo {
     pub id: i64,
     pub body: String,
+    #[eq(skip)]
     pub created_at: DateTime<Utc>,
+    #[eq(skip)]
     pub updated_at: DateTime<Utc>,
     #[sqlx(skip)]
+    #[eq(skip)]
     pub references: Option<Vec<BackgroundReference>>,
 }
 
-#[derive(Default, Clone, Debug, FromRow)]
+#[derive(Default, Clone, Debug, FromRow, Eq, PartialEq)]
 pub struct Tag {
     pub id: i64,
     pub name: String,
     pub memo: Option<String>,
 }
 
-#[derive(Default, Clone, Debug)]
+#[derive(Default, Clone, Debug, Eq, PartialEq)]
 pub struct Publisher {
     pub id: i64,
     pub name: String,
     pub memo: Option<String>,
 }
 
-#[derive(Default, Clone, Debug)]
+//noinspection RsUnnecessaryQualifications: suppress false positive
+//noinspection RsDerivableTraitMembers: suppress false positive
+#[derive(Default, Clone, Debug, derive_more::Eq, derive_more::PartialEq)]
 pub struct Bibliography {
     pub id: i64,
     pub isbn: Option<String>,
@@ -48,19 +60,22 @@ pub struct Bibliography {
     pub authors: Vec<BibliographyAuthor>,
     pub publisher: Option<Publisher>,
     pub publication_date: Option<String>,
+    #[eq(skip)]
     pub created_at: DateTime<Utc>,
+    #[eq(skip)]
     pub updated_at: DateTime<Utc>,
-    pub tmp_registration_id: Option<usize>
+    #[eq(skip)]
+    pub tmp_registration_id: Option<usize>,
 }
 
-#[derive(Default, Clone, Debug, FromRow)]
+#[derive(Default, Clone, Debug, FromRow, Eq, PartialEq)]
 pub struct BibliographyAuthor {
     pub id: i64,
     pub name: String,
     pub memo: Option<String>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ItemType {
     Headline(Option<Headline>),
     Paragraph(Option<Paragraph>),
@@ -81,63 +96,85 @@ impl From<ItemType> for String {
     }
 }
 
-#[derive(Default, Clone, Debug)]
+//noinspection RsUnnecessaryQualifications: suppress false positive
+//noinspection RsDerivableTraitMembers: suppress false positive
+#[derive(Default, Clone, Debug, derive_more::Eq, derive_more::PartialEq)]
 pub struct Item {
     pub id: i64,
     pub created_at: i64,
     pub item_type: ItemType,
     pub title: String,
+    #[eq(skip)]
     pub references: Option<Vec<ItemReference>>,
+    #[eq(skip)]
     pub tags: Option<Vec<Tag>>,
+    #[eq(skip)]
     pub background_info_list: Option<Vec<BackgroundInfo>>,
+    #[eq(skip)]
     pub tasks: Option<Vec<Task>>,
 }
 
-#[derive(Default, Clone, Debug, FromRow)]
+//noinspection RsUnnecessaryQualifications: suppress false positive
+//noinspection RsDerivableTraitMembers: suppress false positive
+#[derive(Default, Clone, Debug, FromRow, derive_more::Eq, derive_more::PartialEq)]
 pub struct Headline {
     pub id: i64,
     pub item_id: i64,
     pub parent_id: Option<i64>,
     pub headline_pos: Option<i64>,
     #[sqlx(skip)]
+    #[eq(skip)]
     pub children: Option<Vec<Option<i64>>>,
     #[sqlx(skip)]
+    #[eq(skip)]
     pub paragraph: Option<Vec<Paragraph>>,
 }
 
-#[derive(Default, Clone, Debug, FromRow)]
+//noinspection RsUnnecessaryQualifications: suppress false positive
+//noinspection RsDerivableTraitMembers: suppress false positive
+#[derive(Default, Clone, Debug, FromRow, derive_more::Eq, derive_more::PartialEq)]
 pub struct Draft {
     pub id: i64,
     pub paragraph_id: i64,
     pub draft_pos: Option<i64>,
     pub title: String,
     pub body: String,
+    #[eq(skip)]
     pub created_at: DateTime<Utc>,
+    #[eq(skip)]
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Default, Clone, Debug)]
+//noinspection RsUnnecessaryQualifications: suppress false positive
+//noinspection RsDerivableTraitMembers: suppress false positive
+#[derive(Default, Clone, Debug, derive_more::Eq, derive_more::PartialEq)]
 pub struct Paragraph {
     pub id: i64,
     pub item_id: i64,
     pub headline: Headline,
     pub accepted_draft: Option<Draft>,
     pub paragraph_pos: Option<i64>,
+    #[eq(skip)]
     pub draft: Option<Vec<Draft>>,
+    #[eq(skip)]
     pub summary: Option<Vec<ParagraphSummary>>,
 }
 
-#[derive(Default, Clone, Debug, FromRow)]
+//noinspection RsUnnecessaryQualifications: suppress false positive
+//noinspection RsDerivableTraitMembers: suppress false positive
+#[derive(Default, Clone, Debug, FromRow, derive_more::Eq, derive_more::PartialEq)]
 pub struct ParagraphSummary {
     pub id: i64,
     pub paragraph_id: i64,
     pub title: String,
     pub detail: String,
+    #[eq(skip)]
     pub created_at: DateTime<Utc>,
+    #[eq(skip)]
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Default, Clone, Debug)]
+#[derive(Default, Clone, Debug, Eq, PartialEq)]
 pub struct BackgroundReference {
     pub id: i64,
     pub background_info_id: i64,
@@ -145,7 +182,7 @@ pub struct BackgroundReference {
     pub location: String,
 }
 
-#[derive(Default, Clone, Debug)]
+#[derive(Default, Clone, Debug, Eq, PartialEq)]
 pub struct ItemReference {
     pub id: i64,
     pub item_id: i64,
@@ -153,14 +190,14 @@ pub struct ItemReference {
     pub location: String,
 }
 
-#[derive(Default, Clone, Debug, FromRow)]
+#[derive(Default, Clone, Debug, FromRow, Eq, PartialEq)]
 pub struct TaskCategory {
     pub id: i64,
     pub name: String,
     pub autocomplete_paragraph_link: bool,
 }
 
-#[derive(Default, Clone, Debug)]
+#[derive(Default, Clone, Debug, Eq, PartialEq)]
 pub struct TaskTemplate {
     pub id: i64,
     pub task_category: Option<TaskCategory>,
@@ -168,7 +205,7 @@ pub struct TaskTemplate {
     pub detail: Option<String>,
 }
 
-#[derive(Default, Clone, Debug)]
+#[derive(Default, Clone, Debug, Eq, PartialEq)]
 pub struct Task {
     pub id: i64,
     pub item_id: i64,
@@ -178,7 +215,7 @@ pub struct Task {
     pub is_finished: bool,
 }
 
-#[derive(Default, Clone, Debug)]
+#[derive(Default, Clone, Debug, Eq, PartialEq)]
 pub struct ParagraphLink {
     pub id: i64,
     pub from_paragraph: Paragraph,
@@ -187,28 +224,28 @@ pub struct ParagraphLink {
     pub comment: Option<String>,
 }
 
-#[derive(Default, Clone, Debug, FromRow)]
+#[derive(Default, Clone, Debug, FromRow, Eq, PartialEq)]
 pub struct PrehniteBookSetting {
     pub id: i64,
     pub setting_key: String,
     pub setting_value: Option<String>,
 }
 
-#[derive(Default, Clone, Debug, FromRow)]
+#[derive(Default, Clone, Debug, FromRow, Eq, PartialEq)]
 pub struct RelBibliographyAuthor {
     pub id: i64,
     pub bibliography_id: i64,
     pub bibliography_author_id: i64,
 }
 
-#[derive(Default, Clone, Debug, FromRow)]
+#[derive(Default, Clone, Debug, FromRow, Eq, PartialEq)]
 pub struct RelTagAndItem {
     pub id: i64,
     pub item_id: i64,
     pub tag_id: i64,
 }
 
-#[derive(Default, Clone, Debug, FromRow)]
+#[derive(Default, Clone, Debug, FromRow, Eq, PartialEq)]
 pub struct RelBackgroundAndItem {
     pub id: i64,
     pub item_id: i64,

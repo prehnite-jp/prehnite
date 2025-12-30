@@ -8,3 +8,5 @@
 /dataSources.local.xml
 # エディターベースの HTTP クライアントリクエスト
 /httpRequests/
+
+/remote-targets.xml
