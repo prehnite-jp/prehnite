@@ -44,3 +44,5 @@ target/
 *.prehnite
 *.prehnite-shm
 *.prehnite-wal
+/scratch/*
+!/scratch/README.MD
