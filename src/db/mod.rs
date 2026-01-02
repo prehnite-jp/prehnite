@@ -4,16 +4,22 @@ pub mod error;
 pub mod schema;
 mod util;
 
-use sqlx::migrate::Migrator;
-use sqlx::sqlx_macros::migrate;
 use sqlx::SqlitePool;
 
-fn app_global_migrator() -> Migrator {
-    migrate!("./migrations_app_global")
-}
+pub mod migrate {
+    pub mod prehnite_book {
+        use sqlx::migrate::Migrator;
+        use sqlx::sqlx_macros::migrate;
 
-fn book_migrator() -> Migrator {
-    migrate!("./migrations_prehnite_book")
+        pub static MIGRATOR: Migrator = migrate!("./migrations_prehnite_book");
+    }
+
+    pub mod app_global {
+        use sqlx::migrate::Migrator;
+        use sqlx::sqlx_macros::migrate;
+
+        pub static MIGRATOR: Migrator = migrate!("./migrations_app_global");
+    }
 }
 
 pub enum MigrateMode {
@@ -26,9 +32,9 @@ pub async fn migrate(
     mode: MigrateMode,
 ) -> Result<(), sqlx::migrate::MigrateError> {
     match mode {
-        MigrateMode::PrehniteBook => book_migrator(),
-        MigrateMode::AppGlobal => app_global_migrator(),
+        MigrateMode::PrehniteBook => &migrate::prehnite_book::MIGRATOR,
+        MigrateMode::AppGlobal => &migrate::app_global::MIGRATOR,
     }
-    .run(conn)
-    .await
+        .run(conn)
+        .await
 }
