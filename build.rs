@@ -6,8 +6,8 @@ fn set_icon() {
         "assets/platform/win/prehnite.exe.icon.rc",
         embed_resource::NONE,
     )
-    .manifest_optional()
-    .unwrap();
+        .manifest_optional()
+        .unwrap();
 }
 
 #[cfg(not(any(target_os = "windows")))]

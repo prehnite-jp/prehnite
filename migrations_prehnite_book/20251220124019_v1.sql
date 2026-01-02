@@ -265,7 +265,7 @@ CREATE TABLE task_templates
 (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,
     task_category_id INTEGER REFERENCES task_categories (id) ON DELETE SET NULL, -- タスクカテゴリ。
-    title            TEXT NOT NULL,
+    title            TEXT    NOT NULL,
     detail           TEXT
 );
 

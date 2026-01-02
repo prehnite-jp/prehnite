@@ -43,8 +43,8 @@ impl BookSearchApi {
             Ok(v) => v,
             Err(e) => return Err(BookSearchApiError::RequestError(e)),
         }
-        .json::<Dynamic>()
-        .await
+            .json::<Dynamic>()
+            .await
         {
             Ok(v) => v,
             Err(e) => return Err(BookSearchApiError::RequestError(e)),
@@ -90,7 +90,7 @@ impl BookSearchApi {
             Some(isbn.as_ref().into()),
             None,
         )
-        .await
+            .await
     }
 
     pub async fn search_text(
@@ -102,7 +102,7 @@ impl BookSearchApi {
             None,
             Some(text.as_ref().into()),
         )
-        .await
+            .await
     }
 }
 
@@ -111,8 +111,7 @@ mod tests {
     use crate::db::app_global_schema::book_search_api::BookSearchApi;
     use crate::db::app_global_schema::book_search_result::BookSearchResult;
     use rhai::Dynamic;
-    use serde::de::IntoDeserializer;
-    use serde::{Deserialize, Deserializer, Serialize};
+    use serde::{Deserializer, Serialize};
 
     #[derive(Serialize, Clone)]
     struct Result {
@@ -182,8 +181,8 @@ mod tests {
             mapping_script: MAPPER_REQUIRED_TEST_SCRIPT.to_string(),
             ..Default::default()
         }
-        .mapper(Default::default(), Default::default(), Default::default())
-        .unwrap();
+            .mapper(Default::default(), Default::default(), Default::default())
+            .unwrap();
     }
 
     #[test]
@@ -193,8 +192,8 @@ mod tests {
                 mapping_script: MAPPER_OPTIONAL_TEST_SCRIPT.to_string(),
                 ..Default::default()
             }
-            .mapper(Default::default(), Default::default(), Default::default())
-            .unwrap(),
+                .mapper(Default::default(), Default::default(), Default::default())
+                .unwrap(),
             vec![BookSearchResult {
                 isbn: None,
                 url: None,
@@ -331,7 +330,7 @@ mod tests {
                 Dynamic::from(()),
                 Dynamic::from(())
             )
-            .unwrap(),
+                .unwrap(),
             mapped_result
         )
     }

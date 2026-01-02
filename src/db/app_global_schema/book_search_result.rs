@@ -1,6 +1,6 @@
 use crate::db::app_global_schema::cushion_types::{OptionString, VecString};
 use crate::db::schema::{Bibliography, BibliographyAuthor, Publisher, RelBibliographyAuthor};
-use crate::db::util::{get_optional, utc_parse_format};
+use crate::db::util::get_optional;
 use rhai::{CustomType, Dynamic, EvalAltResult, Position, TypeBuilder};
 use sqlx::{Acquire, SqliteConnection};
 use std::collections::HashMap;
@@ -75,10 +75,10 @@ impl BookSearchResult {
             &mut tx,
             true,
         )
-        .await?
-        .into_iter()
-        .map(|v| (v.name.clone(), v))
-        .collect();
+            .await?
+            .into_iter()
+            .map(|v| (v.name.clone(), v))
+            .collect();
         let authors: HashMap<String, BibliographyAuthor> = BibliographyAuthor::register_vec_tx(
             book_search_result_list
                 .iter()
@@ -95,10 +95,10 @@ impl BookSearchResult {
             &mut tx,
             true,
         )
-        .await?
-        .into_iter()
-        .map(|v| (v.name.clone(), v))
-        .collect();
+            .await?
+            .into_iter()
+            .map(|v| (v.name.clone(), v))
+            .collect();
         let bibliographies = Bibliography::register_vec_tx(
             book_search_result_list
                 .iter()
@@ -121,7 +121,7 @@ impl BookSearchResult {
             &mut tx,
             true,
         )
-        .await?;
+            .await?;
         RelBibliographyAuthor::register_vec_tx(
             bibliographies
                 .iter()
@@ -145,7 +145,7 @@ impl BookSearchResult {
             &mut tx,
             true,
         )
-        .await?;
+            .await?;
         tx.commit().await?;
         Ok(bibliographies)
     }

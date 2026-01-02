@@ -11,9 +11,9 @@ impl BackgroundInfo {
             sqlx::query_as::<_, BackgroundReference>(
                 "SELECT * FROM view_deserializable_background_reference WHERE background_info_id=?",
             )
-            .bind(self.id)
-            .fetch_all(conn)
-            .await?,
+                .bind(self.id)
+                .fetch_all(conn)
+                .await?,
         );
         Ok(())
     }
@@ -33,9 +33,9 @@ impl Bibliography {
     ON rel_bibliography_authors.bibliography_author_id = author.id
     WHERE rel_bibliography_authors.bibliography_id=?",
         )
-        .bind(self.id)
-        .fetch_all(conn)
-        .await?;
+            .bind(self.id)
+            .fetch_all(conn)
+            .await?;
         Ok(())
     }
 }
@@ -52,9 +52,9 @@ impl Item {
             sqlx::query_as::<_, ItemReference>(
                 "SELECT * FROM view_deserializable_item_reference WHERE item_id=?",
             )
-            .bind(self.id)
-            .fetch_all(conn)
-            .await?,
+                .bind(self.id)
+                .fetch_all(conn)
+                .await?,
         );
         Ok(())
     }
@@ -80,9 +80,9 @@ impl Item {
         ON background_info.id = rel_background_and_item.background_info_id
     WHERE item_id=?",
             )
-            .bind(self.id)
-            .fetch_all(conn)
-            .await?,
+                .bind(self.id)
+                .fetch_all(conn)
+                .await?,
         );
         Ok(())
     }
@@ -180,9 +180,9 @@ impl Paragraph {
             sqlx::query_as::<_, ParagraphSummary>(
                 "SELECT * FROM paragraph_summaries WHERE paragraph_id=?",
             )
-            .bind(self.id)
-            .fetch_all(conn)
-            .await?,
+                .bind(self.id)
+                .fetch_all(conn)
+                .await?,
         );
         Ok(())
     }

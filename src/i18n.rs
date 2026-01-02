@@ -48,7 +48,7 @@ fn try_get_ftl_str(lang_id: &str) -> Result<String, TryGetFtlPathError> {
         "en-US" | "en" => include_str!("../assets/locales/en-US.ftl"),
         _ => return Err(TryGetFtlPathError::LangNotFound),
     }
-    .to_string())
+        .to_string())
 }
 
 fn get_ftl_str(lang_id: &str) -> String {
