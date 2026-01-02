@@ -1,4 +1,6 @@
-use crate::db::schema::schema_binder_helper_impl::{Binder, placeholder_helper, placeholder_in_clause};
+use crate::db::schema::schema_binder_helper_impl::{
+    placeholder_helper, placeholder_in_clause, Binder,
+};
 use crate::db::schema::{
     BackgroundInfo, BackgroundReference, Bibliography, BibliographyAuthor, Draft, Headline, Item,
     ItemReference, Paragraph, ParagraphLink, ParagraphSummary, PrehniteBookSetting, Publisher,
@@ -20,9 +22,43 @@ where
     }
 }
 
+macro_rules! allow_r {
+    ($(($x: ty, $view_name:expr)),*) => {
+        $(impl $x {
+            pub async fn select_all(conn: &mut SqliteConnection) ->  Result<Vec<Self>, Error> {
+                let mut tx = conn.begin().await?;
+                let result = Self::select_all_tx(&mut tx).await?;
+                tx.commit().await?;
+                Ok(result)
+            }
+
+            pub async fn select_all_tx(tx: &mut SqliteTransaction<'_>) ->  Result<Vec<Self>, Error> {
+                sqlx::query_as(concat!("SELECT * FROM ", $view_name))
+                .fetch_all(&mut **tx).await
+            }
+        })*
+    };
+}
+
 macro_rules! allow_c {
     ($(($x: ty, $table_name:expr, $view_name:expr, $register_columns:expr, $place_holder_count:expr)),*) => {
         $(impl $x {
+            pub async fn register_optional(val: Option<Self>, conn: &mut SqliteConnection, is_on_conflict_do_nothing: bool) -> Result<Option<Self>, Error> {
+                if val.is_none(){
+                    Ok(None)
+                } else {
+                    Ok(Some(val.unwrap().register(conn, is_on_conflict_do_nothing).await?))
+                }
+            }
+
+            pub async fn register_optional_tx(val: Option<Self>, tx: &mut SqliteTransaction<'_>, is_on_conflict_do_nothing: bool) -> Result<Option<Self>, Error> {
+                if val.is_none(){
+                    Ok(None)
+                } else {
+                    Ok(Some(val.unwrap().register_tx(tx, is_on_conflict_do_nothing).await?))
+                }
+            }
+
             pub async fn register(&self, conn: &mut SqliteConnection, is_on_conflict_do_nothing: bool) -> Result<Self, Error> {
                 first_or_row_not_found(&Self::register_vec(&vec![self.clone()], conn, is_on_conflict_do_nothing).await?)
             }
@@ -79,7 +115,6 @@ macro_rules! allow_c {
         })*
     };
 }
-
 macro_rules! allow_u {
     ($(($x: ty, $table_name:expr, $update_set_clause:expr)),*) => {
     $(impl $x {
@@ -108,7 +143,6 @@ macro_rules! allow_u {
     })*
     };
 }
-
 macro_rules! allow_d {
     ($(($x:ty, $table_name:expr)),*) => {
         $(
@@ -133,36 +167,35 @@ macro_rules! allow_d {
         )*
     };
 }
-
-macro_rules! allow_cud {
+macro_rules! allow_crud {
     ($(($x: ty, $table_name:expr, $view_name:expr, $register_columns:expr, $place_holder:expr, $update_set_clause:expr)),*) => {
         $(
             allow_c!(($x, $table_name, $view_name, $register_columns, $place_holder));
+            allow_r!(($x, $view_name));
             allow_u!(($x, $table_name, $update_set_clause));
             allow_d!(($x, $table_name));
         )*
     };
 }
-
-macro_rules! allow_cu {
+macro_rules! allow_cru {
     ($(($x: ty, $table_name:expr, $view_name:expr, $register_columns:expr, $place_holder:expr, $update_set_clause:expr)),*) => {
         $(
             allow_c!(($x, $table_name, $view_name, $register_columns, $place_holder));
+            allow_r!(($x, $view_name));
             allow_u!(($x, $table_name, $update_set_clause));
         )*
     };
 }
-
-macro_rules! allow_cd {
+macro_rules! allow_crd {
     ($(($x: ty, $table_name:expr, $view_name:expr, $register_columns:expr, $place_holder:expr)),*) => {
         $(
             allow_c!(($x, $table_name, $view_name, $register_columns, $place_holder));
+            allow_r!(($x, $view_name));
             allow_d!(($x, $table_name));
         )*
     };
 }
-
-allow_cu!(
+allow_cru!(
     (
         Paragraph,
         "paragraph",
@@ -176,12 +209,12 @@ allow_cu!(
         "headlines",
         "headlines",
         "item_id,parent_id,headline_pos",
-        1,
+        3,
         "parent_id=?,headline_pos=?"
     )
 );
 
-allow_cud!(
+allow_crud!(
     (
         BackgroundInfo,
         "background_info",

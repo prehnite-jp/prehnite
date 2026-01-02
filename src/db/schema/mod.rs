@@ -4,7 +4,7 @@ pub mod custom_from_row;
 pub mod load_impl;
 mod prefixed_deserializer;
 mod schema_binder_helper_impl;
-pub mod schema_cud_impl;
+pub mod schema_crud_impl;
 #[cfg(test)]
 mod tests;
 
@@ -101,6 +101,7 @@ impl From<ItemType> for String {
 #[derive(Default, Clone, Debug, derive_more::Eq, derive_more::PartialEq)]
 pub struct Item {
     pub id: i64,
+    #[eq(skip)]
     pub created_at: i64,
     pub item_type: ItemType,
     pub title: String,
