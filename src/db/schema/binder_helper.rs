@@ -1,3 +1,4 @@
+use crate::db::schema::app_global::book_search_api::BookSearchApi;
 use crate::db::schema::{
     BackgroundInfo, BackgroundReference, Bibliography, BibliographyAuthor, Draft, Headline, Item,
     ItemReference, Paragraph, ParagraphLink, ParagraphSummary, PrehniteBookSetting, Publisher,
@@ -404,5 +405,30 @@ impl Binder for TaskTemplate {
             .bind(self.task_category.map(|v| v.id))
             .bind(self.title)
             .bind(self.detail)
+    }
+}
+impl Binder for BookSearchApi {
+    fn register_bind_values<'a>(
+        self,
+        query: QueryAs<'a, Sqlite, ReturningId, SqliteArguments<'a>>,
+    ) -> QueryAs<'a, Sqlite, ReturningId, SqliteArguments<'a>> {
+        query
+            .bind(self.name)
+            .bind(self.detail)
+            .bind(self.isbn_url)
+            .bind(self.text_url)
+            .bind(self.mapping_script)
+    }
+
+    fn update_bind_values<'a>(
+        self,
+        query: Query<'a, Sqlite, SqliteArguments<'a>>,
+    ) -> Query<'a, Sqlite, SqliteArguments<'a>> {
+        query
+            .bind(self.name)
+            .bind(self.detail)
+            .bind(self.isbn_url)
+            .bind(self.text_url)
+            .bind(self.mapping_script)
     }
 }

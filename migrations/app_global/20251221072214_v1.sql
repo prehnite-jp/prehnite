@@ -23,15 +23,6 @@ CREATE TABLE task_templates
     detail           TEXT
 );
 
-CREATE VIEW view_deserializable_task_template AS
-SELECT task_templates.*,
-       task_categories.id                          AS tc_id,
-       task_categories.name                        AS tc_name,
-       task_categories.autocomplete_paragraph_link AS tc_autocomplete_paragraph_link
-FROM task_templates
-         LEFT OUTER JOIN task_categories
-                         ON task_templates.task_category_id = task_categories.id;
-
 -- タグ
 CREATE TABLE tags
 (
@@ -57,7 +48,7 @@ CREATE TABLE bibliographies
     title               TEXT    NOT NULL,
     detail              TEXT,
     publisher_id        INTEGER REFERENCES publishers (id) ON DELETE SET NULL,
-    publication_date    INTEGER,
+    publication_date    TEXT,
     tmp_registration_id INTEGER,
     created_at          INTEGER NOT NULL DEFAULT (unixepoch()),
     updated_at          INTEGER NOT NULL DEFAULT (unixepoch())

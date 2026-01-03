@@ -8,6 +8,7 @@ use crate::db::schema::{
     TaskCategory, TaskTemplate,
 };
 use sqlx::{Acquire, Error, SqliteConnection, SqliteTransaction};
+use crate::db::schema::app_global::book_search_api::BookSearchApi;
 
 const MAX_BIND_COUNT: usize = 30000; // sqlite 3.32.0 以降では32766が最大だが、マージンを取って30000
 
@@ -351,5 +352,15 @@ allow_crud!(
         "item_id,background_info_id",
         2,
         "item_id=?,background_info_id=?"
+    )
+);
+allow_crud!(
+    (
+        BookSearchApi,
+        "book_search_api",
+        "book_search_api",
+        "name,detail,isbn_url,text_url,mapping_script",
+        5,
+        "name=?,detail=?,isbn_url=?,text_url=?,mapping_script=?"
     )
 );

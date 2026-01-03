@@ -10,14 +10,14 @@ pub mod migrate {
         use sqlx::migrate::Migrator;
         use sqlx::sqlx_macros::migrate;
 
-        pub static MIGRATOR: Migrator = migrate!("./migrations_prehnite_book");
+        pub static MIGRATOR: Migrator = migrate!("./migrations/prehnite_book");
     }
 
     pub mod app_global {
         use sqlx::migrate::Migrator;
         use sqlx::sqlx_macros::migrate;
 
-        pub static MIGRATOR: Migrator = migrate!("./migrations_app_global");
+        pub static MIGRATOR: Migrator = migrate!("./migrations/app_global");
     }
 }
 
@@ -34,6 +34,6 @@ pub async fn migrate(
         MigrateMode::PrehniteBook => &migrate::prehnite_book::MIGRATOR,
         MigrateMode::AppGlobal => &migrate::app_global::MIGRATOR,
     }
-        .run(conn)
-        .await
+    .run(conn)
+    .await
 }
