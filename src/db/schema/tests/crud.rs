@@ -1,7 +1,9 @@
+use crate::db::schema::app_global::book_search_api::BookSearchApi;
 use crate::db::schema::*;
 use crate::test_util::{RandomValue, RandomValueVec};
 use sqlx::{SqliteConnection, SqlitePool};
 use std::cmp::max;
+use crate::db::schema::app_global::{AppGlobalDefaultBibliography, AppGlobalDefaultBibliographyAuthor, AppGlobalDefaultPublisher, AppGlobalDefaultRelBibliographyAuthor, AppGlobalDefaultTag, AppGlobalDefaultTaskCategory, AppGlobalDefaultTaskTemplate, AppGlobalSetting};
 
 const TEST_DATA_COUNT: usize = 100;
 
@@ -51,40 +53,71 @@ macro_rules! assert_eq_select_all {
 }
 
 macro_rules! test_cr {
-        ($($x: ty),*) => {
-            paste::paste!{$(
-            #[sqlx::test(migrator = "crate::db::migrate::prehnite_book::MIGRATOR")]
-            async fn [<valid_create_read_random_ $x:snake>](pool: SqlitePool) {
-                acquire_pool!(pool, conn);
-                let mut result =
-                    <$x>::register_random_vec(&mut conn, TEST_DATA_COUNT)
-                        .await
-                        .unwrap();
-                let before = result.before_registration;
-                let after = result.after_registration;
-                register_tester!($x, conn, before, after);
-            }
-            )*}
-        };
-    }
+    ($x:ty, $pool:ident) => {
+        acquire_pool!($pool, conn);
+        let mut result = <$x>::register_random_vec(&mut conn, TEST_DATA_COUNT)
+            .await
+            .unwrap();
+        let before = result.before_registration;
+        let after = result.after_registration;
+        register_tester!($x, conn, before, after);
+    };
+}
+
+macro_rules! test_cr_prehnite_book {
+    ($($x: ty),*) => {
+        paste::paste!{$(
+        #[sqlx::test(migrator = "crate::db::migrate::prehnite_book::MIGRATOR")]
+        async fn [<valid_create_read_random_prehnite_book_ $x:snake>](pool: SqlitePool) {
+            test_cr!($x, pool);
+        }
+        )*}
+    };
+}
+
+macro_rules! test_cr_app_global {
+    ($($x: ty),*) => {
+        paste::paste!{$(
+        #[sqlx::test(migrator = "crate::db::migrate::app_global::MIGRATOR")]
+        async fn [<valid_create_read_random_app_global_ $x:snake>](pool: SqlitePool) {
+            test_cr!($x, pool);
+        }
+        )*}
+    };
+}
 
 macro_rules! test_crd {
-        ($($x: ty),*) => {
-            paste::paste!{$(
-            #[sqlx::test(migrator = "crate::db::migrate::prehnite_book::MIGRATOR")]
-            async fn [<valid_create_read_delete_random_ $x:snake>](pool: SqlitePool) {
-                acquire_pool!(pool, conn);
-                let mut result =
-                    <$x>::register_random_vec(&mut conn, TEST_DATA_COUNT)
-                        .await
-                        .unwrap();
-                let before = result.before_registration;
-                let after = result.after_registration;
-                register_tester!($x, conn, before, after);
-                delete_tester!($x, conn, after);
-            })*}
-        };
-    }
+    ($x:ty, $pool:ident) => {
+        acquire_pool!($pool, conn);
+        let mut result = <$x>::register_random_vec(&mut conn, TEST_DATA_COUNT)
+            .await
+            .unwrap();
+        let before = result.before_registration;
+        let after = result.after_registration;
+        register_tester!($x, conn, before, after);
+        delete_tester!($x, conn, after);
+    };
+}
+
+macro_rules! test_crd_prehnite_book {
+    ($($x: ty),*) => {
+        paste::paste!{$(
+        #[sqlx::test(migrator = "crate::db::migrate::prehnite_book::MIGRATOR")]
+        async fn [<valid_create_read_delete_random_prehnite_book_ $x:snake>](pool: SqlitePool) {
+            test_crd!($x, pool);
+        })*}
+    };
+}
+
+macro_rules! test_crd_app_global {
+    ($($x: ty),*) => {
+        paste::paste!{$(
+        #[sqlx::test(migrator = "crate::db::migrate::app_global::MIGRATOR")]
+        async fn [<valid_create_read_delete_random_app_global_ $x:snake>](pool: SqlitePool) {
+            test_crd!($x, pool);
+        })*}
+    };
+}
 
 #[derive(Clone)]
 struct RegisterRandomTestDataResult<T> {
@@ -156,6 +189,8 @@ impl_register_non_dependent_entity!(
     PrehniteBookSetting
 );
 
+impl_register_non_dependent_entity!(BookSearchApi);
+
 impl BackgroundReference {
     async fn register_random_vec(
         conn: &mut SqliteConnection,
@@ -191,7 +226,7 @@ impl Bibliography {
             conn,
             true,
         )
-            .await?;
+        .await?;
         let mut bibliographies = Vec::<Bibliography>::random_n_values(n);
         bibliographies.chunks_mut(2).enumerate().for_each(|(i, v)| {
             v.iter_mut().enumerate().for_each(|(j, v)| {
@@ -495,9 +530,9 @@ impl Task {
                 .await?
                 .get(),
         ]
-            .into_iter()
-            .flatten()
-            .collect();
+        .into_iter()
+        .flatten()
+        .collect();
         let mut tasks = Vec::<Task>::random_n_values(n);
         tasks.chunks_mut(4).enumerate().for_each(|(i, v)| {
             v.iter_mut().enumerate().for_each(|(j, v)| {
@@ -524,7 +559,7 @@ impl TaskTemplate {
     }
 }
 
-test_crd!(
+test_crd_prehnite_book!(
     BackgroundInfo,
     Tag,
     Publisher,
@@ -533,7 +568,16 @@ test_crd!(
     PrehniteBookSetting
 );
 
-test_cr!(
+test_crd_app_global!(
+    AppGlobalDefaultPublisher,
+    AppGlobalSetting,
+    AppGlobalDefaultTaskCategory,
+    AppGlobalDefaultTag,
+    AppGlobalDefaultBibliographyAuthor,
+    BookSearchApi
+);
+
+test_cr_prehnite_book!(
     BackgroundReference,
     Bibliography,
     Draft,
@@ -547,6 +591,12 @@ test_cr!(
     RelTagAndItem,
     Task,
     TaskTemplate
+);
+
+test_cr_app_global!(
+    AppGlobalDefaultBibliography,
+    AppGlobalDefaultTaskTemplate,
+    AppGlobalDefaultRelBibliographyAuthor
 );
 
 #[sqlx::test(migrator = "crate::db::migrate::prehnite_book::MIGRATOR")]
@@ -565,9 +615,9 @@ async fn valid_create_read_random_item(pool: SqlitePool) {
         paragraph_items.before_registration.clone(),
         headline_items.before_registration.clone(),
     ]
-        .into_iter()
-        .flatten()
-        .collect::<Vec<Item>>();
+    .into_iter()
+    .flatten()
+    .collect::<Vec<Item>>();
     let mut items = vec![paragraph_items.get(), headline_items.get()]
         .into_iter()
         .flatten()
