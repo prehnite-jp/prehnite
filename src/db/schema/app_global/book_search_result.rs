@@ -1,12 +1,11 @@
-use crate::db::util::cushion_types::{OptionString, VecString};
 use crate::db::schema::{Bibliography, BibliographyAuthor, Publisher, RelBibliographyAuthor};
+use crate::db::util::cushion_types::{OptionString, VecString};
 use crate::db::util::get_optional;
 use rhai::{CustomType, Dynamic, EvalAltResult, Position, TypeBuilder};
 use sqlx::{Acquire, SqliteConnection};
 use std::collections::HashMap;
 
-#[derive(Default, Clone, CustomType, Debug)]
-#[derive(PartialEq)]
+#[derive(Default, Clone, CustomType, Debug, PartialEq)]
 pub struct BookSearchResult {
     pub isbn: Option<String>,
     pub url: Option<String>,
@@ -15,6 +14,12 @@ pub struct BookSearchResult {
     pub authors: Vec<String>,
     pub publisher: Option<String>,
     pub publication_date: Option<String>,
+}
+
+macro_rules! to_hash_map {
+    ($v:expr) => {
+        $v.into_iter().map(|v| (v.name.clone(), v)).collect()
+    };
 }
 
 impl BookSearchResult {
@@ -55,97 +60,107 @@ impl BookSearchResult {
         }
     }
 
+    fn publishers_from_bsr(bsr: &[BookSearchResult]) -> Vec<Publisher> {
+        bsr.iter()
+            .filter_map(|v| {
+                Some(Publisher {
+                    name: v.publisher.clone()?,
+                    ..Default::default()
+                })
+            })
+            .collect()
+    }
+
+    fn authors_from_bsr(bsr: &[BookSearchResult]) -> Vec<BibliographyAuthor> {
+        bsr.iter()
+            .filter_map(|v| {
+                Some(v.authors.clone().into_iter().map(|v| BibliographyAuthor {
+                    name: v,
+                    ..Default::default()
+                }))
+            })
+            .flatten()
+            .collect()
+    }
+
+    fn bibliographies_from_bsr(
+        bsr: &[BookSearchResult],
+        publishers: &HashMap<String, Publisher>,
+    ) -> Vec<Bibliography> {
+        bsr.iter()
+            .enumerate()
+            .map(|(i, v)| Bibliography {
+                isbn: v.isbn.clone(),
+                url: v.url.clone(),
+                title: v.title.clone(),
+                detail: v.detail.clone(),
+                publisher: get_optional(publishers, &v.publisher),
+                publication_date: v.publication_date.clone(),
+                tmp_registration_id: Some(i),
+                ..Default::default()
+            })
+            .collect()
+    }
+
+    fn rel_bibliography_author_from_bibliographies(
+        bsr: &[BookSearchResult],
+        bibliographies: &[Bibliography],
+        authors: &HashMap<String, BibliographyAuthor>,
+    ) -> Vec<RelBibliographyAuthor> {
+        bibliographies
+            .iter()
+            .filter_map(|b| {
+                Some(bsr[b.tmp_registration_id?].authors.iter().filter_map(|a| {
+                    Some(RelBibliographyAuthor {
+                        id: 0,
+                        bibliography_id: b.id,
+                        bibliography_author_id: authors.get(a)?.id,
+                    })
+                }))
+            })
+            .flatten()
+            .collect()
+    }
+
     pub async fn register(
         conn: &mut SqliteConnection,
         book_search_result_list: Vec<BookSearchResult>,
     ) -> Result<Vec<Bibliography>, sqlx::Error> {
         let mut tx = conn.begin().await?;
-        let publishers: HashMap<String, Publisher> = Publisher::register_vec_tx(
-            book_search_result_list
-                .iter()
-                .filter_map(|v| {
-                    Some(Publisher {
-                        id: 0,
-                        name: v.publisher.clone()?,
-                        memo: None,
-                    })
-                })
-                .collect::<Vec<Publisher>>()
-                .as_slice(),
-            &mut tx,
-            true,
-        )
+        let publishers: HashMap<String, Publisher> = to_hash_map!(
+            Publisher::register_vec_tx(
+                Self::publishers_from_bsr(book_search_result_list.as_slice()).as_slice(),
+                &mut tx,
+                true,
+            )
             .await?
-            .into_iter()
-            .map(|v| (v.name.clone(), v))
-            .collect();
-        let authors: HashMap<String, BibliographyAuthor> = BibliographyAuthor::register_vec_tx(
-            book_search_result_list
-                .iter()
-                .filter_map(|v| {
-                    Some(v.authors.clone().into_iter().map(|v| BibliographyAuthor {
-                        id: 0,
-                        name: v,
-                        memo: None,
-                    }))
-                })
-                .flatten()
-                .collect::<Vec<BibliographyAuthor>>()
-                .as_slice(),
-            &mut tx,
-            true,
-        )
+        );
+        let authors: HashMap<String, BibliographyAuthor> = to_hash_map!(
+            BibliographyAuthor::register_vec_tx(
+                Self::authors_from_bsr(book_search_result_list.as_slice()).as_slice(),
+                &mut tx,
+                true,
+            )
             .await?
-            .into_iter()
-            .map(|v| (v.name.clone(), v))
-            .collect();
+        );
         let bibliographies = Bibliography::register_vec_tx(
-            book_search_result_list
-                .iter()
-                .enumerate()
-                .map(|(i, v)| Bibliography {
-                    id: 0,
-                    isbn: v.isbn.clone(),
-                    url: v.url.clone(),
-                    title: v.title.clone(),
-                    detail: v.detail.clone(),
-                    authors: vec![],
-                    publisher: get_optional(&publishers, &v.publisher),
-                    publication_date: v.publication_date.clone(),
-                    created_at: Default::default(),
-                    updated_at: Default::default(),
-                    tmp_registration_id: Some(i),
-                })
-                .collect::<Vec<Bibliography>>()
+            Self::bibliographies_from_bsr(book_search_result_list.as_slice(), &publishers)
                 .as_slice(),
             &mut tx,
             true,
         )
-            .await?;
+        .await?;
         RelBibliographyAuthor::register_vec_tx(
-            bibliographies
-                .iter()
-                .filter_map(|b| {
-                    Some(
-                        book_search_result_list[b.tmp_registration_id?]
-                            .authors
-                            .iter()
-                            .filter_map(|a| {
-                                Some(RelBibliographyAuthor {
-                                    id: 0,
-                                    bibliography_id: b.id,
-                                    bibliography_author_id: authors.get(a)?.id,
-                                })
-                            }),
-                    )
-                })
-                .flatten()
-                .collect::<Vec<RelBibliographyAuthor>>()
-                .as_slice(),
+            Self::rel_bibliography_author_from_bibliographies(
+                book_search_result_list.as_slice(),
+                bibliographies.as_slice(),
+                &authors,
+            )
+            .as_slice(),
             &mut tx,
             true,
         )
-            .await?;
+        .await?;
         tx.commit().await?;
         Ok(bibliographies)
     }
