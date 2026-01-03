@@ -1,4 +1,4 @@
-use crate::db::app_global_schema::cushion_types::{OptionString, VecString};
+use crate::db::util::cushion_types::{OptionString, VecString};
 use crate::db::schema::{Bibliography, BibliographyAuthor, Publisher, RelBibliographyAuthor};
 use crate::db::util::get_optional;
 use rhai::{CustomType, Dynamic, EvalAltResult, Position, TypeBuilder};

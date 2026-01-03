@@ -4,6 +4,8 @@ use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 use std::hash::Hash;
 
+pub mod cushion_types;
+
 pub struct Prefixer {
     prefix: String,
     result: String,

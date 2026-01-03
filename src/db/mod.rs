@@ -1,5 +1,4 @@
 #![allow(unused)]
-pub mod app_global_schema;
 pub mod error;
 pub mod schema;
 mod util;

@@ -1,6 +1,5 @@
 pub mod book_search_api;
 pub mod book_search_result;
-mod cushion_types;
 
 use sqlx::FromRow;
 

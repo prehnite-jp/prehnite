@@ -1,4 +1,4 @@
-use crate::db::schema::schema_binder_helper_impl::{
+use crate::db::schema::binder_helper::{
     placeholder_helper, placeholder_in_clause, Binder,
 };
 use crate::db::schema::{

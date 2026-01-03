@@ -1,7 +1,7 @@
-use crate::db::app_global_schema::book_search_result::BookSearchResult;
+use crate::db::schema::app_global::book_search_result::BookSearchResult;
 use reqwest::IntoUrl;
 use rhai::{Dynamic, Engine, EvalAltResult, Scope};
-use sqlx::{Acquire, FromRow};
+use sqlx::{Acquire, FromRow, SqliteConnection};
 
 #[derive(Debug)]
 pub enum BookSearchApiError {
@@ -108,8 +108,8 @@ impl BookSearchApi {
 
 #[cfg(test)]
 mod tests {
-    use crate::db::app_global_schema::book_search_api::BookSearchApi;
-    use crate::db::app_global_schema::book_search_result::BookSearchResult;
+    use crate::db::schema::app_global::book_search_api::BookSearchApi;
+    use crate::db::schema::app_global::book_search_result::BookSearchResult;
     use rhai::Dynamic;
     use serde::{Deserializer, Serialize};
 

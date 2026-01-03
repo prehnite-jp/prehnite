@@ -1,4 +1,4 @@
-use crate::db::schema::schema_binder_helper_impl::placeholder_in_clause;
+use crate::db::schema::binder_helper::placeholder_in_clause;
 use crate::db::schema::{
     BackgroundInfo, BackgroundReference, Bibliography, BibliographyAuthor, Draft, Headline, Item,
     ItemReference, Paragraph, ParagraphSummary, Tag, Task,
