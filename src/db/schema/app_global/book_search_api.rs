@@ -11,6 +11,36 @@ pub enum BookSearchApiError {
     CustomError(String),
 }
 
+impl From<reqwest::Error> for BookSearchApiError {
+    fn from(value: reqwest::Error) -> Self {
+        BookSearchApiError::RequestError(value)
+    }
+}
+
+impl From<Box<EvalAltResult>> for BookSearchApiError {
+    fn from(value: Box<EvalAltResult>) -> Self {
+        BookSearchApiError::ScriptError(value)
+    }
+}
+
+impl From<rhai::ParseError> for BookSearchApiError {
+    fn from(value: rhai::ParseError) -> Self {
+        BookSearchApiError::ScriptParseError(value)
+    }
+}
+
+impl From<&str> for BookSearchApiError {
+    fn from(value: &str) -> Self {
+        value.to_string().into()
+    }
+}
+
+impl From<String> for BookSearchApiError {
+    fn from(value: String) -> Self {
+        BookSearchApiError::CustomError(value)
+    }
+}
+
 #[derive(Default, Debug, Clone, FromRow, Eq, PartialEq)]
 pub struct BookSearchApi {
     pub id: i64,
@@ -39,16 +69,12 @@ impl BookSearchApi {
         if self.is_example {
             return Ok(vec![BookSearchResult::example()]);
         }
-        let response = match match reqwest::Client::new().get(url).send().await {
-            Ok(v) => v,
-            Err(e) => return Err(BookSearchApiError::RequestError(e)),
-        }
-        .json::<Dynamic>()
-        .await
-        {
-            Ok(v) => v,
-            Err(e) => return Err(BookSearchApiError::RequestError(e)),
-        };
+        let response = reqwest::Client::new()
+            .get(url)
+            .send()
+            .await?
+            .json::<Dynamic>()
+            .await?;
         self.mapper(
             response,
             option_str_to_dynamic(isbn),
@@ -67,18 +93,11 @@ impl BookSearchApi {
             .register_type_with_name::<BookSearchResult>("BookSearchResult")
             .register_fn("new_res", BookSearchResult::new);
         let engine = engine;
-        let ast = match engine.compile(self.mapping_script.clone()) {
-            Ok(v) => v,
-            Err(e) => return Err(BookSearchApiError::ScriptParseError(e)),
-        };
+        let ast = engine.compile(self.mapping_script.clone())?;
         let mut scope = Scope::new();
-        match engine.call_fn::<Dynamic>(&mut scope, &ast, "mapper", (isbn, search_text, response)) {
-            Ok(v) => Ok(match v.into_typed_array::<BookSearchResult>() {
-                Ok(v) => v,
-                Err(e) => return Err(BookSearchApiError::CustomError(e.into())),
-            }),
-            Err(e) => Err(BookSearchApiError::ScriptError(e)),
-        }
+        Ok(engine
+            .call_fn::<Dynamic>(&mut scope, &ast, "mapper", (isbn, search_text, response))?
+            .into_typed_array::<BookSearchResult>()?)
     }
 
     pub async fn search_isbn(

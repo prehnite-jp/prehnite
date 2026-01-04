@@ -36,7 +36,7 @@ impl CurrentI18nBundle {
 #[derive(Debug)]
 pub enum I18nError {
     FailedToParseLangId(LanguageIdentifierError),
-    FailedToParseFTL,
+    FailedToParseFTL((FluentResource, Vec<fluent_syntax::parser::ParserError>)),
     FailedToAddResource(Vec<FluentError>),
     DbError(sqlx::Error),
 }
@@ -52,6 +52,30 @@ impl Display for I18nError {
 }
 
 impl Error for I18nError {}
+
+impl From<LanguageIdentifierError> for I18nError {
+    fn from(value: LanguageIdentifierError) -> Self {
+        I18nError::FailedToParseLangId(value)
+    }
+}
+
+impl From<(FluentResource, Vec<fluent_syntax::parser::ParserError>)> for I18nError {
+    fn from(value: (FluentResource, Vec<fluent_syntax::parser::ParserError>)) -> Self {
+        I18nError::FailedToParseFTL(value)
+    }
+}
+
+impl From<Vec<FluentError>> for I18nError {
+    fn from(value: Vec<FluentError>) -> Self {
+        I18nError::FailedToAddResource(value)
+    }
+}
+
+impl From<sqlx::Error> for I18nError {
+    fn from(value: sqlx::Error) -> Self {
+        I18nError::DbError(value)
+    }
+}
 
 #[derive(Debug)]
 enum TryGetFtlPathError {
@@ -84,28 +108,12 @@ fn get_ftl_str(lang_id: &str) -> String {
         .unwrap_or_else(|_| try_get_ftl_str("en").expect("Default locale not found."))
 }
 
-fn parse_language_identifier(lang_id: &str) -> Result<LanguageIdentifier, I18nError> {
-    match lang_id.parse() {
-        Ok(v) => Ok(v),
-        Err(e) => Err(I18nError::FailedToParseLangId(e)),
-    }
-}
-
 fn parse_lang_bundle(lang_id: &str) -> Result<FluentBundle<FluentResource>, I18nError> {
-    let language_identifier: LanguageIdentifier = parse_language_identifier(lang_id)?;
-    let resource = match FluentResource::try_new(get_ftl_str(lang_id)) {
-        Ok(v) => v,
-        Err(e) => {
-            eprintln!("{:#?}", e);
-            return Err(I18nError::FailedToParseFTL);
-        }
-    };
+    let language_identifier: LanguageIdentifier = lang_id.parse()?;
+    let resource = FluentResource::try_new(get_ftl_str(lang_id))?;
 
     let mut bundle = FluentBundle::new_concurrent(vec![language_identifier]);
-    match bundle.add_resource(resource) {
-        Ok(_) => {}
-        Err(e) => return Err(I18nError::FailedToAddResource(e)),
-    }
+    bundle.add_resource(resource)?;
     Ok(bundle)
 }
 
@@ -113,8 +121,7 @@ pub async fn change_lang_bundle(
     conn: &mut SqliteConnection,
     lang_id_str: &str,
 ) -> Result<(), I18nError> {
-    let lang_id = parse_language_identifier(lang_id_str)
-        .unwrap_or(parse_language_identifier(DEFAULT_LANG_ID)?);
+    let lang_id: LanguageIdentifier = lang_id_str.parse().unwrap_or(DEFAULT_LANG_ID.parse()?);
     if match CURRENT_RESOURCE_BUNDLE
         .read()
         .expect("Failed to read lock lang bundle.")
@@ -127,10 +134,7 @@ pub async fn change_lang_bundle(
             .write()
             .expect("Failed to write lock lang bundle.")
             .set_bundle(Some(parse_lang_bundle(lang_id_str)?));
-        match Setting::update_setting(conn, SettingKey::Locale, Some(lang_id.to_string())).await {
-            Ok(_) => {}
-            Err(e) => return Err(I18nError::DbError(e)),
-        }
+        Setting::update_setting(conn, SettingKey::Locale, Some(lang_id.to_string())).await?
     }
     Ok(())
 }
@@ -167,9 +171,7 @@ pub fn i18n_fmt(id: &str, args: Option<&FluentArgs<'_>>) -> String {
         .to_string()
 }
 
-pub async fn initialize_i18n_from_db(
-    conn: &mut SqliteConnection,
-) -> Result<(), sqlx::Error> {
+pub async fn initialize_i18n_from_db(conn: &mut SqliteConnection) -> Result<(), sqlx::Error> {
     let lang_id = Setting::fetch_setting(conn, SettingKey::Locale).await?;
     change_lang_bundle(
         conn,
@@ -183,11 +185,9 @@ pub async fn initialize_i18n_from_db(
 #[cfg(test)]
 mod tests {
     use crate::i18n::{
-        SUPPORTED_LANG_ID, change_lang_bundle, get_lang_bundle, parse_lang_bundle, try_get_ftl_str,
+        change_lang_bundle, get_lang_bundle, parse_lang_bundle, try_get_ftl_str, SUPPORTED_LANG_ID,
     };
     use sqlx::SqlitePool;
-
-    use crate::i18n::parse_language_identifier;
 
     #[test]
     fn valid_check_get_for_all_supported_languages() {
@@ -210,7 +210,7 @@ mod tests {
                     .get_bundle()
                     .expect("Failed to get lang bundle.")
                     .locales
-                    .contains(&parse_language_identifier(i).unwrap())
+                    .contains(&i.parse().unwrap())
             )
         }
     }

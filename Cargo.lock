@@ -3265,6 +3265,7 @@ dependencies = [
  "derive_more",
  "embed-resource",
  "fluent-bundle",
+ "fluent-syntax",
  "iced",
  "iced_aw",
  "intl-memoizer",
