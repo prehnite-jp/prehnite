@@ -27,13 +27,13 @@ pub enum MigrateMode {
 }
 
 pub async fn migrate(
-    conn: &SqlitePool,
+    pool: &SqlitePool,
     mode: MigrateMode,
 ) -> Result<(), sqlx::migrate::MigrateError> {
     match mode {
         MigrateMode::PrehniteBook => &migrate::prehnite_book::MIGRATOR,
         MigrateMode::AppGlobal => &migrate::app_global::MIGRATOR,
     }
-    .run(conn)
+    .run(pool)
     .await
 }
