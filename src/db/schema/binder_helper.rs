@@ -1,7 +1,7 @@
 use crate::db::schema::app_global::book_search_api::BookSearchApi;
 use crate::db::schema::{
     BackgroundInfo, BackgroundReference, Bibliography, BibliographyAuthor, Draft, Headline, Item,
-    ItemReference, Paragraph, ParagraphLink, ParagraphSummary, PrehniteBookSetting, Publisher,
+    ItemReference, Paragraph, ParagraphLink, ParagraphSummary, Setting, Publisher,
     RelBackgroundAndItem, RelBibliographyAuthor, RelTagAndItem, ReturningId, Tag, Task,
     TaskCategory, TaskTemplate,
 };
@@ -252,7 +252,7 @@ impl Binder for ParagraphSummary {
             .bind(self.detail)
     }
 }
-impl Binder for PrehniteBookSetting {
+impl Binder for Setting {
     fn register_bind_values<'a>(
         self,
         query: QueryAs<'a, Sqlite, ReturningId, SqliteArguments<'a>>,

@@ -227,7 +227,7 @@ pub struct ParagraphLink {
 }
 
 #[derive(Default, Clone, Debug, FromRow, Eq, PartialEq)]
-pub struct PrehniteBookSetting {
+pub struct Setting {
     pub id: i64,
     pub setting_key: String,
     pub setting_value: Option<String>,

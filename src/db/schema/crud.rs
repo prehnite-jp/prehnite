@@ -3,7 +3,7 @@ use crate::db::schema::binder_helper::{
 };
 use crate::db::schema::{
     BackgroundInfo, BackgroundReference, Bibliography, BibliographyAuthor, Draft, Headline, Item,
-    ItemReference, Paragraph, ParagraphLink, ParagraphSummary, PrehniteBookSetting, Publisher,
+    ItemReference, Paragraph, ParagraphLink, ParagraphSummary, Setting, Publisher,
     RelBackgroundAndItem, RelBibliographyAuthor, RelTagAndItem, ReturningId, Tag, Task,
     TaskCategory, TaskTemplate,
 };
@@ -322,7 +322,7 @@ allow_crud!(
         "from_paragraph_id=?,to_paragraph_id=?,task_id=?,comment=?"
     ),
     (
-        PrehniteBookSetting,
+        Setting,
         "settings",
         "settings",
         "setting_key,setting_value",

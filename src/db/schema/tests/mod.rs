@@ -159,9 +159,9 @@ impl RandomValue for ParagraphSummary {
         }
     }
 }
-impl RandomValue for PrehniteBookSetting {
+impl RandomValue for Setting {
     fn random_value() -> Self {
-        PrehniteBookSetting {
+        Setting {
             id: 0,
             setting_key: RandomValue::random_value(),
             setting_value: RandomValue::random_value(),

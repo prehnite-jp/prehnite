@@ -4,8 +4,6 @@ pub mod book_search_result;
 use crate::db::schema::app_global::book_search_api::BookSearchApi;
 use sqlx::{Acquire, FromRow, SqliteConnection, SqliteTransaction};
 
-pub type AppGlobalSetting = crate::db::schema::PrehniteBookSetting;
-
 pub type AppGlobalDefaultTaskCategory = crate::db::schema::TaskCategory;
 
 pub type AppGlobalDefaultTaskTemplate = crate::db::schema::TaskTemplate;

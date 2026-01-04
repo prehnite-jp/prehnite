@@ -3,7 +3,7 @@ use crate::db::schema::*;
 use crate::test_util::{RandomValue, RandomValueVec};
 use sqlx::{SqliteConnection, SqlitePool};
 use std::cmp::max;
-use crate::db::schema::app_global::{AppGlobalDefaultBibliography, AppGlobalDefaultBibliographyAuthor, AppGlobalDefaultPublisher, AppGlobalDefaultRelBibliographyAuthor, AppGlobalDefaultTag, AppGlobalDefaultTaskCategory, AppGlobalDefaultTaskTemplate, AppGlobalSetting};
+use crate::db::schema::app_global::{AppGlobalDefaultBibliography, AppGlobalDefaultBibliographyAuthor, AppGlobalDefaultPublisher, AppGlobalDefaultRelBibliographyAuthor, AppGlobalDefaultTag, AppGlobalDefaultTaskCategory, AppGlobalDefaultTaskTemplate};
 
 const TEST_DATA_COUNT: usize = 100;
 
@@ -186,7 +186,7 @@ impl_register_non_dependent_entity!(
     Publisher,
     BibliographyAuthor,
     TaskCategory,
-    PrehniteBookSetting
+    Setting
 );
 
 impl_register_non_dependent_entity!(BookSearchApi);
@@ -565,12 +565,11 @@ test_crd_prehnite_book!(
     Publisher,
     BibliographyAuthor,
     TaskCategory,
-    PrehniteBookSetting
+    Setting
 );
 
 test_crd_app_global!(
     AppGlobalDefaultPublisher,
-    AppGlobalSetting,
     AppGlobalDefaultTaskCategory,
     AppGlobalDefaultTag,
     AppGlobalDefaultBibliographyAuthor,
