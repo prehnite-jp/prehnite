@@ -6,16 +6,16 @@ task-template-will-explain = 詳細を解説する。
 task-template-will-explain-detail = 解説する必要がある内容ですが、まだ解説されていません。
 book-search-api-example-name =　書誌情報検索API設定例 - 使用禁止
 book-search-api-example-detail = APIのレスポンス(例):
-    {
+    {"{"}
         status: number,
-        result: {
+        result: {"{"}
             isbn: string,
             title: string,
             authors: string[],
             detail: string,
             publication_date: string
-        }[]
-    }
+        {"}"}[]
+    {"}"}
     書き方
         - 関数名はmapperでなければならない。
         - 関数は引数(isbn, search_text, response)を持つ。

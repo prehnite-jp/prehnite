@@ -6,16 +6,16 @@ task-template-will-explain = Explain details.
 task-template-will-explain-detail = Content that needs to be explained, but has not yet been explained.
 book-search-api-example-name = Bibliographic Information Search API Configuration Example - Do Not Use
 book-search-api-example-detail = API Response (Example):
-    {
+    {"{"}
         status: number,
-        result: {
+        result: {"{"}
             isbn: string,
             title: string,
             authors: string[],
             detail: string,
             publication_date: string
-        }[]
-    }
+        {"}"}[]
+    {"}"}
     Writing Method
         - The function name must be mapper.
         - The function has arguments (isbn, search_text, response).

@@ -2,7 +2,7 @@ pub mod book_search_api;
 pub mod book_search_result;
 
 use crate::db::schema::app_global::book_search_api::BookSearchApi;
-use crate::i18n::{i18n, i18n_fmt};
+use crate::i18n::i18n;
 use sqlx::{Acquire, FromRow, SqliteConnection, SqliteTransaction};
 
 pub type AppGlobalDefaultTaskCategory = crate::db::schema::TaskCategory;
@@ -103,11 +103,13 @@ pub async fn register_all_default_data(conn: &mut SqliteConnection) -> Result<()
 #[cfg(test)]
 mod tests {
     use crate::db::schema::app_global::register_all_default_data;
+    use crate::i18n::initialize_i18n_from_db;
     use sqlx::SqlitePool;
 
     #[sqlx::test(migrator = "crate::db::migrate::app_global::MIGRATOR")]
     async fn valid_register_all_default_data(pool: SqlitePool) {
         let mut conn = pool.acquire().await.unwrap();
+        initialize_i18n_from_db(&mut conn).await;
         register_all_default_data(&mut conn).await.unwrap();
     }
 }

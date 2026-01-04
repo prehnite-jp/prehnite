@@ -150,7 +150,7 @@ pub fn i18n_fmt(id: &str, args: Option<&FluentArgs<'_>>) -> String {
         .read()
         .expect("Failed to read lock lang bundle.")
         .get_bundle()
-        .expect("Failed to get lang bundle.")
+        .expect("i18n does not be initialized.")
         .format_pattern(
             get_lang_bundle()
                 .read()
@@ -167,7 +167,7 @@ pub fn i18n_fmt(id: &str, args: Option<&FluentArgs<'_>>) -> String {
         .to_string()
 }
 
-pub async fn initialize_i18n_locale_from_db(
+pub async fn initialize_i18n_from_db(
     conn: &mut SqliteConnection,
 ) -> Result<(), sqlx::Error> {
     let lang_id = Setting::fetch_setting(conn, SettingKey::Locale).await?;
