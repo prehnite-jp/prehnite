@@ -1,7 +1,7 @@
 use crate::db::schema::Setting;
 use crate::settings::SettingKey;
 use fluent_bundle::concurrent::FluentBundle;
-use fluent_bundle::{FluentError, FluentResource};
+use fluent_bundle::{FluentArgs, FluentError, FluentResource};
 use sqlx::SqliteConnection;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
@@ -28,7 +28,7 @@ impl CurrentI18nBundle {
         self.bundle = bundle;
     }
 
-    fn get_bundle(&self) -> Option<&FluentBundle<FluentResource>> {
+    pub fn get_bundle(&self) -> Option<&FluentBundle<FluentResource>> {
         self.bundle.as_ref()
     }
 }
@@ -139,17 +139,32 @@ pub fn get_lang_bundle() -> Arc<RwLock<CurrentI18nBundle>> {
     CURRENT_RESOURCE_BUNDLE.clone()
 }
 
-#[macro_export]
-macro_rules! i18n {
-    ($id:expr) => {
-        get_lang_bundle()
-            .read()
-            .expect("Failed to read lock lang bundle.")
-            .get_bundle()
-            .expect("Failed to get lang bundle.")
-            .get_message($id)
-            .expect("Failed to get message. id: {}", $id)
-    };
+pub fn i18n(id: &str) -> String {
+    i18n_fmt(id, None)
+}
+
+// TODO: エラーハンドリング
+pub fn i18n_fmt(id: &str, args: Option<&FluentArgs<'_>>) -> String {
+    let mut errors = vec![];
+    get_lang_bundle()
+        .read()
+        .expect("Failed to read lock lang bundle.")
+        .get_bundle()
+        .expect("Failed to get lang bundle.")
+        .format_pattern(
+            get_lang_bundle()
+                .read()
+                .expect("Failed to read lock lang bundle.")
+                .get_bundle()
+                .expect("Failed to get lang bundle.")
+                .get_message(id)
+                .expect(format!("Failed to get message. id: {}", id).as_str())
+                .value()
+                .expect("Failed to get message value"),
+            args,
+            &mut errors,
+        )
+        .to_string()
 }
 
 pub async fn initialize_i18n_locale_from_db(
