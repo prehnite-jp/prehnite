@@ -34,3 +34,4 @@ book-search-api-example-detail = API Response (Example):
                 publisher: Option<String>,
                 publication_date: Option<NaiveDate>
             ) -> BookSearchResult
+wip = WIP

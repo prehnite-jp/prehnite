@@ -45,9 +45,14 @@ pub fn initialize_logger() {
     const INFO_LOG_FILE_LEVEL: Level = Level::INFO;
 
     #[cfg(debug_assertions)]
-    const DEFAULT_LOG_LEVEL: Level = Level::TRACE;
+    let default_log_filter: EnvFilter = EnvFilter::try_from_default_env()
+        .unwrap_or(EnvFilter::new("info"))
+        .add_directive("sqlx::query=trace".parse().unwrap())
+        .add_directive("iced_wgpu::window::compositor=off".parse().unwrap());
     #[cfg(not(debug_assertions))]
-    const DEFAULT_LOG_LEVEL: Level = Level::INFO;
+    let default_log_filter: EnvFilter = EnvFilter::builder()
+        .with_default_directive(Level::INFO.into())
+        .from_env_lossy();
 
     // 標準出力にはすべての情報を出力します。
     let stdout_logger = std::io::stdout.with_max_level(Level::TRACE);
@@ -66,11 +71,7 @@ pub fn initialize_logger() {
     let writer = stdout_logger.and(error_appender.and(info_appender));
 
     tracing_subscriber::fmt::fmt()
-        .with_env_filter(
-            EnvFilter::builder()
-                .with_default_directive(DEFAULT_LOG_LEVEL.into())
-                .from_env_lossy(),
-        )
+        .with_env_filter(default_log_filter)
         .with_ansi(false)
         .with_file(cfg!(debug_assertions))
         .with_line_number(cfg!(debug_assertions))

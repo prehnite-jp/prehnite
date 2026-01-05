@@ -12,8 +12,9 @@ use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use sqlx::{ConnectOptions, Sqlite, SqlitePool};
 use std::fmt::{Debug, Display, Formatter};
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use tokio::sync::Mutex;
+use tracing::error;
 
 pub enum DBType {
     PrehniteBook,
@@ -67,6 +68,26 @@ impl Pool {
     fn get_pool(&self) -> &Option<SqlitePool> {
         &self.pool
     }
+}
+
+pub async fn initialize_db() -> Result<(), DatabaseError> {
+    let v = Database::initialize().await?;
+    DATABASE.set(Arc::new(Mutex::new(v)));
+    Ok(())
+}
+
+static DATABASE: OnceLock<Arc<Mutex<Database>>> = OnceLock::new();
+
+#[tracing::instrument]
+pub fn get_database() -> Arc<Mutex<Database>> {
+    match DATABASE.get() {
+        None => {
+            error!("Failed to get database. The database may not be initialized.");
+            panic!();
+        }
+        Some(v) => v,
+    }
+    .clone()
 }
 
 pub struct Database {

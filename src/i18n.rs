@@ -164,7 +164,7 @@ pub fn i18n_fmt(id: &str, args: Option<&FluentArgs<'_>>) -> String {
                 .get_message(id)
                 .expect(format!("Failed to get message. id: {}", id).as_str())
                 .value()
-                .expect("Failed to get message value"),
+                .expect(format!("Failed to get message value. id: {}", id).as_str()),
             args,
             &mut errors,
         )

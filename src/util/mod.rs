@@ -62,7 +62,7 @@ pub fn fatal_initialize_app_error_msg() -> (&'static str, &'static str) {
     }
 }
 
-pub fn fatal_initialize_app_error(e: DatabaseError) {
+pub fn fatal_initialize_app_error_db(e: DatabaseError) {
     let (title, err_msg) = fatal_initialize_app_error_msg();
     alert((
         title,

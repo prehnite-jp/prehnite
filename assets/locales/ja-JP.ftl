@@ -34,3 +34,4 @@ book-search-api-example-detail = APIのレスポンス(例):
                 publisher: Option<String>,
                 publication_date: Option<NaiveDate>
             ) -> BookSearchResult
+wip = 作業中

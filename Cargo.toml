@@ -12,7 +12,6 @@ build = "build.rs"
 [dependencies]
 chrono = "0.4"
 iced = { version = "0.14", features = ["tokio"] }
-iced_aw = "0.13"
 sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "chrono", "macros"] }
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "sync"] }
 native-dialog = { version = "0.9", features = ["async"] }
