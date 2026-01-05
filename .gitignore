@@ -46,3 +46,4 @@ target/
 *.prehnite-wal
 /scratch/*
 !/scratch/README.MD
+*.log

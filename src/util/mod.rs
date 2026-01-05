@@ -1,3 +1,5 @@
+pub mod app_global;
+
 use crate::db::DatabaseError;
 use native_dialog::{MessageDialogBuilder, MessageLevel};
 use sys_locale::get_locale;
@@ -30,13 +32,13 @@ const FATAL_EN: &str = "Fatal error";
 
 const FATAL_INIT_DB_ERROR_MESSAGE_JA: &str = "アプリ設定用のデータベースが作成できません。
 アプリ用ディレクトリが決定できませんでした。
-APP_GLOBAL_DATABASE_PATH 環境変数を以下のように指定してください。
-例(実行時のディレクトリに作成): APP_GLOBAL_DATABASE_PATH = \"app_global.db\"";
+PREHNITE_GLOBAL_DIR_PATH 環境変数を以下のように指定してください。
+例(実行時のディレクトリに作成): PREHNITE_GLOBAL_DIR_PATH = \".\"";
 
 const FATAL_INIT_DB_ERROR_MESSAGE_EN: &str = "Unable to create database for app settings.
 Could not determine directory for app.
-Specify the APP_GLOBAL_DATABASE_PATH environment variable as follows:
-Example (created in the runtime directory): APP_GLOBAL_DATABASE_PATH = \"app_global.db\"";
+Specify the PREHNITE_GLOBAL_DIR_PATH environment variable as follows:
+Example (created in the runtime directory): PREHNITE_GLOBAL_DIR_PATH = \".\"";
 
 fn fatal_init_db_error_msg() -> (&'static str, &'static str) {
     match lang_id().as_str() {
@@ -73,12 +75,4 @@ pub fn fatal_initialize_app_error(e: DatabaseError) {
         )
         .as_str(),
     ))
-}
-
-#[macro_export]
-macro_rules! fatal_init_db_error {
-    () => {
-        fatal_init_db_error();
-        panic!();
-    };
 }

@@ -4,14 +4,14 @@ pub mod schema;
 mod util;
 
 use crate::db::migrate::migrate;
-use crate::fatal_init_db_error;
-use crate::util::fatal_init_db_error;
+use crate::util::app_global::global_dir;
+use chrono::Duration;
+use log::LevelFilter;
 use sqlx::pool::PoolConnection;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
-use sqlx::{Sqlite, SqlitePool};
-use std::ffi::OsString;
+use sqlx::{ConnectOptions, Sqlite, SqlitePool};
 use std::fmt::{Debug, Display, Formatter};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -101,21 +101,13 @@ impl From<sqlx::migrate::MigrateError> for DatabaseError {
 }
 
 impl Database {
-    fn get_app_global_database_url() -> OsString {
+    fn get_app_global_database_url() -> PathBuf {
         if cfg!(debug_assertions) {
-            "dev.db".into()
+            "app_global.db".into()
         } else {
-            let mut db_file = std::env::home_dir().unwrap_or_else(|| {
-                fatal_init_db_error!();
-            });
-            db_file.push(".jp.prehnite.prehnite");
+            let mut db_file = global_dir();
             db_file.push("app_global.db");
             db_file
-                .to_str()
-                .unwrap_or_else(|| {
-                    fatal_init_db_error!();
-                })
-                .into()
         }
     }
 
@@ -124,11 +116,15 @@ impl Database {
             .filename(file)
             .foreign_keys(true)
             .create_if_missing(true)
+            .log_slow_statements(
+                LevelFilter::Debug,
+                Duration::milliseconds(300).to_std().unwrap(),
+            )
+            .log_statements(LevelFilter::Trace)
     }
 
     pub async fn initialize() -> Result<Self, DatabaseError> {
-        let app_global_path = std::env::var_os("APP_GLOBAL_DATABASE_PATH")
-            .unwrap_or_else(Self::get_app_global_database_url);
+        let app_global_path = Self::get_app_global_database_url();
         let mut pool = SqlitePoolOptions::new()
             .connect_with(Self::connect_option(app_global_path))
             .await?;
