@@ -155,7 +155,7 @@ impl Database {
     pub async fn acquire(
         &self,
         mode: DBType,
-    ) -> Result<Option<PoolConnection<Sqlite>>, sqlx::Error> {
+    ) -> Result<Option<PoolConnection<Sqlite>>, DatabaseError> {
         Ok(match mode {
             DBType::PrehniteBook => {
                 match self.prehnite_book_db_pool.clone().lock().await.get_pool() {
