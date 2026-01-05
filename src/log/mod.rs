@@ -2,7 +2,6 @@ use crate::util::app_global::global_dir;
 use std::path::{Path, PathBuf};
 use tracing::Level;
 use tracing_appender::rolling;
-use tracing_subscriber::filter::LevelFilter;
 use tracing_subscriber::fmt::writer::MakeWriterExt;
 use tracing_subscriber::EnvFilter;
 
@@ -45,6 +44,11 @@ pub fn initialize_logger() {
     const ERROR_LOG_FILE_LEVEL: Level = Level::ERROR;
     const INFO_LOG_FILE_LEVEL: Level = Level::INFO;
 
+    #[cfg(debug_assertions)]
+    const DEFAULT_LOG_LEVEL: Level = Level::TRACE;
+    #[cfg(not(debug_assertions))]
+    const DEFAULT_LOG_LEVEL: Level = Level::INFO;
+
     // 標準出力にはすべての情報を出力します。
     let stdout_logger = std::io::stdout.with_max_level(Level::TRACE);
 
@@ -64,11 +68,12 @@ pub fn initialize_logger() {
     tracing_subscriber::fmt::fmt()
         .with_env_filter(
             EnvFilter::builder()
-                .with_default_directive(LevelFilter::TRACE.into())
+                .with_default_directive(DEFAULT_LOG_LEVEL.into())
                 .from_env_lossy(),
         )
         .with_ansi(false)
         .with_file(cfg!(debug_assertions))
+        .with_line_number(cfg!(debug_assertions))
         .with_writer(writer)
         .init();
 }
