@@ -123,13 +123,9 @@ impl From<sqlx::migrate::MigrateError> for DatabaseError {
 
 impl Database {
     fn get_app_global_database_url() -> PathBuf {
-        if cfg!(debug_assertions) {
-            "app_global.db".into()
-        } else {
-            let mut db_file = global_dir();
-            db_file.push("app_global.db");
-            db_file
-        }
+        let mut db_file = global_dir();
+        db_file.push("app_global.db");
+        db_file
     }
 
     fn connect_option(file: impl AsRef<Path>) -> SqliteConnectOptions {

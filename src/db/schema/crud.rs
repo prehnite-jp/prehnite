@@ -1,14 +1,12 @@
-use crate::db::schema::binder_helper::{
-    placeholder_helper, placeholder_in_clause, Binder,
-};
+use crate::db::schema::app_global::book_search_api::BookSearchApi;
+use crate::db::schema::binder_helper::{Binder, placeholder_helper, placeholder_in_clause};
 use crate::db::schema::{
     BackgroundInfo, BackgroundReference, Bibliography, BibliographyAuthor, Draft, Headline, Item,
-    ItemReference, Paragraph, ParagraphLink, ParagraphSummary, Setting, Publisher,
-    RelBackgroundAndItem, RelBibliographyAuthor, RelTagAndItem, ReturningId, Tag, Task,
-    TaskCategory, TaskTemplate,
+    ItemReference, Paragraph, ParagraphLink, ParagraphSummary, Publisher, RelBackgroundAndItem,
+    RelBibliographyAuthor, RelTagAndItem, ReturningId, Setting, Tag, Task, TaskCategory,
+    TaskTemplate,
 };
 use sqlx::{Acquire, Error, SqliteConnection, SqliteTransaction};
-use crate::db::schema::app_global::book_search_api::BookSearchApi;
 
 const MAX_BIND_COUNT: usize = 30000; // sqlite 3.32.0 以降では32766が最大だが、マージンを取って30000
 
@@ -45,19 +43,17 @@ macro_rules! allow_c {
     ($(($x: ty, $table_name:expr, $view_name:expr, $register_columns:expr, $place_holder_count:expr)),*) => {
         $(impl $x {
             pub async fn register_optional(val: Option<Self>, conn: &mut SqliteConnection, is_on_conflict_do_nothing: bool) -> Result<Option<Self>, Error> {
-                if val.is_none(){
-                    Ok(None)
-                } else {
-                    Ok(Some(val.unwrap().register(conn, is_on_conflict_do_nothing).await?))
-                }
+                Ok(match val {
+                    Some(v) => Some(v.register(conn, is_on_conflict_do_nothing).await?),
+                    None => None
+                })
             }
 
             pub async fn register_optional_tx(val: Option<Self>, tx: &mut SqliteTransaction<'_>, is_on_conflict_do_nothing: bool) -> Result<Option<Self>, Error> {
-                if val.is_none(){
-                    Ok(None)
-                } else {
-                    Ok(Some(val.unwrap().register_tx(tx, is_on_conflict_do_nothing).await?))
-                }
+                Ok(match val{
+                    Some(v) => Some(v.register_tx(tx, is_on_conflict_do_nothing).await?),
+                    None => None
+                })
             }
 
             pub async fn register(&self, conn: &mut SqliteConnection, is_on_conflict_do_nothing: bool) -> Result<Self, Error> {
@@ -196,6 +192,7 @@ macro_rules! allow_crd {
         )*
     };
 }
+
 allow_cru!(
     (
         Paragraph,
@@ -354,13 +351,12 @@ allow_crud!(
         "item_id=?,background_info_id=?"
     )
 );
-allow_crud!(
-    (
-        BookSearchApi,
-        "book_search_api",
-        "book_search_api",
-        "name,detail,isbn_url,text_url,mapping_script",
-        5,
-        "name=?,detail=?,isbn_url=?,text_url=?,mapping_script=?"
-    )
-);
+
+allow_crud!((
+    BookSearchApi,
+    "book_search_api",
+    "book_search_api",
+    "name,detail,isbn_url,text_url,mapping_script",
+    5,
+    "name=?,detail=?,isbn_url=?,text_url=?,mapping_script=?"
+));

@@ -1,0 +1,2 @@
+pub const ENV_KEY_GLOBAL_DIR_PATH: &str = "PREHNITE_GLOBAL_DIR_PATH";
+pub const ENV_KEY_LOG: &str = "PREHNITE_LOG";

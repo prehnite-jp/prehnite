@@ -5,7 +5,8 @@ use fluent_bundle::{FluentArgs, FluentError, FluentResource};
 use sqlx::SqliteConnection;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
-use std::sync::{Arc, LazyLock, RwLock};
+use std::sync::{Arc, LazyLock, PoisonError, RwLock, RwLockReadGuard};
+use tracing::error;
 use unic_langid::{LanguageIdentifier, LanguageIdentifierError};
 
 pub const SUPPORTED_LANG_ID: &[&str] = &["en-US", "ja-JP"];
@@ -39,6 +40,7 @@ pub enum I18nError {
     FailedToParseFTL((FluentResource, Vec<fluent_syntax::parser::ParserError>)),
     FailedToAddResource(Vec<FluentError>),
     DbError(sqlx::Error),
+    FailedToLockLangBundle,
 }
 
 impl Display for I18nError {
@@ -117,22 +119,29 @@ fn parse_lang_bundle(lang_id: &str) -> Result<FluentBundle<FluentResource>, I18n
     Ok(bundle)
 }
 
+macro_rules! error_failed_to_lock_lang_bundle {
+    ($e:expr) => {
+        match $e {
+            Ok(v) => v,
+            Err(e) => {
+                error!("Failed to read lock lang bundle. {:#?}", e);
+                return Err(I18nError::FailedToLockLangBundle);
+            }
+        }
+    };
+}
+
+#[tracing::instrument]
 pub async fn change_lang_bundle(
     conn: &mut SqliteConnection,
     lang_id_str: &str,
 ) -> Result<(), I18nError> {
     let lang_id: LanguageIdentifier = lang_id_str.parse().unwrap_or(DEFAULT_LANG_ID.parse()?);
-    if match CURRENT_RESOURCE_BUNDLE
-        .read()
-        .expect("Failed to read lock lang bundle.")
+    if error_failed_to_lock_lang_bundle!(CURRENT_RESOURCE_BUNDLE.read())
         .get_bundle()
+        .is_none_or(|v| !v.locales.contains(&lang_id))
     {
-        None => true,
-        Some(v) => !v.locales.contains(&lang_id),
-    } {
-        CURRENT_RESOURCE_BUNDLE
-            .write()
-            .expect("Failed to write lock lang bundle.")
+        error_failed_to_lock_lang_bundle!(CURRENT_RESOURCE_BUNDLE.write())
             .set_bundle(Some(parse_lang_bundle(lang_id_str)?));
         Setting::update_setting(conn, SettingKey::Locale, Some(lang_id.to_string())).await?
     }
@@ -147,28 +156,49 @@ pub fn i18n(id: &str) -> String {
     i18n_fmt(id, None)
 }
 
-// TODO: エラーハンドリング
+#[tracing::instrument]
 pub fn i18n_fmt(id: &str, args: Option<&FluentArgs<'_>>) -> String {
-    let mut errors = vec![];
-    get_lang_bundle()
-        .read()
-        .expect("Failed to read lock lang bundle.")
-        .get_bundle()
-        .expect("i18n does not be initialized.")
-        .format_pattern(
-            get_lang_bundle()
-                .read()
-                .expect("Failed to read lock lang bundle.")
-                .get_bundle()
-                .expect("Failed to get lang bundle.")
-                .get_message(id)
-                .expect(format!("Failed to get message. id: {}", id).as_str())
-                .value()
-                .expect(format!("Failed to get message value. id: {}", id).as_str()),
-            args,
-            &mut errors,
-        )
-        .to_string()
+    #[derive(Debug)]
+    enum Error {
+        ReadLockLangBundleError(String),
+        DoesNotBeInitialized,
+        MessageDoesNotExists,
+        FailedToFetchMessage,
+    }
+    impl From<PoisonError<RwLockReadGuard<'_, CurrentI18nBundle>>> for Error {
+        fn from(value: PoisonError<RwLockReadGuard<'_, CurrentI18nBundle>>) -> Self {
+            Error::ReadLockLangBundleError(format!("{:#?}", value))
+        }
+    }
+    fn func<'a>(id: &str, args: Option<&FluentArgs<'_>>) -> Result<String, Error> {
+        let mut errors = vec![];
+        Ok(get_lang_bundle()
+            .read()?
+            .get_bundle()
+            .ok_or(Error::DoesNotBeInitialized)?
+            .format_pattern(
+                get_lang_bundle()
+                    .read()?
+                    .get_bundle()
+                    .ok_or(Error::DoesNotBeInitialized)?
+                    .get_message(id)
+                    .ok_or(Error::MessageDoesNotExists)?
+                    .value()
+                    .ok_or(Error::FailedToFetchMessage)?,
+                args,
+                &mut errors,
+            )
+            .to_string())
+    }
+    func(id, args).unwrap_or_else(|e| {
+        match e {
+            Error::ReadLockLangBundleError(e) => error!("Failed to read lock lang bundle. {e}"),
+            Error::DoesNotBeInitialized => error!("i18n does not be initialized."),
+            Error::MessageDoesNotExists => error!("Message {id} does not exist."),
+            Error::FailedToFetchMessage => error!("Unable to get value for message {id}."),
+        }
+        id.to_string()
+    })
 }
 
 pub async fn initialize_i18n_from_db(conn: &mut SqliteConnection) -> Result<(), sqlx::Error> {

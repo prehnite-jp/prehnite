@@ -2,12 +2,15 @@ use crate::db::schema::Setting;
 use sqlx::SqliteConnection;
 use std::fmt::Display;
 
+const KEY_LOCALE: &str = "locale";
+
+const UPDATE_SQL: &str = "INSERT INTO settings(setting_key, setting_value) VALUES ($1,$2) ON CONFLICT DO UPDATE SET setting_value = $2;";
+const FETCH_SQL: &str = "SELECT * FROM settings WHERE setting_key=?;";
+
 #[derive(Clone)]
 pub enum SettingKey {
     Locale,
 }
-
-const KEY_LOCALE: &str = "locale";
 
 impl Display for SettingKey {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -45,16 +48,11 @@ impl Setting {
         key: SettingKey,
         value: Option<String>,
     ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "
-INSERT INTO settings(setting_key, setting_value)
-    VALUES ($1,$2)
-    ON CONFLICT DO UPDATE SET setting_value = $2;",
-        )
-        .bind(key.to_string())
-        .bind(value)
-        .execute(conn)
-        .await?;
+        sqlx::query(UPDATE_SQL)
+            .bind(key.to_string())
+            .bind(value)
+            .execute(conn)
+            .await?;
         Ok(())
     }
 
@@ -63,7 +61,7 @@ INSERT INTO settings(setting_key, setting_value)
         key: SettingKey,
     ) -> Result<Option<String>, sqlx::Error> {
         Ok(
-            match sqlx::query_as::<_, Setting>("SELECT * FROM settings WHERE setting_key=?")
+            match sqlx::query_as::<_, Setting>(FETCH_SQL)
                 .bind(key.to_string())
                 .fetch_optional(conn)
                 .await?
