@@ -7,6 +7,7 @@ use prehnite::log::initialize_logger;
 use prehnite::util::fatal_initialize_app_error_db;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
+use tracing::error;
 
 #[derive(Debug)]
 enum InitializeError {
@@ -34,6 +35,7 @@ impl From<sqlx::Error> for InitializeError {
 }
 
 #[tokio::main]
+#[tracing::instrument]
 async fn initializer() {
     async fn func() -> Result<(), InitializeError> {
         initialize_logger();
@@ -52,11 +54,13 @@ async fn initializer() {
     }
 
     func().await.unwrap_or_else(|e| {
+        let err_msg = format!("{:#?}", e);
         match e {
             InitializeError::DatabaseError(e) => {
                 fatal_initialize_app_error_db(e);
             }
         }
+        error!("{}", err_msg);
         panic!()
     });
 }
