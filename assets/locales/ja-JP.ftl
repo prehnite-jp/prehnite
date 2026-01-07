@@ -35,3 +35,8 @@ book-search-api-example-detail = APIのレスポンス(例):
                 publication_date: Option<NaiveDate>
             ) -> BookSearchResult
 wip = 作業中
+main-content-placeholder = ここに本文を入力。
+open-file = 開く
+new-file = 新規作成
+error = エラー
+book-open-error = ブックを開けませんでした。詳細はログファイルを確認してください。

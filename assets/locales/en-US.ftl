@@ -35,3 +35,8 @@ book-search-api-example-detail = API Response (Example):
                 publication_date: Option<NaiveDate>
             ) -> BookSearchResult
 wip = WIP
+main-content-placeholder = Enter the text here.
+open-file = Open
+new-file = New
+error = Error
+book-open-error = The book could not be opened. Please see the log file for more information.

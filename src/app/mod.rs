@@ -1,38 +1,51 @@
-use iced::{Element, Task};
-use prehnite::db::{get_database, Database};
-use prehnite::i18n::i18n;
-use std::sync::Arc;
-use tokio::sync::Mutex;
+mod background_info;
+mod draft;
+mod headline;
+mod item_list;
+mod paragraph;
 
-pub struct PrehniteApp;
+use crate::util::book_opener::{BookOpener, BookOpenerMessage};
+use iced::widget::{button, center, text};
+use iced::{Element, Task};
+use prehnite_core::i18n::i18n;
+
+#[derive(Debug)]
+pub struct PrehniteApp {}
+
+#[derive(Clone, Debug)]
+enum RootMessage {
+    None,
+    BookOpener(BookOpenerMessage),
+}
 
 impl PrehniteApp {
     pub fn run() -> Result<(), iced::Error> {
-        iced::application(AppDaemon::new, AppDaemon::update, AppDaemon::view).run()
+        iced::application(Self::new, Self::update, Self::view).run()
     }
-}
 
-enum RootMessage {}
-
-struct AppDaemon {
-    database: Arc<Mutex<Database>>,
-}
-
-impl AppDaemon {
     fn new() -> (Self, Task<RootMessage>) {
-        (
-            Self {
-                database: get_database(),
-            },
-            Task::none(),
-        )
+        (Self {}, Task::none())
     }
 
-    fn update(&mut self, _message: RootMessage) -> Task<RootMessage> {
+    #[tracing::instrument]
+    fn update(&mut self, message: RootMessage) -> Task<RootMessage> {
+        match message {
+            RootMessage::None => {}
+            RootMessage::BookOpener(v) => {
+                return BookOpener::update(v).map(RootMessage::BookOpener);
+            }
+        }
         Task::none()
     }
 
+    #[tracing::instrument]
     fn view(&'_ self) -> Element<'_, RootMessage> {
-        iced::widget::text(i18n("wip")).into()
+        center(iced::widget::column![
+            button(text(i18n("open-file")))
+                .on_press(RootMessage::BookOpener(BookOpenerMessage::OpenBook)),
+            button(text(i18n("new-file")))
+                .on_press(RootMessage::BookOpener(BookOpenerMessage::NewBook))
+        ])
+        .into()
     }
 }

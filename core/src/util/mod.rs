@@ -1,4 +1,5 @@
 pub mod app_global;
+pub mod file_dialog;
 
 use crate::db::DatabaseError;
 use native_dialog::{MessageDialogBuilder, MessageLevel};

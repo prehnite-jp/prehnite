@@ -9,6 +9,7 @@ authors.workspace = true
 repository.workspace = true
 homepage.workspace = true
 rust-version.workspace = true
+categories.workspace = true
 
 [workspace]
 members = ["core"]
@@ -21,11 +22,16 @@ authors = ["saku-shirakura<saku@sakushira.com>"]
 repository = "https://github.com/saku-shirakura/prehnite"
 homepage = "https://prehnite.jp/"
 rust-version = "1.92"
+categories = ["text-editors"]
+keywords = ["gui", "test-editors"]
 
 [dependencies]
 prehnite-core.workspace = true
 iced.workspace = true
 tracing.workspace = true
+tokio.workspace = true
+sqlx.workspace = true
+native-dialog.workspace = true
 
 [workspace.dependencies]
 prehnite-core = { version = "0.1.0", path = "core" }

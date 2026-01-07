@@ -3203,7 +3203,10 @@ version = "0.1.0"
 dependencies = [
  "embed-resource",
  "iced",
+ "native-dialog",
  "prehnite-core",
+ "sqlx",
+ "tokio",
  "tracing",
 ]
 

@@ -29,14 +29,14 @@ pub mod migrate {
         use sqlx::migrate::Migrator;
         use sqlx::sqlx_macros::migrate;
 
-        pub static MIGRATOR: Migrator = migrate!("./migrations/prehnite_book");
+        pub static MIGRATOR: Migrator = migrate!("migrations/prehnite_book");
     }
 
     pub mod app_global {
         use sqlx::migrate::Migrator;
         use sqlx::sqlx_macros::migrate;
 
-        pub static MIGRATOR: Migrator = migrate!("./migrations/app_global");
+        pub static MIGRATOR: Migrator = migrate!("migrations/app_global");
     }
 
     pub async fn migrate(
@@ -134,7 +134,7 @@ impl Database {
             .foreign_keys(true)
             .create_if_missing(true)
             .log_slow_statements(
-                LevelFilter::Debug,
+                LevelFilter::Warn,
                 Duration::milliseconds(300).to_std().unwrap(),
             )
             .log_statements(LevelFilter::Trace)
