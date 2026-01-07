@@ -98,8 +98,8 @@ impl Error for TryGetFtlPathError {}
 
 fn try_get_ftl_str(lang_id: &str) -> Result<String, TryGetFtlPathError> {
     Ok(match lang_id {
-        "ja-JP" | "ja" => include_str!("../assets/locales/ja-JP.ftl"),
-        "en-US" | "en" => include_str!("../assets/locales/en-US.ftl"),
+        "ja-JP" | "ja" => include_str!("../../assets/locales/ja-JP.ftl"),
+        "en-US" | "en" => include_str!("../../assets/locales/en-US.ftl"),
         _ => return Err(TryGetFtlPathError::LangNotFound),
     }
     .to_string())

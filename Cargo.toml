@@ -1,15 +1,34 @@
 [package]
 name = "prehnite"
+description = "Writing support software that helps you create coherent sentences"
+build = "build.rs"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+rust-version.workspace = true
+
+[workspace]
+members = ["core"]
+
+[workspace.package]
 version = "0.1.0"
 edition = "2024"
 license = "Zlib"
 authors = ["saku-shirakura<saku@sakushira.com>"]
-description = "Writing support software that helps you create coherent sentences"
 repository = "https://github.com/saku-shirakura/prehnite"
 homepage = "https://prehnite.jp/"
-build = "build.rs"
+rust-version = "1.92"
 
 [dependencies]
+prehnite-core.workspace = true
+iced.workspace = true
+tracing.workspace = true
+
+[workspace.dependencies]
+prehnite-core = { version = "0.1.0", path = "core" }
 chrono = "0.4"
 iced = { version = "0.14", features = ["tokio"] }
 sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "chrono", "macros"] }
@@ -28,9 +47,6 @@ sys-locale = "0.3.2"
 fluent-syntax = "0.12"
 tracing = { version = "0.1", features = ["log"] }
 tracing-appender = "0.2"
-
-[dev-dependencies]
-rand = "0.9"
 
 [target.'cfg(windows)'.build-dependencies]
 embed-resource = "3.0"
