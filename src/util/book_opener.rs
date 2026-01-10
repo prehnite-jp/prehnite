@@ -44,7 +44,33 @@ impl BookOpener {
                     }
                 }
             },
-            BookOpe::Open => {}
+            BookOpe::Open => {
+                if !tokio::fs::try_exists(book_path.clone())
+                    .await
+                    .unwrap_or(false)
+                {
+                    error!("File does not exist ({book_path:#?})");
+                    alert_i18n_spawn(("error", "file-notfound")).await;
+                    match Setting::restore(
+                        opt_unwrap_or_return!(
+                            acquire_err_handled(DBType::AppGlobal).await,
+                            BookOpenerMessage::None
+                        )
+                        .as_mut(),
+                        SettingKey::LastOpened,
+                    )
+                    .await
+                    {
+                        Ok(_) => {}
+                        Err(e) => {
+                            error!(
+                                "Failed to update setting. [AppGlobal::LastOpened] Error: {e:#?}"
+                            );
+                        }
+                    };
+                    return BookOpenerMessage::None;
+                }
+            }
         };
         let result = get_database()
             .write()
