@@ -40,3 +40,4 @@ open-file = Open
 new-file = New
 error = Error
 book-open-error = The book could not be opened. Please see the log file for more information.
+permission-denied = Permission denied.

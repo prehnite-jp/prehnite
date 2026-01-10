@@ -40,3 +40,4 @@ open-file = 開く
 new-file = 新規作成
 error = エラー
 book-open-error = ブックを開けませんでした。詳細はログファイルを確認してください。
+permission-denied = ファイルへのアクセスが拒否されました。
