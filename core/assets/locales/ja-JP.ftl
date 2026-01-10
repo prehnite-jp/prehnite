@@ -42,3 +42,4 @@ error = エラー
 book-open-error = ブックを開けませんでした。詳細はログファイルを確認してください。
 permission-denied = ファイルへのアクセスが拒否されました。
 file-notfound = ファイルが存在しません。
+cant-connect-database = データベース接続が確立できませんでした。

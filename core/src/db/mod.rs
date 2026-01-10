@@ -13,8 +13,18 @@ use sqlx::{ConnectOptions, Sqlite, SqlitePool};
 use std::fmt::{Debug, Display, Formatter};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
-use tokio::sync::{RwLock};
+use tokio::sync::RwLock;
 use tracing::error;
+use crate::util::alert::{alert_i18n_show, UnwrapOrErrorAlert};
+
+impl UnwrapOrErrorAlert<PoolConnection<Sqlite>> for Option<PoolConnection<Sqlite>>{
+    fn unwrap_or_alert(self) -> PoolConnection<Sqlite> {
+        self.unwrap_or_else(||{
+            alert_i18n_show(("error", "cant-connect-database"));
+            panic!()
+        })
+    }
+}
 
 #[derive(Clone, Debug)]
 pub enum DBType {
@@ -107,23 +117,22 @@ pub fn get_database() -> Arc<RwLock<Database>> {
     .clone()
 }
 
-
 #[tracing::instrument]
 pub async fn acquire_err_handled(mode: DBType) -> Option<PoolConnection<Sqlite>> {
-        match get_database().read().await.acquire(mode.clone()).await {
-            Ok(v) => match v {
-                None => {
-                    error!("{} Database not connected.", mode);
-                    None
-                }
-                Some(v) => Some(v),
-            },
-            Err(e) => {
-                error!("Failed to acquire {} Database. Error: {:#?}", mode, e);
+    match get_database().read().await.acquire(mode.clone()).await {
+        Ok(v) => match v {
+            None => {
+                error!("{} Database not connected.", mode);
                 None
             }
+            Some(v) => Some(v),
+        },
+        Err(e) => {
+            error!("Failed to acquire {} Database. Error: {:#?}", mode, e);
+            None
         }
     }
+}
 
 pub struct Database {
     app_global_db_pool: Arc<RwLock<Pool>>,
@@ -196,7 +205,10 @@ impl Database {
 
         migrate(&mut pool, DBType::PrehniteBook).await?;
 
-        self.prehnite_book_db_pool.write().await.set_pool(Some(pool));
+        self.prehnite_book_db_pool
+            .write()
+            .await
+            .set_pool(Some(pool));
         Ok(())
     }
 

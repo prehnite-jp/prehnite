@@ -14,6 +14,7 @@ use iced::{Element, Task};
 use prehnite_core::db::schema::Setting;
 use prehnite_core::db::{acquire_err_handled, DBType};
 use prehnite_core::settings::SettingKey;
+use prehnite_core::util::alert::UnwrapOrErrorAlert;
 use std::path::PathBuf;
 use tracing::error;
 
@@ -51,7 +52,9 @@ impl PrehniteApp {
 
     #[tracing::instrument]
     async fn open_last_opened_book() -> RootMessage {
-        let mut conn = acquire_err_handled(DBType::AppGlobal).await.unwrap();
+        let mut conn = acquire_err_handled(DBType::AppGlobal)
+            .await
+            .unwrap_or_alert();
         let last_opened = Setting::fetch_setting(&mut conn, SettingKey::LastOpened)
             .await
             .unwrap_or_else(|e| {

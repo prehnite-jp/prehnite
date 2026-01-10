@@ -5,6 +5,10 @@ use tracing::error;
 use crate::db::DatabaseError;
 use crate::i18n::{i18n, DEFAULT_LANG_ID};
 
+pub trait UnwrapOrErrorAlert<T> {
+    fn unwrap_or_alert(self) -> T;
+}
+
 const FATAL_JA: &str = "致命的なエラー";
 const FATAL_EN: &str = "Fatal error";
 const FATAL_INIT_DB_ERROR_MESSAGE_JA: &str = "アプリ設定用のデータベースが作成できません。
