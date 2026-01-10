@@ -13,12 +13,29 @@ use sqlx::{ConnectOptions, Sqlite, SqlitePool};
 use std::fmt::{Debug, Display, Formatter};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
-use tokio::sync::Mutex;
+use tokio::sync::{RwLock};
 use tracing::error;
 
+#[derive(Clone, Debug)]
 pub enum DBType {
     PrehniteBook,
     AppGlobal,
+}
+
+impl From<DBType> for String {
+    fn from(value: DBType) -> Self {
+        match value {
+            DBType::PrehniteBook => "Prehnite book",
+            DBType::AppGlobal => "App global settings",
+        }
+        .into()
+    }
+}
+
+impl Display for DBType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", String::from(self.clone()))
+    }
 }
 
 pub mod migrate {
@@ -72,14 +89,14 @@ impl Pool {
 
 pub async fn initialize_db() -> Result<(), DatabaseError> {
     let v = Database::initialize().await?;
-    DATABASE.set(Arc::new(Mutex::new(v)));
+    DATABASE.set(Arc::new(RwLock::new(v)));
     Ok(())
 }
 
-static DATABASE: OnceLock<Arc<Mutex<Database>>> = OnceLock::new();
+static DATABASE: OnceLock<Arc<RwLock<Database>>> = OnceLock::new();
 
 #[tracing::instrument]
-pub fn get_database() -> Arc<Mutex<Database>> {
+pub fn get_database() -> Arc<RwLock<Database>> {
     match DATABASE.get() {
         None => {
             error!("Failed to get database. The database may not be initialized.");
@@ -90,9 +107,27 @@ pub fn get_database() -> Arc<Mutex<Database>> {
     .clone()
 }
 
+
+#[tracing::instrument]
+pub async fn acquire_err_handled(mode: DBType) -> Option<PoolConnection<Sqlite>> {
+        match get_database().read().await.acquire(mode.clone()).await {
+            Ok(v) => match v {
+                None => {
+                    error!("{} Database not connected.", mode);
+                    None
+                }
+                Some(v) => Some(v),
+            },
+            Err(e) => {
+                error!("Failed to acquire {} Database. Error: {:#?}", mode, e);
+                None
+            }
+        }
+    }
+
 pub struct Database {
-    app_global_db_pool: Arc<Mutex<Pool>>,
-    prehnite_book_db_pool: Arc<Mutex<Pool>>,
+    app_global_db_pool: Arc<RwLock<Pool>>,
+    prehnite_book_db_pool: Arc<RwLock<Pool>>,
 }
 
 #[derive(Debug)]
@@ -149,8 +184,8 @@ impl Database {
         migrate(&mut pool, DBType::AppGlobal).await?;
 
         Ok(Self {
-            app_global_db_pool: Arc::new(Mutex::new(Pool::new(Some(pool)))),
-            prehnite_book_db_pool: Arc::new(Mutex::new(Pool::new(None))),
+            app_global_db_pool: Arc::new(RwLock::new(Pool::new(Some(pool)))),
+            prehnite_book_db_pool: Arc::new(RwLock::new(Pool::new(None))),
         })
     }
 
@@ -161,7 +196,7 @@ impl Database {
 
         migrate(&mut pool, DBType::PrehniteBook).await?;
 
-        self.prehnite_book_db_pool.lock().await.set_pool(Some(pool));
+        self.prehnite_book_db_pool.write().await.set_pool(Some(pool));
         Ok(())
     }
 
@@ -171,12 +206,12 @@ impl Database {
     ) -> Result<Option<PoolConnection<Sqlite>>, DatabaseError> {
         Ok(match mode {
             DBType::PrehniteBook => {
-                match self.prehnite_book_db_pool.clone().lock().await.get_pool() {
+                match self.prehnite_book_db_pool.clone().read().await.get_pool() {
                     None => None,
                     Some(v) => Some(v.acquire().await?),
                 }
             }
-            DBType::AppGlobal => match self.app_global_db_pool.clone().lock().await.get_pool() {
+            DBType::AppGlobal => match self.app_global_db_pool.clone().read().await.get_pool() {
                 None => None,
                 Some(v) => Some(v.acquire().await?),
             },
