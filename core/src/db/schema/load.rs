@@ -1,9 +1,10 @@
-use crate::db::schema::binder_helper::placeholder_in_clause;
 use crate::db::schema::{
-    BackgroundInfo, BackgroundReference, Bibliography, BibliographyAuthor, Draft, Headline, Item,
-    ItemReference, Paragraph, ParagraphSummary, Tag, Task,
+    BackgroundInfo, BackgroundReference, Bibliography, BibliographyAuthor, Draft, Headline,
+    HeadlineChildren, Item, ItemReference, Paragraph, ParagraphSummary, Tag, Task,
 };
-use sqlx::{Error, Row, SqliteConnection};
+use crate::{opt_unwrap_or_continue, opt_unwrap_or_return, to_hash_map_key_id};
+use sqlx::{Error, SqliteConnection};
+use std::collections::HashMap;
 
 impl BackgroundInfo {
     pub async fn load_references(&mut self, conn: &mut SqliteConnection) -> Result<(), Error> {
@@ -11,9 +12,9 @@ impl BackgroundInfo {
             sqlx::query_as::<_, BackgroundReference>(
                 "SELECT * FROM view_deserializable_background_reference WHERE background_info_id=?",
             )
-                .bind(self.id)
-                .fetch_all(conn)
-                .await?,
+            .bind(self.id)
+            .fetch_all(conn)
+            .await?,
         );
         Ok(())
     }
@@ -33,9 +34,9 @@ impl Bibliography {
     ON rel_bibliography_authors.bibliography_author_id = author.id
     WHERE rel_bibliography_authors.bibliography_id=?",
         )
-            .bind(self.id)
-            .fetch_all(conn)
-            .await?;
+        .bind(self.id)
+        .fetch_all(conn)
+        .await?;
         Ok(())
     }
 }
@@ -52,9 +53,9 @@ impl Item {
             sqlx::query_as::<_, ItemReference>(
                 "SELECT * FROM view_deserializable_item_reference WHERE item_id=?",
             )
-                .bind(self.id)
-                .fetch_all(conn)
-                .await?,
+            .bind(self.id)
+            .fetch_all(conn)
+            .await?,
         );
         Ok(())
     }
@@ -80,9 +81,9 @@ impl Item {
         ON background_info.id = rel_background_and_item.background_info_id
     WHERE item_id=?",
             )
-                .bind(self.id)
-                .fetch_all(conn)
-                .await?,
+            .bind(self.id)
+            .fetch_all(conn)
+            .await?,
         );
         Ok(())
     }
@@ -107,43 +108,36 @@ impl Item {
     }
 }
 
+const FETCH_CHILDREN_CTE_QUERY: &str = r#"
+WITH RECURSIVE children(p_id) AS (
+ VALUES (?) UNION ALL SELECT headlines.id FROM headlines
+ LEFT OUTER JOIN children ON headlines.parent_id = children.p_id
+ WHERE headlines.parent_id = p_id
+) SELECT * FROM headlines WHERE id IN (SELECT * FROM children);"#;
+
 impl Headline {
-    pub async fn load_children(&mut self, conn: &mut SqliteConnection) -> Result<(), Error> {
-        self.children = Some(
-            sqlx::query("SELECT id FROM headlines WHERE parent_id = $1")
+    pub async fn fetch_children(
+        &mut self,
+        conn: &mut SqliteConnection,
+    ) -> Result<Option<HeadlineChildren>, Error> {
+        let headlines: HashMap<i64, Headline> = to_hash_map_key_id!(
+            sqlx::query_as::<_, Headline>(FETCH_CHILDREN_CTE_QUERY)
                 .bind(self.id)
                 .fetch_all(conn)
                 .await?
-                .iter()
-                .map(|v| v.try_get("id").ok())
-                .collect(),
         );
-        Ok(())
-    }
-
-    pub async fn fetch_children(&self, conn: &mut SqliteConnection) -> Result<Vec<Self>, Error> {
-        let id_list: Vec<String> = match self.children.clone() {
-            None => {
-                vec!["NULL".to_string()]
+        let parent = opt_unwrap_or_return!(headlines.get(&self.id).cloned(), Ok(None));
+        let mut children: HashMap<i64, Vec<Headline>> = HashMap::new();
+        for i in headlines.keys() {
+            let headline = opt_unwrap_or_continue!(headlines.get(i));
+            match children.get_mut(&opt_unwrap_or_continue!(headline.parent_id)) {
+                None => {
+                    children.insert(headline.parent_id.unwrap(), vec![headline.clone()]);
+                }
+                Some(v) => v.push(headline.clone()),
             }
-            Some(v) => v
-                .iter()
-                .map(|v| match v {
-                    None => "NULL".to_string(),
-                    Some(v) => v.to_string(),
-                })
-                .collect(),
-        };
-
-        let sql = format!(
-            "SELECT * FROM headlines WHERE id IN ({})",
-            placeholder_in_clause(&id_list)
-        );
-        let mut query = sqlx::query_as::<_, Headline>(sql.as_str());
-        for i in id_list {
-            query = query.bind(i);
         }
-        query.fetch_all(conn).await
+        Ok(Some(HeadlineChildren { parent, children }))
     }
 
     pub async fn load_paragraph(&mut self, conn: &mut SqliteConnection) -> Result<(), Error> {
@@ -159,7 +153,6 @@ impl Headline {
 
 impl Headline {
     async fn load_all(&mut self, conn: &mut SqliteConnection) -> Result<(), Error> {
-        self.load_children(conn).await?;
         self.load_paragraph(conn).await
     }
 }
@@ -180,9 +173,9 @@ impl Paragraph {
             sqlx::query_as::<_, ParagraphSummary>(
                 "SELECT * FROM paragraph_summaries WHERE paragraph_id=?",
             )
-                .bind(self.id)
-                .fetch_all(conn)
-                .await?,
+            .bind(self.id)
+            .fetch_all(conn)
+            .await?,
         );
         Ok(())
     }

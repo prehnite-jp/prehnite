@@ -1,28 +1,26 @@
 #![allow(unused)]
 
+pub mod app_global;
+mod binder_helper;
+pub mod crud;
 pub mod from_row;
 pub mod load;
 mod prefixed_deserializer;
-mod binder_helper;
-pub mod crud;
 #[cfg(test)]
 mod tests;
-pub mod app_global;
 
 use chrono::{DateTime, Utc};
 use sqlx::{Acquire, Database, FromRow, Row};
+use std::collections::HashMap;
 
 #[derive(Default, Clone, Debug, FromRow, Eq, PartialEq)]
 pub struct ReturningId {
     pub id: i64,
 }
 
-
 //noinspection RsUnnecessaryQualifications: suppress false positive
 //noinspection RsDerivableTraitMembers: suppress false positive
-#[derive(
-    Default, Clone, Debug, FromRow, derive_more::Eq, derive_more::PartialEq,
-)]
+#[derive(Default, Clone, Debug, FromRow, derive_more::Eq, derive_more::PartialEq)]
 pub struct BackgroundInfo {
     pub id: i64,
     pub body: String,
@@ -126,10 +124,13 @@ pub struct Headline {
     pub headline_pos: Option<i64>,
     #[sqlx(skip)]
     #[eq(skip)]
-    pub children: Option<Vec<Option<i64>>>,
-    #[sqlx(skip)]
-    #[eq(skip)]
     pub paragraph: Option<Vec<Paragraph>>,
+}
+
+#[derive(Default, Clone, Debug, Eq, PartialEq)]
+pub struct HeadlineChildren {
+    pub parent: Headline,
+    pub children: HashMap<i64, Vec<Headline>>,
 }
 
 //noinspection RsUnnecessaryQualifications: suppress false positive
