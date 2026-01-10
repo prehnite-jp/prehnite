@@ -2,10 +2,10 @@ pub mod app_global;
 pub mod file_dialog;
 
 use crate::db::DatabaseError;
+use crate::i18n::{i18n, DEFAULT_LANG_ID};
 use native_dialog::{MessageDialogBuilder, MessageLevel};
 use sys_locale::get_locale;
 use unic_langid::LanguageIdentifier;
-use crate::i18n::DEFAULT_LANG_ID;
 
 const FATAL_JA: &str = "致命的なエラー";
 
@@ -25,7 +25,6 @@ const FATAL_INIT_APP_ERROR_MESSAGE_JA: &str = "アプリケーションの初期
 
 const FATAL_INIT_APP_ERROR_MESSAGE_EN: &str = "Application initialization failed.";
 
-
 fn lang_id() -> String {
     match get_locale()
         .unwrap_or(DEFAULT_LANG_ID.into())
@@ -36,8 +35,11 @@ fn lang_id() -> String {
     }
 }
 
-fn alert(msg: (&str, &str)) {
-    let (title, msg) = msg;
+pub fn alert_i18n((title_i18n_id, msg_i18n_id): (&str, &str)) {
+    alert((i18n(title_i18n_id).as_str(), i18n(msg_i18n_id).as_str()))
+}
+
+fn alert((title, msg): (&str, &str)) {
     MessageDialogBuilder::default()
         .set_level(MessageLevel::Error)
         .set_title(title)
