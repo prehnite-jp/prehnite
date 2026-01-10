@@ -1,7 +1,9 @@
 use iced::Task;
-use native_dialog::{MessageDialogBuilder, MessageLevel};
-use prehnite_core::db::get_database;
-use prehnite_core::i18n::i18n;
+use prehnite_core::db::schema::Setting;
+use prehnite_core::db::{acquire_err_handled, get_database, DBType};
+use prehnite_core::opt_unwrap_or_return;
+use prehnite_core::settings::SettingKey;
+use prehnite_core::util::alert::{alert_i18n, alert_i18n_spawn};
 use prehnite_core::util::file_dialog::{dialog_new_prehnite_book, dialog_open_prehnite_book};
 use std::path::PathBuf;
 use tracing::{debug, error};
@@ -32,28 +34,57 @@ impl BookOpener {
             BookOpe::New => match tokio::fs::remove_file(book_path.clone()).await {
                 Ok(_) => {}
                 Err(e) => {
-                    error!("Failed to remove file ({book_path:#?}): {e}");
-                    return BookOpenerMessage::None;
+                    if tokio::fs::try_exists(book_path.clone())
+                        .await
+                        .unwrap_or(true)
+                    {
+                        error!("Failed to remove file ({book_path:#?}): {e}");
+                        alert_i18n_spawn(("error", "permission-denied")).await;
+                        return BookOpenerMessage::None;
+                    }
                 }
             },
             BookOpe::Open => {}
-        }
-        match get_database().lock().await.open_book(book_path).await {
-            Ok(_) => BookOpenerMessage::BookOpened,
+        };
+        let result = get_database()
+            .write()
+            .await
+            .open_book(book_path.clone())
+            .await;
+        match result {
+            Ok(_) => {
+                match Setting::update_setting(
+                    opt_unwrap_or_return!(
+                        acquire_err_handled(DBType::AppGlobal).await,
+                        BookOpenerMessage::None
+                    )
+                    .as_mut(),
+                    SettingKey::LastOpened,
+                    book_path.to_str().map(|v| v.to_string()),
+                )
+                .await
+                {
+                    Ok(_) => {}
+                    Err(e) => {
+                        error!("Failed to update setting. [AppGlobal::LastOpened] Error: {e:#?}");
+                    }
+                };
+                BookOpenerMessage::BookOpened
+            }
             Err(e) => {
                 error!("Failed to open the book. {}", e);
-                MessageDialogBuilder::default()
-                    .set_title(i18n("error"))
-                    .set_text(i18n("book-open-error"))
-                    .set_level(MessageLevel::Error);
+                alert_i18n(("error", "book-open-error"))
+                    .spawn()
+                    .await
+                    .unwrap_or_else(|v| error!("Spawn alert error: Error: {v:#?}"));
                 BookOpenerMessage::None
             }
         }
     }
+
     pub fn update(message: BookOpenerMessage) -> Task<BookOpenerMessage> {
         match message {
             BookOpenerMessage::None => {}
-
             BookOpenerMessage::BookSelected((ope, book_path)) => {
                 return match book_path {
                     None => Task::none(),
@@ -64,7 +95,7 @@ impl BookOpener {
                 debug!("Opening the book: {:#?}", v);
                 return Task::future(Self::book_selected(v));
             }
-            BookOpenerMessage::BookOpened => {}
+            BookOpenerMessage::BookOpened => return Task::none(),
             BookOpenerMessage::NewBook => {
                 return Task::future(dialog_new_prehnite_book())
                     .map(move |v| BookOpenerMessage::BookSelected((BookOpe::New, v)));

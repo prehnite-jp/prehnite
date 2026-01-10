@@ -1,5 +1,5 @@
 use crate::env::ENV_KEY_GLOBAL_DIR_PATH;
-use crate::util::fatal_init_db_error;
+use crate::util::alert::fatal_init_db_error;
 use std::path::PathBuf;
 use tracing::error;
 
