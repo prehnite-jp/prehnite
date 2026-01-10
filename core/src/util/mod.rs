@@ -3,8 +3,9 @@ pub mod file_dialog;
 
 use crate::db::DatabaseError;
 use crate::i18n::{i18n, DEFAULT_LANG_ID};
-use native_dialog::{MessageDialogBuilder, MessageLevel};
+use native_dialog::{MessageAlert, MessageDialogBuilder, MessageLevel};
 use sys_locale::get_locale;
+use tracing::error;
 use unic_langid::LanguageIdentifier;
 
 const FATAL_JA: &str = "致命的なエラー";
@@ -35,18 +36,30 @@ fn lang_id() -> String {
     }
 }
 
-pub fn alert_i18n((title_i18n_id, msg_i18n_id): (&str, &str)) {
+pub fn alert_i18n((title_i18n_id, msg_i18n_id): (&str, &str)) -> MessageAlert {
     alert((i18n(title_i18n_id).as_str(), i18n(msg_i18n_id).as_str()))
 }
 
-fn alert((title, msg): (&str, &str)) {
+#[tracing::instrument]
+pub async fn alert_i18n_spawn((title_i18n_id, msg_i18n_id): (&str, &str)) {
+    alert_i18n((title_i18n_id, msg_i18n_id))
+        .spawn()
+        .await
+        .unwrap_or_else(|e| error!("Spawn alert error: Error: {e:#?}"));
+}
+
+pub fn alert_i18n_show((title_i18n_id, msg_i18n_id): (&str, &str)) {
+    alert_i18n((title_i18n_id, msg_i18n_id))
+        .show()
+        .unwrap_or_else(|e| error!("Spawn alert error: Error: {e:#?}"));
+}
+
+pub fn alert((title, msg): (&str, &str)) -> MessageAlert {
     MessageDialogBuilder::default()
         .set_level(MessageLevel::Error)
         .set_title(title)
         .set_text(msg)
         .alert()
-        .show()
-        .unwrap();
 }
 
 fn fatal_init_db_error_msg() -> (&'static str, &'static str) {
@@ -56,18 +69,18 @@ fn fatal_init_db_error_msg() -> (&'static str, &'static str) {
     }
 }
 
-pub fn fatal_init_db_error() {
+pub fn fatal_init_db_error() -> MessageAlert {
     alert(fatal_init_db_error_msg())
 }
 
-pub fn fatal_initialize_app_error_msg() -> (&'static str, &'static str) {
+fn fatal_initialize_app_error_msg() -> (&'static str, &'static str) {
     match lang_id().as_str() {
         "ja" => (FATAL_JA, FATAL_INIT_APP_ERROR_MESSAGE_JA),
         &_ => (FATAL_EN, FATAL_INIT_APP_ERROR_MESSAGE_EN),
     }
 }
 
-pub fn fatal_initialize_app_error_db(e: DatabaseError) {
+pub fn fatal_initialize_app_error_db(e: DatabaseError) -> MessageAlert {
     let (title, err_msg) = fatal_initialize_app_error_msg();
     alert((
         title,

@@ -1,6 +1,6 @@
 mod app;
-mod widget;
 mod util;
+mod widget;
 
 use crate::app::PrehniteApp;
 use prehnite_core::db::{get_database, initialize_db, DBType, DatabaseError};
@@ -44,7 +44,7 @@ async fn initializer() {
         initialize_db().await?;
         initialize_i18n_from_db(
             get_database()
-                .lock()
+                .read()
                 .await
                 .acquire(DBType::AppGlobal)
                 .await?
@@ -57,12 +57,12 @@ async fn initializer() {
 
     func().await.unwrap_or_else(|e| {
         let err_msg = format!("{:#?}", e);
+        error!("{}", err_msg);
         match e {
             InitializeError::DatabaseError(e) => {
-                fatal_initialize_app_error_db(e);
+                fatal_initialize_app_error_db(e).show().unwrap();
             }
         }
-        error!("{}", err_msg);
         panic!()
     });
 }

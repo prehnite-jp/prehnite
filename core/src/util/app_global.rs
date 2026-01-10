@@ -15,7 +15,7 @@ pub fn global_dir() -> PathBuf {
             } else {
                 let mut path = std::env::home_dir().unwrap_or_else(|| {
                     error!("Failed to get home_dir. The home directory may not be set.");
-                    fatal_init_db_error();
+                    fatal_init_db_error().show().unwrap();
                     panic!();
                 });
                 path.push(DEFAULT_APP_DIR_NAME);
