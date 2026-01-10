@@ -11,9 +11,7 @@ impl RandomValue for BackgroundInfo {
         BackgroundInfo {
             id: 0,
             body: RandomValue::random_value(),
-            created_at: Default::default(),
-            updated_at: Default::default(),
-            references: Default::default(),
+            ..Default::default()
         }
     }
 }
@@ -23,8 +21,8 @@ impl RandomValue for BackgroundReference {
         BackgroundReference {
             id: 0,
             background_info_id: 0,
-            bibliography: Default::default(),
             location: RandomValue::random_value(),
+            ..Default::default()
         }
     }
 }
@@ -37,12 +35,9 @@ impl RandomValue for Bibliography {
             url: RandomValue::random_value(),
             title: RandomValue::random_value(),
             detail: RandomValue::random_value(),
-            authors: Default::default(),
-            publisher: Default::default(),
             publication_date: RandomValue::random_value(),
-            created_at: Default::default(),
-            updated_at: Default::default(),
             tmp_registration_id: None,
+            ..Default::default()
         }
     }
 }
@@ -64,8 +59,7 @@ impl RandomValue for Draft {
             draft_pos: RandomValue::random_value(),
             title: RandomValue::random_value(),
             body: RandomValue::random_value(),
-            created_at: Default::default(),
-            updated_at: Default::default(),
+            ..Default::default()
         }
     }
 }
@@ -75,10 +69,8 @@ impl RandomValue for Headline {
         Headline {
             id: 0,
             item_id: 0,
-            parent_id: Default::default(),
             headline_pos: RandomValue::random_value(),
-            children: Default::default(),
-            paragraph: Default::default(),
+            ..Default::default()
         }
     }
 }
@@ -104,10 +96,7 @@ impl RandomValue for Item {
                 ItemType::Paragraph(None)
             },
             title: RandomValue::random_value(),
-            references: Default::default(),
-            tags: Default::default(),
-            background_info_list: Default::default(),
-            tasks: Default::default(),
+            ..Default::default()
         }
     }
 }
@@ -116,8 +105,8 @@ impl RandomValue for ItemReference {
         ItemReference {
             id: 0,
             item_id: 0,
-            bibliography: Default::default(),
             location: RandomValue::random_value(),
+            ..Default::default()
         }
     }
 }
@@ -127,11 +116,8 @@ impl RandomValue for Paragraph {
         Paragraph {
             id: 0,
             item_id: 0,
-            headline: Default::default(),
-            accepted_draft: Default::default(),
             paragraph_pos: RandomValue::random_value(),
-            draft: Default::default(),
-            summary: Default::default(),
+            ..Default::default()
         }
     }
 }
@@ -139,10 +125,8 @@ impl RandomValue for ParagraphLink {
     fn random_value() -> Self {
         ParagraphLink {
             id: 0,
-            from_paragraph: Default::default(),
-            to_paragraph: Default::default(),
-            task: Default::default(),
             comment: RandomValue::random_value(),
+            ..Default::default()
         }
     }
 }
@@ -154,8 +138,7 @@ impl RandomValue for ParagraphSummary {
             paragraph_id: 0,
             title: RandomValue::random_value(),
             detail: RandomValue::random_value(),
-            created_at: Default::default(),
-            updated_at: Default::default(),
+            ..Default::default()
         }
     }
 }
@@ -191,10 +174,10 @@ impl RandomValue for Task {
         Task {
             id: 0,
             item_id: 0,
-            task_category: Default::default(),
             title: RandomValue::random_value(),
             detail: RandomValue::random_value(),
             is_finished: RandomValue::random_value(),
+            ..Default::default()
         }
     }
 }
@@ -211,9 +194,9 @@ impl RandomValue for TaskTemplate {
     fn random_value() -> Self {
         TaskTemplate {
             id: 0,
-            task_category: Default::default(),
             title: RandomValue::random_value(),
             detail: RandomValue::random_value(),
+            ..Default::default()
         }
     }
 }

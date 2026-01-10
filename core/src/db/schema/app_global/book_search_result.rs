@@ -4,6 +4,7 @@ use crate::db::util::get_optional;
 use rhai::{CustomType, Dynamic, EvalAltResult, Position, TypeBuilder};
 use sqlx::{Acquire, SqliteConnection};
 use std::collections::HashMap;
+use crate::to_hash_map_key_name;
 
 #[derive(Default, Clone, CustomType, Debug, PartialEq)]
 pub struct BookSearchResult {
@@ -14,12 +15,6 @@ pub struct BookSearchResult {
     pub authors: Vec<String>,
     pub publisher: Option<String>,
     pub publication_date: Option<String>,
-}
-
-macro_rules! to_hash_map {
-    ($v:expr) => {
-        $v.into_iter().map(|v| (v.name.clone(), v)).collect()
-    };
 }
 
 impl BookSearchResult {
@@ -127,7 +122,7 @@ impl BookSearchResult {
         book_search_result_list: Vec<BookSearchResult>,
     ) -> Result<Vec<Bibliography>, sqlx::Error> {
         let mut tx = conn.begin().await?;
-        let publishers: HashMap<String, Publisher> = to_hash_map!(
+        let publishers: HashMap<String, Publisher> = to_hash_map_key_name!(
             Publisher::register_vec_tx(
                 Self::publishers_from_bsr(book_search_result_list.as_slice()).as_slice(),
                 &mut tx,
@@ -135,7 +130,7 @@ impl BookSearchResult {
             )
             .await?
         );
-        let authors: HashMap<String, BibliographyAuthor> = to_hash_map!(
+        let authors: HashMap<String, BibliographyAuthor> = to_hash_map_key_name!(
             BibliographyAuthor::register_vec_tx(
                 Self::authors_from_bsr(book_search_result_list.as_slice()).as_slice(),
                 &mut tx,
