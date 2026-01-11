@@ -6,7 +6,7 @@ use crate::db::schema::{
     RelBibliographyAuthor, RelTagAndItem, ReturningId, Setting, Tag, Task, TaskCategory,
     TaskTemplate,
 };
-use sqlx::{Acquire, Error, SqliteConnection, SqliteTransaction};
+use sqlx::{Acquire, Error, SqliteConnection, SqliteTransaction, SqliteExecutor};
 
 const MAX_BIND_COUNT: usize = 30000; // sqlite 3.32.0 以降では32766が最大だが、マージンを取って30000
 
@@ -25,15 +25,8 @@ macro_rules! allow_r {
     ($(($x: ty, $view_name:expr)),*) => {
         $(impl $x {
             pub async fn select_all(conn: &mut SqliteConnection) ->  Result<Vec<Self>, Error> {
-                let mut tx = conn.begin().await?;
-                let result = Self::select_all_tx(&mut tx).await?;
-                tx.commit().await?;
-                Ok(result)
-            }
-
-            pub async fn select_all_tx(tx: &mut SqliteTransaction<'_>) ->  Result<Vec<Self>, Error> {
                 sqlx::query_as(concat!("SELECT * FROM ", $view_name))
-                .fetch_all(&mut **tx).await
+                    .fetch_all(conn).await
             }
         })*
     };
@@ -49,33 +42,11 @@ macro_rules! allow_c {
                 })
             }
 
-            pub async fn register_optional_tx(val: Option<Self>, tx: &mut SqliteTransaction<'_>, is_on_conflict_do_nothing: bool) -> Result<Option<Self>, Error> {
-                Ok(match val{
-                    Some(v) => Some(v.register_tx(tx, is_on_conflict_do_nothing).await?),
-                    None => None
-                })
-            }
-
             pub async fn register(&self, conn: &mut SqliteConnection, is_on_conflict_do_nothing: bool) -> Result<Self, Error> {
                 first_or_row_not_found(&Self::register_vec(&vec![self.clone()], conn, is_on_conflict_do_nothing).await?)
             }
 
-            pub async fn register_tx(&self, tx: &mut SqliteTransaction<'_>, is_on_conflict_do_nothing: bool) -> Result<Self, Error> {
-                first_or_row_not_found(&Self::register_vec_tx(&vec![self.clone()], tx, is_on_conflict_do_nothing).await?)
-            }
-
-            pub async fn register_vec(
-                values: &[Self],
-                conn: &mut SqliteConnection,
-                is_on_conflict_do_nothing: bool
-            ) -> Result<Vec<Self>, Error> {
-                let mut tx = conn.begin().await?;
-                let result = Self::register_vec_tx(values, &mut tx, is_on_conflict_do_nothing).await?;
-                tx.commit().await?;
-                Ok(result)
-            }
-
-            pub async fn register_vec_tx(values: &[Self], tx: &mut SqliteTransaction<'_>, is_on_conflict_do_nothing: bool) -> Result<Vec<Self>, Error> {
+            pub async fn register_vec(values: &[Self], conn: &mut SqliteConnection, is_on_conflict_do_nothing: bool) -> Result<Vec<Self>, Error> {
                 if values.is_empty() {
                     return Ok(vec![]);
                 }
@@ -96,7 +67,7 @@ macro_rules! allow_c {
                     for i in i {
                         query = Binder::register_bind_values(i.clone(), query)
                     }
-                    let id_list: Vec<ReturningId> = query.fetch_all(&mut **tx).await?;
+                    let id_list: Vec<ReturningId> = query.fetch_all(&mut *conn).await?;
                     let sql = format!(
                         concat!("SELECT * FROM ", $view_name, " WHERE id IN ({})"),
                         placeholder_in_clause(id_list.as_ref())
@@ -105,7 +76,7 @@ macro_rules! allow_c {
                     for i in id_list {
                         query = query.bind(i.id);
                     }
-                    v.extend(query.fetch_all(&mut **tx).await?);
+                    v.extend(query.fetch_all(&mut *conn).await?);
                 }
                 Ok(v)
             }
@@ -116,12 +87,6 @@ macro_rules! allow_u {
     ($(($x: ty, $table_name:expr, $update_set_clause:expr)),*) => {
     $(impl $x {
         pub async fn update(&self, conn: &mut SqliteConnection) -> Result<(), Error> {
-            let mut tx = conn.begin().await?;
-            self.update_with_tx(&mut tx).await?;
-            tx.commit().await
-        }
-
-        pub async fn update_with_tx(&self, tx: &mut SqliteTransaction<'_>) -> Result<(), Error> {
             let mut query = sqlx::query(concat!(
                 "UPDATE ",
                 $table_name,
@@ -133,7 +98,7 @@ macro_rules! allow_u {
                 .clone()
                 .update_bind_values(query)
                 .bind(self.id)
-                .execute(&mut **tx)
+                .execute(conn)
                 .await?;
             return Ok(());
         }
@@ -144,19 +109,10 @@ macro_rules! allow_d {
     ($(($x:ty, $table_name:expr)),*) => {
         $(
         impl $x {
-            pub async fn delete(self, conn: &mut SqliteConnection) -> Result<(), Error>
-            where
-                Self: Sized,
-            {
-                let mut tx = conn.begin().await?;
-                self.delete_with_tx(&mut tx).await?;
-                tx.commit().await
-            }
-
-            pub async fn delete_with_tx(self, tx: &mut SqliteTransaction<'_>) -> Result<(), Error> {
+            pub async fn delete(self, conn: &mut SqliteConnection) -> Result<(), Error> {
                 sqlx::query(concat!("DELETE FROM ", $table_name, " WHERE id = ?"))
                     .bind(self.id)
-                    .execute(&mut **tx)
+                    .execute(conn)
                     .await?;
                 Ok(())
             }

@@ -57,7 +57,7 @@ pub async fn register_default_data_task_category_and_templates(
             detail: Some(i18n("task-template-will-explain-detail")),
         },
     ];
-    AppGlobalDefaultTaskTemplate::register_vec_tx(values.as_slice(), tx, false).await?;
+    AppGlobalDefaultTaskTemplate::register_vec(values.as_slice(), &mut *tx, false).await?;
     Ok(())
 }
 
@@ -88,7 +88,7 @@ pub async fn register_default_data_book_search_api(
         .to_string(),
         is_example: true,
     }
-    .register_tx(tx, false)
+    .register(&mut *tx, false)
     .await?;
     Ok(())
 }

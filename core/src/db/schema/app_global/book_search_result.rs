@@ -123,36 +123,36 @@ impl BookSearchResult {
     ) -> Result<Vec<Bibliography>, sqlx::Error> {
         let mut tx = conn.begin().await?;
         let publishers: HashMap<String, Publisher> = to_hash_map_key_name!(
-            Publisher::register_vec_tx(
+            Publisher::register_vec(
                 Self::publishers_from_bsr(book_search_result_list.as_slice()).as_slice(),
-                &mut tx,
+                &mut *tx,
                 true,
             )
             .await?
         );
         let authors: HashMap<String, BibliographyAuthor> = to_hash_map_key_name!(
-            BibliographyAuthor::register_vec_tx(
+            BibliographyAuthor::register_vec(
                 Self::authors_from_bsr(book_search_result_list.as_slice()).as_slice(),
-                &mut tx,
+                &mut *tx,
                 true,
             )
             .await?
         );
-        let bibliographies = Bibliography::register_vec_tx(
+        let bibliographies = Bibliography::register_vec(
             Self::bibliographies_from_bsr(book_search_result_list.as_slice(), &publishers)
                 .as_slice(),
-            &mut tx,
+            &mut *tx,
             true,
         )
         .await?;
-        RelBibliographyAuthor::register_vec_tx(
+        RelBibliographyAuthor::register_vec(
             Self::rel_bibliography_author_from_bibliographies(
                 book_search_result_list.as_slice(),
                 bibliographies.as_slice(),
                 &authors,
             )
             .as_slice(),
-            &mut tx,
+            &mut *tx,
             true,
         )
         .await?;
