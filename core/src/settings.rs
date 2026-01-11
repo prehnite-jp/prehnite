@@ -1,12 +1,10 @@
 use crate::db::schema::Setting;
 use sqlx::SqliteConnection;
 use std::fmt::Display;
+use crate::db::query::{SETTING_FETCH_SQL, SETTING_UPDATE_SQL};
 
 const KEY_LOCALE: &str = "locale";
 const KEY_LAST_OPENED: &str = "last-opened-file";
-
-const UPDATE_SQL: &str = "INSERT INTO settings(setting_key, setting_value) VALUES ($1,$2) ON CONFLICT DO UPDATE SET setting_value = $2;";
-const FETCH_SQL: &str = "SELECT * FROM settings WHERE setting_key=?;";
 
 #[derive(Clone)]
 pub enum SettingKey {
@@ -53,7 +51,7 @@ impl Setting {
         key: SettingKey,
         value: Option<String>,
     ) -> Result<(), sqlx::Error> {
-        sqlx::query(UPDATE_SQL)
+        sqlx::query(SETTING_UPDATE_SQL)
             .bind(key.to_string())
             .bind(value)
             .execute(conn)
@@ -66,7 +64,7 @@ impl Setting {
         key: SettingKey,
     ) -> Result<Option<String>, sqlx::Error> {
         Ok(
-            match sqlx::query_as::<_, Setting>(FETCH_SQL)
+            match sqlx::query_as::<_, Setting>(SETTING_FETCH_SQL)
                 .bind(key.to_string())
                 .fetch_optional(conn)
                 .await?

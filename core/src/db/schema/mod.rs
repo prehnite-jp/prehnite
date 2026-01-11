@@ -171,6 +171,7 @@ pub struct ParagraphSummary {
     pub paragraph_id: i64,
     pub title: String,
     pub detail: String,
+    pub summary_pos: Option<i64>,
     #[eq(skip)]
     pub created_at: DateTime<Utc>,
     #[eq(skip)]
@@ -215,6 +216,7 @@ pub struct Task {
     pub task_category: Option<TaskCategory>,
     pub title: String,
     pub detail: Option<String>,
+    pub task_pos: Option<i64>,
     pub is_finished: bool,
 }
 

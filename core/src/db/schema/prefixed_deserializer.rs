@@ -214,6 +214,7 @@ impl PrefixedDeserializer {
             task_category: Self::category(row, prefix_task_category).ok(),
             title: row.try_get(p.prefix("title"))?,
             detail: row.try_get(p.prefix("detail"))?,
+            task_pos: row.try_get(p.prefix("task_pos"))?,
             is_finished: row.try_get(p.prefix("is_finished"))?,
         })
     }

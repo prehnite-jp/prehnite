@@ -147,6 +147,7 @@ SELECT paragraph_link.*,
        t.title                          AS t_title,
        t.detail                         AS t_detail,
        t.is_finished                    AS t_is_finished,
+       t.task_pos                       AS t_task_pos,
        t.tc_id                          AS tc_id,
        t.tc_name                        AS tc_name,
        t.tc_autocomplete_paragraph_link AS tc_autocomplete_paragraph_link

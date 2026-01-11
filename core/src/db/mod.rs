@@ -2,6 +2,7 @@
 pub mod error;
 pub mod schema;
 mod util;
+pub mod query;
 
 use crate::db::migrate::migrate;
 use crate::util::app_global::global_dir;

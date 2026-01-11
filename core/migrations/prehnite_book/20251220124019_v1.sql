@@ -202,8 +202,10 @@ CREATE TABLE paragraph_summaries
     paragraph_id INTEGER NOT NULL REFERENCES paragraph (id) ON DELETE CASCADE,
     title        TEXT    NOT NULL,
     detail       TEXT    NOT NULL,
+    summary_pos  INTEGER,
     created_at   INTEGER NOT NULL DEFAULT (unixepoch()),
-    updated_at   INTEGER NOT NULL DEFAULT (unixepoch())
+    updated_at   INTEGER NOT NULL DEFAULT (unixepoch()),
+    UNIQUE (paragraph_id, summary_pos)
 );
 
 -- 下書きの最終更新時刻を更新
@@ -277,7 +279,9 @@ CREATE TABLE tasks
     task_category_id INTEGER REFERENCES task_categories (id) ON DELETE SET NULL,
     title            TEXT    NOT NULL,
     detail           TEXT,
-    is_finished      INTEGER NOT NULL DEFAULT 0 CHECK ( is_finished = 0 /* false */ OR is_finished = 1 /* true */ )
+    task_pos         INTEGER,
+    is_finished      INTEGER NOT NULL DEFAULT 0 CHECK ( is_finished = 0 /* false */ OR is_finished = 1 /* true */ ),
+    UNIQUE (item_id, task_pos)
 );
 
 -- 段落間に置くリンク
