@@ -1,3 +1,4 @@
+use crate::db::query;
 use crate::db::schema::Setting;
 use crate::settings::SettingKey;
 use fluent_bundle::concurrent::FluentBundle;
@@ -143,7 +144,7 @@ pub async fn change_lang_bundle(
     {
         error_failed_to_lock_lang_bundle!(CURRENT_RESOURCE_BUNDLE.write())
             .set_bundle(Some(parse_lang_bundle(lang_id_str)?));
-        Setting::update_setting(conn, SettingKey::Locale, Some(lang_id.to_string())).await?
+        query::update_setting(conn, SettingKey::Locale, Some(lang_id.to_string())).await?
     }
     Ok(())
 }
@@ -202,7 +203,10 @@ pub fn i18n_fmt(id: &str, args: Option<&FluentArgs<'_>>) -> String {
 }
 
 pub async fn initialize_i18n_from_db(conn: &mut SqliteConnection) -> Result<(), sqlx::Error> {
-    let lang_id = Setting::fetch_setting(conn, SettingKey::Locale).await?;
+    let lang_id = query::fetch_setting(conn, SettingKey::Locale)
+        .await?
+        .map(|v| v.setting_value)
+        .unwrap_or(None);
     change_lang_bundle(
         conn,
         lang_id.unwrap_or(DEFAULT_LANG_ID.to_string()).as_str(),
