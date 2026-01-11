@@ -1,6 +1,7 @@
 mod app;
 mod util;
 mod widget;
+mod query;
 
 use crate::app::PrehniteApp;
 use prehnite_core::db::{get_database, initialize_db, DBType, DatabaseError};
