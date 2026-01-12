@@ -12,10 +12,11 @@ pub mod headline_editor;
 pub mod item_list;
 pub mod paragraph_editor;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum PrehnitePage {
+    NowLoading,
     BookNotOpened(BookNotOpened),
-    BackgroundInfoEditor(BackgroundInfoEditor),
+    BgInfoEditor(BackgroundInfoEditor),
     DraftEditor(DraftEditor),
     HeadlineEditor(HeadlineEditor),
     ItemList(ItemList),
@@ -24,6 +25,6 @@ pub enum PrehnitePage {
 
 impl Default for PrehnitePage {
     fn default() -> Self {
-        PrehnitePage::BookNotOpened(Default::default())
+        PrehnitePage::NowLoading
     }
 }

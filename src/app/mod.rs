@@ -6,15 +6,15 @@ use crate::app::page::background_info_editor::{
 use crate::app::page::book_not_opened::{BookNotOpenedActions, BookNotOpenedMessage};
 use crate::app::page::draft_editor::{DraftEditorActions, DraftEditorMessage};
 use crate::app::page::headline_editor::{HeadlineEditorActions, HeadlineEditorMessage};
-use crate::app::page::item_list::{ItemListActions, ItemListMessage};
+use crate::app::page::item_list::{ItemList, ItemListActions, ItemListMessage};
 use crate::app::page::paragraph_editor::{ParagraphEditorActions, ParagraphEditorMessage};
 use crate::app::page::PrehnitePage;
-use crate::util::book_opener::{BookOpe, BookOpenerMessage};
+use iced::widget::text;
 use iced::{Element, Task};
-use prehnite_core::db::{acquire_err_handled, query, DBType};
+use prehnite_core::db::{acquire_err_handled, open_book_err_handled, query, DBType};
+use prehnite_core::i18n::i18n;
 use prehnite_core::settings::SettingKey;
 use prehnite_core::util::alert::UnwrapOrErrorAlert;
-use std::path::PathBuf;
 use tracing::error;
 
 #[derive(Debug)]
@@ -24,8 +24,9 @@ pub struct PrehniteApp {
 
 #[derive(Clone, Debug)]
 pub enum RootMessage {
+    ChangePage(PrehnitePage),
     BookNotOpened(BookNotOpenedMessage),
-    BackgroundInfoEditor(BackgroundInfoEditorMessage),
+    BgInfoEditor(BackgroundInfoEditorMessage),
     DraftEditor(DraftEditorMessage),
     HeadlineEditor(HeadlineEditorMessage),
     ItemList(ItemListMessage),
@@ -60,11 +61,22 @@ impl PrehniteApp {
                 error!("Failed to fetch last opened settings. Error: {:#?}", e);
                 None
             });
-        let path: Option<PathBuf> = match last_opened.map(|v| v.setting_value).unwrap_or(None) {
-            None => None,
-            Some(v) => v.parse().ok(),
-        };
-        RootMessage::BookNotOpened(BookOpenerMessage::BookSelected((BookOpe::Open, path)).into())
+        fn return_err() -> RootMessage {
+            RootMessage::ChangePage(PrehnitePage::BookNotOpened(Default::default()))
+        }
+        match last_opened
+            .and_then(|v| v.setting_value)
+            .and_then(|v| v.parse().ok())
+        {
+            None => return_err(),
+            Some(v) => {
+                if open_book_err_handled(v).await {
+                    RootMessage::ChangePage(PrehnitePage::ItemList(ItemList::new()))
+                } else {
+                    return_err()
+                }
+            }
+        }
     }
 
     fn new() -> (Self, Task<RootMessage>) {
@@ -82,16 +94,17 @@ impl PrehniteApp {
             RootMessage::BookNotOpened(msg) => {
                 let page = unwrap_page!(self, PrehnitePage::BookNotOpened);
                 match page.update(msg) {
-                    BookNotOpenedActions::BookOpener(opener_msg) => {
-                        return opener_msg.map(RootMessage::BookNotOpened);
+                    BookNotOpenedActions::Run(v) => return v.map(RootMessage::BookNotOpened),
+                    BookNotOpenedActions::Opened => {
+                        return Task::done(RootMessage::ChangePage(PrehnitePage::ItemList(
+                            ItemList::new(),
+                        )));
                     }
-                    BookNotOpenedActions::BookOpened => {
-                        self.page = PrehnitePage::ItemList(Default::default());
-                    }
-                }
+                    BookNotOpenedActions::NotOpened => {}
+                };
             }
-            RootMessage::BackgroundInfoEditor(msg) => {
-                let page = unwrap_page!(self, PrehnitePage::BackgroundInfoEditor);
+            RootMessage::BgInfoEditor(msg) => {
+                let page = unwrap_page!(self, PrehnitePage::BgInfoEditor);
                 match page.update(msg) {
                     BackgroundInfoEditorActions::None => {}
                 }
@@ -120,6 +133,9 @@ impl PrehniteApp {
                     ParagraphEditorActions::None => {}
                 }
             }
+            RootMessage::ChangePage(page) => {
+                self.page = page;
+            }
         }
         Task::none()
     }
@@ -127,10 +143,9 @@ impl PrehniteApp {
     #[tracing::instrument]
     fn view(&'_ self) -> Element<'_, RootMessage> {
         match &self.page {
+            PrehnitePage::NowLoading => text(i18n("now-loading")).into(),
             PrehnitePage::BookNotOpened(v) => v.view().map(RootMessage::BookNotOpened),
-            PrehnitePage::BackgroundInfoEditor(v) => {
-                v.view().map(RootMessage::BackgroundInfoEditor)
-            }
+            PrehnitePage::BgInfoEditor(v) => v.view().map(RootMessage::BgInfoEditor),
             PrehnitePage::DraftEditor(v) => v.view().map(RootMessage::DraftEditor),
             PrehnitePage::HeadlineEditor(v) => v.view().map(RootMessage::HeadlineEditor),
             PrehnitePage::ItemList(v) => v.view().map(RootMessage::ItemList),

@@ -43,3 +43,4 @@ book-open-error = The book could not be opened. Please see the log file for more
 permission-denied = Permission denied.
 file-notfound = File does not exist.
 cant-connect-database = A database connection could not be established.
+now-loading = Now loading...

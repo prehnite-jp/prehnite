@@ -208,7 +208,9 @@ pub async fn initialize_i18n_from_db(conn: &mut SqliteConnection) -> Result<(), 
         .unwrap_or(None);
     change_lang_bundle(
         conn,
-        lang_id.unwrap_or(DEFAULT_LANG_ID.to_string()).as_str(),
+        lang_id
+            .unwrap_or(sys_locale::get_locale().unwrap_or(DEFAULT_LANG_ID.to_string()))
+            .as_str(),
     )
     .await
     .expect("lang_id not found.");

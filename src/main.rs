@@ -1,6 +1,5 @@
 mod app;
 mod util;
-mod widget;
 mod db;
 
 use crate::app::PrehniteApp;
