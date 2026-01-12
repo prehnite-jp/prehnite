@@ -86,7 +86,12 @@ macro_rules! allow_c {
 macro_rules! allow_u {
     ($(($x: ty, $table_name:expr, $update_set_clause:expr)),*) => {
     $(impl $x {
+        #[tracing::instrument]
         pub async fn update(&self, conn: &mut SqliteConnection) -> Result<(), Error> {
+            if self.id == 0 {
+                tracing::error!("Unexpected data is included!! Self: {:#?}", self);
+                panic!()
+            }
             let mut query = sqlx::query(concat!(
                 "UPDATE ",
                 $table_name,
@@ -100,7 +105,7 @@ macro_rules! allow_u {
                 .bind(self.id)
                 .execute(conn)
                 .await?;
-            return Ok(());
+            Ok(())
         }
     })*
     };
@@ -109,7 +114,12 @@ macro_rules! allow_d {
     ($(($x:ty, $table_name:expr)),*) => {
         $(
         impl $x {
+            #[tracing::instrument]
             pub async fn delete(self, conn: &mut SqliteConnection) -> Result<(), Error> {
+                if self.id == 0 {
+                    tracing::error!("Unexpected data is included!! Self: {:#?}", self);
+                    panic!()
+                }
                 sqlx::query(concat!("DELETE FROM ", $table_name, " WHERE id = ?"))
                     .bind(self.id)
                     .execute(conn)

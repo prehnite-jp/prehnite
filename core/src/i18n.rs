@@ -1,5 +1,4 @@
 use crate::db::query;
-use crate::db::schema::Setting;
 use crate::settings::SettingKey;
 use fluent_bundle::concurrent::FluentBundle;
 use fluent_bundle::{FluentArgs, FluentError, FluentResource};
