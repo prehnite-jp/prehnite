@@ -11,8 +11,7 @@ use crate::app::page::paragraph_editor::{ParagraphEditorActions, ParagraphEditor
 use crate::app::page::PrehnitePage;
 use crate::util::book_opener::{BookOpe, BookOpenerMessage};
 use iced::{Element, Task};
-use prehnite_core::db::schema::Setting;
-use prehnite_core::db::{acquire_err_handled, DBType};
+use prehnite_core::db::{acquire_err_handled, query, DBType};
 use prehnite_core::settings::SettingKey;
 use prehnite_core::util::alert::UnwrapOrErrorAlert;
 use std::path::PathBuf;
@@ -55,13 +54,13 @@ impl PrehniteApp {
         let mut conn = acquire_err_handled(DBType::AppGlobal)
             .await
             .unwrap_or_alert();
-        let last_opened = Setting::fetch_setting(&mut conn, SettingKey::LastOpened)
+        let last_opened = query::fetch_setting(&mut conn, SettingKey::LastOpened)
             .await
             .unwrap_or_else(|e| {
                 error!("Failed to fetch last opened settings. Error: {:#?}", e);
                 None
             });
-        let path: Option<PathBuf> = match last_opened {
+        let path: Option<PathBuf> = match last_opened.map(|v| v.setting_value).unwrap_or(None) {
             None => None,
             Some(v) => v.parse().ok(),
         };

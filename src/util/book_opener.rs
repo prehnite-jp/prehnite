@@ -1,6 +1,6 @@
 use iced::Task;
 use prehnite_core::db::schema::Setting;
-use prehnite_core::db::{acquire_err_handled, get_database, DBType};
+use prehnite_core::db::{acquire_err_handled, get_database, query, DBType};
 use prehnite_core::opt_unwrap_or_return;
 use prehnite_core::settings::SettingKey;
 use prehnite_core::util::alert::{alert_i18n, alert_i18n_spawn};
@@ -79,7 +79,7 @@ impl BookOpener {
             .await;
         match result {
             Ok(_) => {
-                match Setting::update_setting(
+                match query::update_setting(
                     opt_unwrap_or_return!(
                         acquire_err_handled(DBType::AppGlobal).await,
                         BookOpenerMessage::None
