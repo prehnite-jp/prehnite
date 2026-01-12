@@ -1,9 +1,9 @@
 use crate::db::schema::Setting;
-use crate::db::{acquire_err_handled, get_database, DBType};
+use crate::db::{acquire_err_handled, open_book_err_handled, DBType};
 use crate::i18n::i18n;
 use crate::opt_unwrap_or_return;
 use crate::settings::SettingKey;
-use crate::util::alert::{alert_i18n_spawn};
+use crate::util::alert::alert_i18n_spawn;
 use native_dialog::FileDialogBuilder;
 use std::path::PathBuf;
 use tracing::{debug, error, trace};
@@ -115,17 +115,9 @@ pub async fn select_and_open_prehnite_book_file(ope: FileOpe) -> OpenPrehniteBoo
             }
         }
     }
-    match get_database()
-        .write()
-        .await
-        .open_book(book_path.clone())
-        .await
-    {
-        Ok(_) => OpenPrehniteBookStatus::Success,
-        Err(e) => {
-            error!("Failed to open the book. {}", e);
-            alert_i18n_spawn(("error", "book-open-error")).await;
-            OpenPrehniteBookStatus::Failed
-        }
+    if open_book_err_handled(book_path).await {
+        OpenPrehniteBookStatus::Success
+    } else {
+        OpenPrehniteBookStatus::Failed
     }
 }

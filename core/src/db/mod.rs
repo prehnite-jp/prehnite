@@ -6,8 +6,9 @@ mod util;
 
 use crate::db::migrate::migrate;
 use crate::on_error_logging;
-use crate::util::alert::{alert_i18n_show, UnwrapOrErrorAlert};
+use crate::util::alert::{alert_i18n_show, alert_i18n_spawn, UnwrapOrErrorAlert};
 use crate::util::app_global::global_dir;
+use crate::util::file_dialog::OpenPrehniteBookStatus;
 use chrono::Duration;
 use log::LevelFilter;
 use sqlx::pool::PoolConnection;
@@ -133,6 +134,23 @@ pub async fn acquire_err_handled(mode: DBType) -> Option<PoolConnection<Sqlite>>
         Err(e) => {
             error!("Failed to acquire {} Database. Error: {:#?}", mode, e);
             None
+        }
+    }
+}
+
+#[tracing::instrument]
+pub async fn open_book_err_handled(book_path: PathBuf) -> bool {
+    match get_database()
+        .write()
+        .await
+        .open_book(book_path.clone())
+        .await
+    {
+        Ok(_) => true,
+        Err(e) => {
+            error!("Failed to open the book. {}", e);
+            alert_i18n_spawn(("error", "book-open-error")).await;
+            false
         }
     }
 }
