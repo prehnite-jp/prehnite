@@ -3,20 +3,10 @@ use crate::db::schema::{
     ItemReference, Paragraph, ParagraphSummary, Setting, Tag, Task,
 };
 use crate::settings::SettingKey;
-use crate::{opt_unwrap_or_continue, opt_unwrap_or_return, to_hash_map_key_id};
+use crate::{on_error_logging, opt_unwrap_or_continue, opt_unwrap_or_return, to_hash_map_key_id};
 use sqlx::SqliteConnection;
 use std::collections::HashMap;
 use tracing::error;
-
-macro_rules! on_error_when_logging {
-    ($result:ident) => {
-        if $result.is_err() {
-            let e = $result.err().unwrap();
-            error!("Query Error: {e:#?}");
-            return Err(e);
-        }
-    };
-}
 
 const UPDATE_SETTING_SQL: &str = include_str!("../../assets/query/update_settings.sql");
 #[tracing::instrument]
@@ -30,7 +20,7 @@ pub async fn update_setting(
         .bind(setting_value)
         .execute(conn)
         .await;
-    on_error_when_logging!(v);
+    on_error_logging!(v);
     Ok(())
 }
 
@@ -44,7 +34,7 @@ pub async fn fetch_setting(
         .bind(setting_key.to_string())
         .fetch_optional(conn)
         .await;
-    on_error_when_logging!(v);
+    on_error_logging!(v);
     v
 }
 
@@ -59,7 +49,7 @@ pub async fn fetch_background_info_from_item_id(
         .bind(item_id)
         .fetch_all(conn)
         .await;
-    on_error_when_logging!(v);
+    on_error_logging!(v);
     v
 }
 
@@ -74,7 +64,7 @@ pub async fn fetch_headline_children_recurse(
         .bind(headline_id)
         .fetch_all(conn)
         .await;
-    on_error_when_logging!(query_result);
+    on_error_logging!(query_result);
     let headlines: HashMap<i64, Headline> = to_hash_map_key_id!(query_result?);
     let parent = opt_unwrap_or_return!(headlines.get(&headline_id).cloned(), Ok(None));
     let mut children: HashMap<i64, Vec<Headline>> = HashMap::new();
@@ -101,7 +91,7 @@ pub async fn fetch_background_references(
         .bind(background_info_id)
         .fetch_all(conn)
         .await;
-    on_error_when_logging!(v);
+    on_error_logging!(v);
     v
 }
 
@@ -116,7 +106,7 @@ pub async fn fetch_bibliography_authors(
         .bind(bibliography_id)
         .fetch_all(conn)
         .await;
-    on_error_when_logging!(v);
+    on_error_logging!(v);
     v
 }
 
@@ -131,7 +121,7 @@ pub async fn fetch_item_references(
         .bind(item_id)
         .fetch_all(conn)
         .await;
-    on_error_when_logging!(v);
+    on_error_logging!(v);
     v
 }
 
@@ -146,7 +136,7 @@ pub async fn fetch_item_related_tags(
         .bind(item_id)
         .fetch_all(conn)
         .await;
-    on_error_when_logging!(v);
+    on_error_logging!(v);
     v
 }
 
@@ -161,7 +151,7 @@ pub async fn fetch_item_related_tasks(
         .bind(item_id)
         .fetch_all(conn)
         .await;
-    on_error_when_logging!(v);
+    on_error_logging!(v);
     v
 }
 
@@ -176,7 +166,7 @@ pub async fn fetch_headline_related_paragraph(
         .bind(headline_id)
         .fetch_all(conn)
         .await;
-    on_error_when_logging!(v);
+    on_error_logging!(v);
     v
 }
 
@@ -191,7 +181,7 @@ pub async fn fetch_paragraph_related_summaries(
         .bind(paragraph_id)
         .fetch_all(conn)
         .await;
-    on_error_when_logging!(v);
+    on_error_logging!(v);
     v
 }
 
@@ -206,6 +196,6 @@ pub async fn fetch_paragraph_related_draft(
         .bind(paragraph_id)
         .fetch_all(conn)
         .await;
-    on_error_when_logging!(v);
+    on_error_logging!(v);
     v
 }

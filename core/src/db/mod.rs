@@ -1,10 +1,12 @@
 #![allow(unused)]
 pub mod error;
+pub mod query;
 pub mod schema;
 mod util;
-pub mod query;
 
 use crate::db::migrate::migrate;
+use crate::on_error_logging;
+use crate::util::alert::{alert_i18n_show, UnwrapOrErrorAlert};
 use crate::util::app_global::global_dir;
 use chrono::Duration;
 use log::LevelFilter;
@@ -16,11 +18,10 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 use tokio::sync::RwLock;
 use tracing::error;
-use crate::util::alert::{alert_i18n_show, UnwrapOrErrorAlert};
 
-impl UnwrapOrErrorAlert<PoolConnection<Sqlite>> for Option<PoolConnection<Sqlite>>{
+impl UnwrapOrErrorAlert<PoolConnection<Sqlite>> for Option<PoolConnection<Sqlite>> {
     fn unwrap_or_alert(self) -> PoolConnection<Sqlite> {
-        self.unwrap_or_else(||{
+        self.unwrap_or_else(|| {
             alert_i18n_show(("error", "cant-connect-database"));
             panic!()
         })
@@ -80,6 +81,7 @@ pub mod migrate {
     }
 }
 
+#[derive(Debug)]
 struct Pool {
     pool: Option<SqlitePool>,
 }
@@ -135,6 +137,7 @@ pub async fn acquire_err_handled(mode: DBType) -> Option<PoolConnection<Sqlite>>
     }
 }
 
+#[derive(Debug)]
 pub struct Database {
     app_global_db_pool: Arc<RwLock<Pool>>,
     prehnite_book_db_pool: Arc<RwLock<Pool>>,
@@ -199,10 +202,14 @@ impl Database {
         })
     }
 
-    pub async fn open_book(&mut self, path: impl AsRef<Path>) -> Result<(), DatabaseError> {
-        let mut pool = SqlitePoolOptions::new()
+    #[tracing::instrument]
+    pub async fn open_book(&mut self, path: impl AsRef<Path> + Debug) -> Result<(), DatabaseError> {
+        let pool_result = SqlitePoolOptions::new()
             .connect_with(Self::connect_option(path))
-            .await?;
+            .await;
+
+        on_error_logging!(pool_result);
+        let mut pool = pool_result?;
 
         migrate(&mut pool, DBType::PrehniteBook).await?;
 
