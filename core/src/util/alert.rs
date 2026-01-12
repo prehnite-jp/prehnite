@@ -32,7 +32,7 @@ fn lang_id() -> String {
     }
 }
 
-pub fn alert_i18n((title_i18n_id, msg_i18n_id): (&str, &str)) -> MessageAlert {
+fn alert_i18n((title_i18n_id, msg_i18n_id): (&str, &str)) -> MessageAlert {
     alert((i18n(title_i18n_id).as_str(), i18n(msg_i18n_id).as_str()))
 }
 
@@ -44,6 +44,7 @@ pub async fn alert_i18n_spawn((title_i18n_id, msg_i18n_id): (&str, &str)) {
         .unwrap_or_else(|e| error!("Spawn alert error: Error: {e:#?}"));
 }
 
+#[tracing::instrument]
 pub fn alert_i18n_show((title_i18n_id, msg_i18n_id): (&str, &str)) {
     alert_i18n((title_i18n_id, msg_i18n_id))
         .show()

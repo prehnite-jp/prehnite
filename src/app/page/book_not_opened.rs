@@ -1,48 +1,62 @@
-use crate::util::book_opener::{BookOpener, BookOpenerMessage};
 use iced::widget::{button, center, text};
 use iced::{Alignment, Element, Task};
 use prehnite_core::i18n::i18n;
+use prehnite_core::util::file_dialog::{select_and_open_prehnite_book_file, FileOpe};
+
+impl Into<FileOpe> for BookNotOpenedMessage {
+    fn into(self) -> FileOpe {
+        match self {
+            BookNotOpenedMessage::New => FileOpe::New,
+            _ => FileOpe::Open,
+        }
+    }
+}
 
 #[derive(Clone, Debug)]
 pub enum BookNotOpenedMessage {
-    BookOpener(BookOpenerMessage),
-}
-
-impl From<BookOpenerMessage> for BookNotOpenedMessage {
-    fn from(value: BookOpenerMessage) -> Self {
-        BookNotOpenedMessage::BookOpener(value)
-    }
+    Open,
+    New,
+    Opened,
+    NotOpened,
 }
 
 #[derive(Debug)]
 pub enum BookNotOpenedActions {
-    BookOpener(Task<BookNotOpenedMessage>),
-    BookOpened,
+    Run(Task<BookNotOpenedMessage>),
+    Opened,
+    NotOpened,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct BookNotOpened;
 
 impl BookNotOpened {
+    fn open_or_new_file(msg: BookNotOpenedMessage) -> BookNotOpenedActions {
+        BookNotOpenedActions::Run(Task::future(async {
+            if select_and_open_prehnite_book_file(msg.into())
+                .await
+                .is_success()
+            {
+                BookNotOpenedMessage::Opened
+            } else {
+                BookNotOpenedMessage::NotOpened
+            }
+        }))
+    }
+
     pub fn update(&mut self, msg: BookNotOpenedMessage) -> BookNotOpenedActions {
         match msg {
-            BookNotOpenedMessage::BookOpener(v) => match v {
-                BookOpenerMessage::BookOpened => BookNotOpenedActions::BookOpened,
-                _ => BookNotOpenedActions::BookOpener(
-                    BookOpener::update(v).map(BookNotOpenedMessage::BookOpener),
-                ),
-            },
+            BookNotOpenedMessage::Open | BookNotOpenedMessage::New => Self::open_or_new_file(msg),
+            BookNotOpenedMessage::Opened => BookNotOpenedActions::Opened,
+            BookNotOpenedMessage::NotOpened => BookNotOpenedActions::NotOpened,
         }
     }
 
     pub fn view(&'_ self) -> Element<'_, BookNotOpenedMessage> {
         center(
             iced::widget::column![
-                button(text(i18n("open-file"))).on_press(BookNotOpenedMessage::BookOpener(
-                    BookOpenerMessage::OpenBook
-                )),
-                button(text(i18n("new-file")))
-                    .on_press(BookNotOpenedMessage::BookOpener(BookOpenerMessage::NewBook))
+                button(text(i18n("open-file"))).on_press(BookNotOpenedMessage::Open),
+                button(text(i18n("new-file"))).on_press(BookNotOpenedMessage::New)
             ]
             .spacing(10)
             .align_x(Alignment::Center),
