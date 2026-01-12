@@ -6,7 +6,7 @@ use std::fmt::Display;
 const KEY_LOCALE: &str = "locale";
 const KEY_LAST_OPENED: &str = "last-opened-file";
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum SettingKey {
     Locale,
     LastOpened,
