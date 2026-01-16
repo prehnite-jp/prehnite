@@ -12,6 +12,7 @@ mod tests;
 use chrono::{DateTime, Utc};
 use sqlx::{Acquire, Database, FromRow, Row};
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
 
 #[derive(Default, Clone, Debug, FromRow, Eq, PartialEq)]
 pub struct ReturningId {
@@ -86,12 +87,24 @@ impl Default for ItemType {
     }
 }
 
-impl From<ItemType> for String {
-    fn from(value: ItemType) -> Self {
-        String::from(match value {
+impl AsRef<str> for ItemType {
+    fn as_ref(&self) -> &str {
+        match self {
             ItemType::Headline(_) => "headline",
             ItemType::Paragraph(_) => "paragraph",
-        })
+        }
+    }
+}
+
+impl From<ItemType> for String {
+    fn from(value: ItemType) -> Self {
+        value.to_string()
+    }
+}
+
+impl Display for ItemType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_ref())
     }
 }
 

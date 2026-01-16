@@ -12,8 +12,20 @@ pub mod headline_editor;
 pub mod item_list;
 pub mod paragraph_editor;
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
+pub enum PrehnitePageId {
+    NowLoading,
+    BookNotOpened,
+    BgInfoEditor,
+    DraftEditor,
+    HeadlineEditor,
+    ItemList,
+    ParagraphEditor,
+}
+
+#[derive(Debug, Clone, Default)]
 pub enum PrehnitePage {
+    #[default]
     NowLoading,
     BookNotOpened(BookNotOpened),
     BgInfoEditor(BackgroundInfoEditor),
@@ -23,8 +35,30 @@ pub enum PrehnitePage {
     ParagraphEditor(ParagraphEditor),
 }
 
-impl Default for PrehnitePage {
-    fn default() -> Self {
-        PrehnitePage::NowLoading
+impl From<PrehnitePageId> for PrehnitePage {
+    fn from(value: PrehnitePageId) -> Self {
+        match value {
+            PrehnitePageId::NowLoading => PrehnitePage::NowLoading,
+            PrehnitePageId::BookNotOpened => PrehnitePage::BookNotOpened(Default::default()),
+            PrehnitePageId::BgInfoEditor => PrehnitePage::BgInfoEditor(Default::default()),
+            PrehnitePageId::DraftEditor => PrehnitePage::DraftEditor(Default::default()),
+            PrehnitePageId::HeadlineEditor => PrehnitePage::HeadlineEditor(Default::default()),
+            PrehnitePageId::ItemList => PrehnitePage::ItemList(Default::default()),
+            PrehnitePageId::ParagraphEditor => PrehnitePage::ParagraphEditor(Default::default()),
+        }
+    }
+}
+
+impl From<PrehnitePage> for PrehnitePageId {
+    fn from(value: PrehnitePage) -> Self {
+        match value {
+            PrehnitePage::NowLoading => PrehnitePageId::NowLoading,
+            PrehnitePage::BookNotOpened(_) => PrehnitePageId::BookNotOpened,
+            PrehnitePage::BgInfoEditor(_) => PrehnitePageId::BgInfoEditor,
+            PrehnitePage::DraftEditor(_) => PrehnitePageId::DraftEditor,
+            PrehnitePage::HeadlineEditor(_) => PrehnitePageId::HeadlineEditor,
+            PrehnitePage::ItemList(_) => PrehnitePageId::ItemList,
+            PrehnitePage::ParagraphEditor(_) => PrehnitePageId::ParagraphEditor,
+        }
     }
 }

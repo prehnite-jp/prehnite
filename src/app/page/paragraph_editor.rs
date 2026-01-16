@@ -10,7 +10,8 @@ pub enum ParagraphEditorActions {
     None,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+#[derive(Default)]
 pub struct ParagraphEditor {}
 
 impl ParagraphEditor {
@@ -18,7 +19,7 @@ impl ParagraphEditor {
         ParagraphEditorActions::None
     }
 
-    pub fn view(&self) -> Element<ParagraphEditorMessage> {
+    pub fn view(&'_ self) -> Element<'_, ParagraphEditorMessage> {
         text(i18n("wip")).into()
     }
 }

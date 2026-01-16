@@ -32,7 +32,7 @@ book-search-api-example-detail = API Response (Example):
                 detail: Option<String>,
                 authors: Option<Vec<String>>,
                 publisher: Option<String>,
-                publication_date: Option<NaiveDate>
+                publication_date: Option<String>
             ) -> BookSearchResult
 wip = WIP
 main-content-placeholder = Enter the text here.
@@ -44,3 +44,10 @@ permission-denied = Permission denied.
 file-notfound = File does not exist.
 cant-connect-database = A database connection could not be established.
 now-loading = Now loading...
+task = Task
+item-no-select = item is not selected.
+headline = Headline
+paragraph = Paragraph
+edit = Edit
+draft = Draft
+accepted-draft = Accepted draft

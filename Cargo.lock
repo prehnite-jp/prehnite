@@ -3199,7 +3199,7 @@ dependencies = [
 
 [[package]]
 name = "prehnite"
-version = "0.1.0-alpha"
+version = "0.0.1-alpha"
 dependencies = [
  "embed-resource",
  "iced",
@@ -3212,12 +3212,13 @@ dependencies = [
 
 [[package]]
 name = "prehnite-core"
-version = "0.1.0-alpha"
+version = "0.0.1-alpha"
 dependencies = [
  "chrono",
  "derive_more",
  "fluent-bundle",
  "fluent-syntax",
+ "iced",
  "log",
  "native-dialog",
  "paste",

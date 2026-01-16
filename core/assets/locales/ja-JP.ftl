@@ -32,7 +32,7 @@ book-search-api-example-detail = APIのレスポンス(例):
                 detail: Option<String>,
                 authors: Option<Vec<String>>,
                 publisher: Option<String>,
-                publication_date: Option<NaiveDate>
+                publication_date: Option<String>
             ) -> BookSearchResult
 wip = 作業中
 main-content-placeholder = ここに本文を入力。
@@ -44,3 +44,10 @@ permission-denied = ファイルへのアクセスが拒否されました。
 file-notfound = ファイルが存在しません。
 cant-connect-database = データベース接続が確立できませんでした。
 now-loading = 読み込み中...
+task = タスク
+item-no-select = アイテムは選択されていません。
+headline = 見出し
+paragraph = 段落
+edit = 編集
+draft = 下書き
+accepted-draft = 採択された下書き

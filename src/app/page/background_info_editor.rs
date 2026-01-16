@@ -10,7 +10,8 @@ pub enum BackgroundInfoEditorActions {
     None,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+#[derive(Default)]
 pub struct BackgroundInfoEditor {}
 
 impl BackgroundInfoEditor {
@@ -18,7 +19,7 @@ impl BackgroundInfoEditor {
         BackgroundInfoEditorActions::None
     }
 
-    pub fn view(&self) -> Element<BackgroundInfoEditorMessage> {
+    pub fn view(&'_ self) -> Element<'_, BackgroundInfoEditorMessage> {
         text(i18n("wip")).into()
     }
 }

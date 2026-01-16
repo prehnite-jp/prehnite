@@ -8,7 +8,7 @@ use crate::app::page::draft_editor::{DraftEditorActions, DraftEditorMessage};
 use crate::app::page::headline_editor::{HeadlineEditorActions, HeadlineEditorMessage};
 use crate::app::page::item_list::{ItemList, ItemListActions, ItemListMessage};
 use crate::app::page::paragraph_editor::{ParagraphEditorActions, ParagraphEditorMessage};
-use crate::app::page::PrehnitePage;
+use crate::app::page::{PrehnitePage, PrehnitePageId};
 use iced::widget::text;
 use iced::{Element, Task};
 use prehnite_core::db::{acquire_err_handled, open_book_err_handled, query, DBType};
@@ -24,7 +24,7 @@ pub struct PrehniteApp {
 
 #[derive(Clone, Debug)]
 pub enum RootMessage {
-    ChangePage(PrehnitePage),
+    ChangePage(PrehnitePageId),
     BookNotOpened(BookNotOpenedMessage),
     BgInfoEditor(BackgroundInfoEditorMessage),
     DraftEditor(DraftEditorMessage),
@@ -62,7 +62,7 @@ impl PrehniteApp {
                 None
             });
         fn return_err() -> RootMessage {
-            RootMessage::ChangePage(PrehnitePage::BookNotOpened(Default::default()))
+            RootMessage::ChangePage(PrehnitePageId::BookNotOpened)
         }
         match last_opened
             .and_then(|v| v.setting_value)
@@ -71,7 +71,7 @@ impl PrehniteApp {
             None => return_err(),
             Some(v) => {
                 if open_book_err_handled(v).await {
-                    RootMessage::ChangePage(PrehnitePage::ItemList(ItemList::new()))
+                    RootMessage::ChangePage(PrehnitePageId::ItemList)
                 } else {
                     return_err()
                 }
@@ -96,9 +96,7 @@ impl PrehniteApp {
                 match page.update(msg) {
                     BookNotOpenedActions::Run(v) => return v.map(RootMessage::BookNotOpened),
                     BookNotOpenedActions::Opened => {
-                        return Task::done(RootMessage::ChangePage(PrehnitePage::ItemList(
-                            ItemList::new(),
-                        )));
+                        return Task::done(RootMessage::ChangePage(PrehnitePageId::ItemList));
                     }
                     BookNotOpenedActions::NotOpened => {}
                 };
@@ -123,9 +121,9 @@ impl PrehniteApp {
             }
             RootMessage::ItemList(msg) => {
                 let page = unwrap_page!(self, PrehnitePage::ItemList);
-                match page.update(msg) {
-                    ItemListActions::None => {}
-                }
+                return match page.update(msg) {
+                    ItemListActions::Run(v) => v.map(RootMessage::ItemList),
+                };
             }
             RootMessage::ParagraphEditor(msg) => {
                 let page = unwrap_page!(self, PrehnitePage::ParagraphEditor);
@@ -134,7 +132,18 @@ impl PrehniteApp {
                 }
             }
             RootMessage::ChangePage(page) => {
-                self.page = page;
+                self.page = page.clone().into();
+                match page {
+                    PrehnitePageId::NowLoading => {}
+                    PrehnitePageId::BookNotOpened => {}
+                    PrehnitePageId::BgInfoEditor => {}
+                    PrehnitePageId::DraftEditor => {}
+                    PrehnitePageId::HeadlineEditor => {}
+                    PrehnitePageId::ItemList => {
+                        return Task::done(RootMessage::ItemList(ItemListMessage::LoadItems));
+                    }
+                    PrehnitePageId::ParagraphEditor => {}
+                }
             }
         }
         Task::none()

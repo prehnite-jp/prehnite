@@ -47,3 +47,4 @@ target/
 /scratch/*
 !/scratch/README.MD
 *.log
+core/target/

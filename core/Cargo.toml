@@ -1,5 +1,6 @@
 [package]
 name = "prehnite-core"
+description = "Prehnite backend implementation"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -26,6 +27,7 @@ sys-locale.workspace = true
 fluent-syntax.workspace = true
 tracing.workspace = true
 tracing-appender.workspace = true
+iced.workspace = true
 
 [dev-dependencies]
 rand = "0.9"

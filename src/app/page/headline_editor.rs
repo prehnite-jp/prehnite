@@ -10,7 +10,8 @@ pub enum HeadlineEditorActions {
     None,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+#[derive(Default)]
 pub struct HeadlineEditor {}
 
 impl HeadlineEditor {
@@ -18,7 +19,7 @@ impl HeadlineEditor {
         HeadlineEditorActions::None
     }
 
-    pub fn view(&self) -> Element<HeadlineEditorMessage> {
+    pub fn view(&'_ self) -> Element<'_, HeadlineEditorMessage> {
         text(i18n("wip")).into()
     }
 }

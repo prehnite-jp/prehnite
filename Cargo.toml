@@ -9,21 +9,22 @@ authors.workspace = true
 repository.workspace = true
 homepage.workspace = true
 rust-version.workspace = true
-categories.workspace = true
+#categories.workspace = true
+#keywords.workspace = true
 
 [workspace]
 members = ["core"]
 
 [workspace.package]
-version = "0.1.0-alpha"
+version = "0.0.1-alpha"
 edition = "2024"
 license = "Zlib"
 authors = ["saku-shirakura<saku@sakushira.com>"]
 repository = "https://github.com/saku-shirakura/prehnite"
 homepage = "https://prehnite.jp/"
 rust-version = "1.92"
-categories = ["text-editors"]
-keywords = ["gui", "text-editors"]
+#categories = ["text-editors"]
+#keywords = ["gui", "text-editors"]
 
 [dependencies]
 prehnite-core.workspace = true
@@ -34,7 +35,7 @@ sqlx.workspace = true
 native-dialog.workspace = true
 
 [workspace.dependencies]
-prehnite-core = { version = "0.1.0-alpha", path = "core" }
+prehnite-core = { version = "0.0.1-alpha", path = "core" }
 chrono = "0.4"
 iced = { version = "0.14", features = ["tokio"] }
 sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "chrono", "macros"] }

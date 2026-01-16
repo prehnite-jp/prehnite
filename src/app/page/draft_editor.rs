@@ -10,7 +10,8 @@ pub enum DraftEditorActions {
     None,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+#[derive(Default)]
 pub struct DraftEditor {}
 
 impl DraftEditor {
@@ -18,7 +19,7 @@ impl DraftEditor {
         DraftEditorActions::None
     }
 
-    pub fn view(&self) -> Element<DraftEditorMessage> {
+    pub fn view(&'_ self) -> Element<'_, DraftEditorMessage> {
         text(i18n("wip")).into()
     }
 }
