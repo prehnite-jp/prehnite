@@ -20,8 +20,8 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
-            . -> target1
-            core -> core/target2
+            . -> target
+            core -> target
       - name: Build
         run: cargo build --verbose
       - name: Run tests
