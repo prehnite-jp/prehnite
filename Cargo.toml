@@ -16,7 +16,7 @@ rust-version.workspace = true
 members = ["core"]
 
 [workspace.package]
-version = "0.0.1-alpha"
+version = "0.0.2-alpha"
 edition = "2024"
 license = "Zlib"
 authors = ["saku-shirakura<saku@sakushira.com>"]
@@ -35,7 +35,7 @@ sqlx.workspace = true
 native-dialog.workspace = true
 
 [workspace.dependencies]
-prehnite-core = { version = "0.0.1-alpha", path = "core" }
+prehnite-core = { version = "0.0.2-alpha", path = "core" }
 chrono = "0.4"
 iced = { version = "0.14", features = ["tokio"] }
 sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "chrono", "macros"] }
