@@ -6,7 +6,7 @@ use sqlx::SqliteConnection;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::sync::{Arc, LazyLock, PoisonError, RwLock, RwLockReadGuard};
-use tracing::error;
+use tracing::{debug, error};
 use unic_langid::{LanguageIdentifier, LanguageIdentifierError};
 
 pub const SUPPORTED_LANG_ID: &[&str] = &["en-US", "ja-JP"];
@@ -134,9 +134,16 @@ macro_rules! error_failed_to_lock_lang_bundle {
 #[tracing::instrument]
 pub async fn change_lang_bundle(
     conn: &mut SqliteConnection,
-    lang_id_str: &str,
+    arg_lang_id_str: &str,
 ) -> Result<(), I18nError> {
-    let lang_id: LanguageIdentifier = lang_id_str.parse().unwrap_or(DEFAULT_LANG_ID.parse()?);
+    let (lang_id, lang_id_str): (LanguageIdentifier, &str) = match arg_lang_id_str.parse() {
+        Ok(v) => (v, arg_lang_id_str),
+        Err(e) => {
+            debug!("Parse failed!! set default lang_id ...");
+            debug!("Error: {e:#?}");
+            (DEFAULT_LANG_ID.parse()?, DEFAULT_LANG_ID)
+        }
+    };
     if error_failed_to_lock_lang_bundle!(CURRENT_RESOURCE_BUNDLE.read())
         .get_bundle()
         .is_none_or(|v| !v.locales.contains(&lang_id))
