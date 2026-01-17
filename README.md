@@ -1,5 +1,9 @@
 # prehnite
 
+[![crate-name at crates.io](https://img.shields.io/crates/v/prehnite.svg)](https://crates.io/crates/prehnite)
+[![crate-name at docs.rs](https://docs.rs/prehnite/badge.svg)](https://docs.rs/prehnite)
+[![Rust CI](https://github.com/saku-shirakura/prehnite/actions/workflows/rust.yml/badge.svg)](https://github.com/saku-shirakura/prehnite/actions/workflows/rust.yml)
+
 Writing support software that helps you create coherent sentences
 
 (整合性の取れた文章作成を支援する執筆支援ソフト)
