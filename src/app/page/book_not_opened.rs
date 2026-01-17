@@ -1,6 +1,6 @@
-use iced::widget::{button, center, text};
+use iced::widget::{button, center};
 use iced::{Alignment, Element, Task};
-use prehnite_core::i18n::i18n;
+use prehnite_core::i18n::i18n_w;
 use prehnite_core::util::file_dialog::{select_and_open_prehnite_book_file, FileOpe};
 
 impl Into<FileOpe> for BookNotOpenedMessage {
@@ -55,8 +55,8 @@ impl BookNotOpened {
     pub fn view(&'_ self) -> Element<'_, BookNotOpenedMessage> {
         center(
             iced::widget::column![
-                button(text(i18n("open-file"))).on_press(BookNotOpenedMessage::Open),
-                button(text(i18n("new-file"))).on_press(BookNotOpenedMessage::New)
+                button(i18n_w("open-file")).on_press(BookNotOpenedMessage::Open),
+                button(i18n_w("new-file")).on_press(BookNotOpenedMessage::New)
             ]
             .spacing(10)
             .align_x(Alignment::Center),

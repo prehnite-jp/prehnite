@@ -163,6 +163,14 @@ pub fn i18n(id: &str) -> String {
     i18n_fmt(id, None)
 }
 
+pub fn i18n_w(id: &str) -> iced::widget::Text<'_> {
+    iced::widget::text(i18n_fmt(id, None))
+}
+
+pub fn i18n_fmt_w<'a>(id: &str, args: Option<&FluentArgs<'_>>) -> iced::widget::Text<'a> {
+    iced::widget::text(i18n_fmt(id, args))
+}
+
 #[tracing::instrument]
 pub fn i18n_fmt(id: &str, args: Option<&FluentArgs<'_>>) -> String {
     #[derive(Debug)]

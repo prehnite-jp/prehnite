@@ -1,6 +1,6 @@
 use iced::widget::text;
 use iced::Element;
-use prehnite_core::i18n::i18n;
+use prehnite_core::i18n::{i18n, i18n_w};
 
 #[derive(Clone, Debug)]
 pub enum HeadlineEditorMessage {}
@@ -20,6 +20,6 @@ impl HeadlineEditor {
     }
 
     pub fn view(&'_ self) -> Element<'_, HeadlineEditorMessage> {
-        text(i18n("wip")).into()
+         i18n_w("wip").into()
     }
 }

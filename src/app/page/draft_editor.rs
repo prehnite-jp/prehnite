@@ -1,6 +1,6 @@
 use iced::widget::text;
 use iced::Element;
-use prehnite_core::i18n::i18n;
+use prehnite_core::i18n::i18n_w;
 
 #[derive(Clone, Debug)]
 pub enum DraftEditorMessage {}
@@ -10,8 +10,7 @@ pub enum DraftEditorActions {
     None,
 }
 
-#[derive(Debug, Clone)]
-#[derive(Default)]
+#[derive(Debug, Clone, Default)]
 pub struct DraftEditor {}
 
 impl DraftEditor {
@@ -20,6 +19,6 @@ impl DraftEditor {
     }
 
     pub fn view(&'_ self) -> Element<'_, DraftEditorMessage> {
-        text(i18n("wip")).into()
+        i18n_w("wip").into()
     }
 }
