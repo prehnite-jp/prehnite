@@ -6,13 +6,17 @@ use crate::app::page::background_info_editor::{
 use crate::app::page::book_not_opened::{BookNotOpenedActions, BookNotOpenedMessage};
 use crate::app::page::draft_editor::{DraftEditorActions, DraftEditorMessage};
 use crate::app::page::headline_editor::{HeadlineEditorActions, HeadlineEditorMessage};
-use crate::app::page::item_list::{ItemList, ItemListActions, ItemListMessage};
+use crate::app::page::item_list::{ItemListActions, ItemListMessage};
 use crate::app::page::paragraph_editor::{ParagraphEditorActions, ParagraphEditorMessage};
 use crate::app::page::{PrehnitePage, PrehnitePageId};
-use iced::widget::text;
+use iced::widget::button;
 use iced::{Element, Task};
-use prehnite_core::db::{acquire_err_handled, open_book_err_handled, query, DBType};
-use prehnite_core::i18n::i18n;
+use iced_aw::menu::Item;
+use iced_aw::{menu, menu_bar, menu_items, Menu, MenuBar};
+use prehnite_core::db::{
+    acquire_err_handled, close_book_err_handled, open_book_err_handled, query, DBType,
+};
+use prehnite_core::i18n::i18n_w;
 use prehnite_core::settings::SettingKey;
 use prehnite_core::util::alert::UnwrapOrErrorAlert;
 use tracing::error;
@@ -20,6 +24,7 @@ use tracing::error;
 #[derive(Debug)]
 pub struct PrehniteApp {
     page: PrehnitePage,
+    is_book_opened: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -31,6 +36,8 @@ pub enum RootMessage {
     HeadlineEditor(HeadlineEditorMessage),
     ItemList(ItemListMessage),
     ParagraphEditor(ParagraphEditorMessage),
+    MenuBar(MenuBarMessage),
+    BookOpened,
 }
 
 macro_rules! unwrap_page {
@@ -43,6 +50,62 @@ macro_rules! unwrap_page {
             }
         }
     }};
+}
+
+#[derive(Clone, Debug)]
+pub enum MenuType {
+    File,
+}
+
+#[derive(Clone, Debug)]
+pub enum MenuBarMessage {
+    MenuBtnPressed(MenuType),
+    NewFile,
+    OpenFile,
+    CloseFile,
+    OpenSettings,
+    OpenBackgroundInfoEditor,
+    OpenListOfBibliographies,
+}
+
+macro_rules! menu_button_maybe {
+    ($i18n_id:expr, $message:expr) => {
+        button(i18n_w($i18n_id))
+            .style(button::text)
+            .width(150.0f32)
+            .on_press_maybe($message)
+    };
+}
+
+macro_rules! menu_button {
+    ($i18n_id:expr, $message:expr) => {
+        menu_button_maybe!($i18n_id, Some($message))
+    };
+}
+
+macro_rules! top_level_menu_button {
+    ($i18n_id:expr, $message:expr) => {
+        button(i18n_w($i18n_id))
+            .style(button::text)
+            .on_press($message)
+    };
+}
+
+fn menubar<'a>(is_book_opened: bool) -> Element<'a, MenuBarMessage> {
+    let file_menu: Item<MenuBarMessage, _, _> = Item::with_menu(
+        top_level_menu_button!("file", MenuBarMessage::MenuBtnPressed(MenuType::File)),
+        menu!(
+            (menu_button!("new-file", MenuBarMessage::NewFile)),
+            (menu_button!("open-file", MenuBarMessage::OpenFile)),
+            (menu_button_maybe!(
+                "close-file",
+                is_book_opened.then_some(MenuBarMessage::CloseFile)
+            )),
+        )
+        .max_width(180.0f32),
+    );
+    let menu_bar = menu_bar!(file_menu).close_on_item_click_global(true);
+    menu_bar.into()
 }
 
 impl PrehniteApp {
@@ -71,7 +134,7 @@ impl PrehniteApp {
             None => return_err(),
             Some(v) => {
                 if open_book_err_handled(v).await {
-                    RootMessage::ChangePage(PrehnitePageId::ItemList)
+                    RootMessage::BookOpened
                 } else {
                     return_err()
                 }
@@ -83,6 +146,7 @@ impl PrehniteApp {
         (
             Self {
                 page: Default::default(),
+                is_book_opened: false,
             },
             Task::future(Self::open_last_opened_book()),
         )
@@ -95,9 +159,7 @@ impl PrehniteApp {
                 let page = unwrap_page!(self, PrehnitePage::BookNotOpened);
                 match page.update(msg) {
                     BookNotOpenedActions::Run(v) => return v.map(RootMessage::BookNotOpened),
-                    BookNotOpenedActions::Opened => {
-                        return Task::done(RootMessage::ChangePage(PrehnitePageId::ItemList));
-                    }
+                    BookNotOpenedActions::Opened => return Task::done(RootMessage::BookOpened),
                     BookNotOpenedActions::NotOpened => {}
                 };
             }
@@ -145,20 +207,47 @@ impl PrehniteApp {
                     PrehnitePageId::ParagraphEditor => {}
                 }
             }
+            RootMessage::MenuBar(v) => match v {
+                MenuBarMessage::NewFile => {
+                    return Task::done(RootMessage::BookNotOpened(BookNotOpenedMessage::New));
+                }
+                MenuBarMessage::OpenFile => {
+                    return Task::done(RootMessage::BookNotOpened(BookNotOpenedMessage::Open));
+                }
+                MenuBarMessage::CloseFile => {
+                    self.is_book_opened = false;
+                    return Task::future(async {
+                        close_book_err_handled().await;
+                        RootMessage::ChangePage(PrehnitePageId::BookNotOpened)
+                    });
+                }
+                MenuBarMessage::OpenSettings => {}
+                MenuBarMessage::OpenBackgroundInfoEditor => {}
+                MenuBarMessage::OpenListOfBibliographies => {}
+                MenuBarMessage::MenuBtnPressed(_) => {}
+            },
+            RootMessage::BookOpened => {
+                self.is_book_opened = true;
+                return Task::done(RootMessage::ChangePage(PrehnitePageId::ItemList));
+            }
         }
         Task::none()
     }
 
     #[tracing::instrument]
     fn view(&'_ self) -> Element<'_, RootMessage> {
-        match &self.page {
-            PrehnitePage::NowLoading => text(i18n("now-loading")).into(),
-            PrehnitePage::BookNotOpened(v) => v.view().map(RootMessage::BookNotOpened),
-            PrehnitePage::BgInfoEditor(v) => v.view().map(RootMessage::BgInfoEditor),
-            PrehnitePage::DraftEditor(v) => v.view().map(RootMessage::DraftEditor),
-            PrehnitePage::HeadlineEditor(v) => v.view().map(RootMessage::HeadlineEditor),
-            PrehnitePage::ItemList(v) => v.view().map(RootMessage::ItemList),
-            PrehnitePage::ParagraphEditor(v) => v.view().map(RootMessage::ParagraphEditor),
-        }
+        iced::widget::column![
+            menubar(self.is_book_opened).map(RootMessage::MenuBar),
+            match &self.page {
+                PrehnitePage::NowLoading => i18n_w("now-loading").into(),
+                PrehnitePage::BookNotOpened(v) => v.view().map(RootMessage::BookNotOpened),
+                PrehnitePage::BgInfoEditor(v) => v.view().map(RootMessage::BgInfoEditor),
+                PrehnitePage::DraftEditor(v) => v.view().map(RootMessage::DraftEditor),
+                PrehnitePage::HeadlineEditor(v) => v.view().map(RootMessage::HeadlineEditor),
+                PrehnitePage::ItemList(v) => v.view().map(RootMessage::ItemList),
+                PrehnitePage::ParagraphEditor(v) => v.view().map(RootMessage::ParagraphEditor),
+            }
+        ]
+        .into()
     }
 }

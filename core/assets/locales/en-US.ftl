@@ -51,3 +51,5 @@ paragraph = Paragraph
 edit = Edit
 draft = Draft
 accepted-draft = Accepted draft
+close-file = Close file
+file = File

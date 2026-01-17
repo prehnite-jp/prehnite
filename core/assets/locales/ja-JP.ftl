@@ -51,3 +51,5 @@ paragraph = 段落
 edit = 編集
 draft = 下書き
 accepted-draft = 採択された下書き
+close-file = ファイルを閉じる
+file = ファイル
