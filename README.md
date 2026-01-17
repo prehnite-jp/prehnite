@@ -1,7 +1,6 @@
 # prehnite
 
 [![crate-name at crates.io](https://img.shields.io/crates/v/prehnite.svg)](https://crates.io/crates/prehnite)
-[![crate-name at docs.rs](https://docs.rs/prehnite/badge.svg)](https://docs.rs/prehnite)
 [![Rust CI](https://github.com/saku-shirakura/prehnite/actions/workflows/rust.yml/badge.svg)](https://github.com/saku-shirakura/prehnite/actions/workflows/rust.yml)
 
 Writing support software that helps you create coherent sentences
@@ -22,3 +21,9 @@ This version includes a data layer implementation and the ability to list items 
 Features such as text editing are not included.
 
 (テキスト編集などの主要機能は存在しません。)
+
+## release
+
+A new version will be released on the 16th of each month, with the latest version working at that time.
+
+(新バージョンは毎月16日にその時点で動作する最新バージョンを公開します。)
