@@ -155,7 +155,8 @@ pub async fn open_book_err_handled(book_path: PathBuf) -> bool {
                     .as_mut(),
                 SettingKey::LastOpened,
                 book_path.to_str().map(|v| v.to_string()),
-            ).await;
+            )
+            .await;
             true
         }
         Err(e) => {
@@ -164,6 +165,25 @@ pub async fn open_book_err_handled(book_path: PathBuf) -> bool {
             false
         }
     }
+}
+
+pub async fn close_book_err_handled() {
+    get_database()
+        .write()
+        .await
+        .prehnite_book_db_pool
+        .write()
+        .await
+        .set_pool(None);
+    query::update_setting(
+        acquire_err_handled(DBType::AppGlobal)
+            .await
+            .unwrap()
+            .as_mut(),
+        SettingKey::LastOpened,
+        None,
+    )
+    .await;
 }
 
 #[derive(Debug)]
