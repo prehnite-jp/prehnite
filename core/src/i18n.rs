@@ -116,6 +116,7 @@ fn parse_lang_bundle(lang_id: &str) -> Result<FluentBundle<FluentResource>, I18n
 
     let mut bundle = FluentBundle::new_concurrent(vec![language_identifier]);
     bundle.add_resource(resource)?;
+    bundle.set_use_isolating(false);
     Ok(bundle)
 }
 

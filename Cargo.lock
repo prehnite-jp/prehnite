@@ -3311,6 +3311,7 @@ name = "prehnite"
 version = "0.0.2-alpha"
 dependencies = [
  "embed-resource",
+ "fluent-bundle",
  "iced",
  "iced_aw",
  "prehnite-core",

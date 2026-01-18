@@ -1,9 +1,9 @@
-use sys_locale::get_locale;
-use unic_langid::LanguageIdentifier;
-use native_dialog::{MessageAlert, MessageDialogBuilder, MessageLevel};
-use tracing::error;
 use crate::db::DatabaseError;
 use crate::i18n::{i18n, DEFAULT_LANG_ID};
+use native_dialog::{MessageAlert, MessageDialogBuilder, MessageLevel};
+use sys_locale::get_locale;
+use tracing::{error, info, trace};
+use unic_langid::LanguageIdentifier;
 
 pub trait UnwrapOrErrorAlert<T> {
     fn unwrap_or_alert(self) -> T;
@@ -32,13 +32,37 @@ fn lang_id() -> String {
     }
 }
 
-fn alert_i18n((title_i18n_id, msg_i18n_id): (&str, &str)) -> MessageAlert {
+#[tracing::instrument]
+fn alert_info((title, msg): (&str, &str)) -> MessageAlert {
+    MessageDialogBuilder::default()
+        .set_title(title)
+        .set_text(msg)
+        .set_level(MessageLevel::Info)
+        .alert()
+}
+
+#[tracing::instrument]
+pub async fn alert_info_spawn((title, msg): (&str, &str)) {
+    alert_info((title, msg))
+        .spawn()
+        .await
+        .unwrap_or_else(|e| error!("Spawn alert error: Error: {e:#?}"));
+}
+
+#[tracing::instrument]
+pub fn alert_info_show((title, msg): (&str, &str)) {
+    alert_info((title, msg))
+        .show()
+        .unwrap_or_else(|e| error!("Show alert error: Error: {e:#?}"));
+}
+
+fn alert_error_i18n((title_i18n_id, msg_i18n_id): (&str, &str)) -> MessageAlert {
     alert((i18n(title_i18n_id).as_str(), i18n(msg_i18n_id).as_str()))
 }
 
 #[tracing::instrument]
 pub async fn alert_i18n_spawn((title_i18n_id, msg_i18n_id): (&str, &str)) {
-    alert_i18n((title_i18n_id, msg_i18n_id))
+    alert_error_i18n((title_i18n_id, msg_i18n_id))
         .spawn()
         .await
         .unwrap_or_else(|e| error!("Spawn alert error: Error: {e:#?}"));
@@ -46,9 +70,9 @@ pub async fn alert_i18n_spawn((title_i18n_id, msg_i18n_id): (&str, &str)) {
 
 #[tracing::instrument]
 pub fn alert_i18n_show((title_i18n_id, msg_i18n_id): (&str, &str)) {
-    alert_i18n((title_i18n_id, msg_i18n_id))
+    alert_error_i18n((title_i18n_id, msg_i18n_id))
         .show()
-        .unwrap_or_else(|e| error!("Spawn alert error: Error: {e:#?}"));
+        .unwrap_or_else(|e| error!("Show alert error: Error: {e:#?}"));
 }
 
 pub fn alert((title, msg): (&str, &str)) -> MessageAlert {

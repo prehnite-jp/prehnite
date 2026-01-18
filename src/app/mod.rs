@@ -9,16 +9,18 @@ use crate::app::page::headline_editor::{HeadlineEditorActions, HeadlineEditorMes
 use crate::app::page::item_list::{ItemListActions, ItemListMessage};
 use crate::app::page::paragraph_editor::{ParagraphEditorActions, ParagraphEditorMessage};
 use crate::app::page::{PrehnitePage, PrehnitePageId};
+use fluent_bundle::FluentArgs;
+use iced::border::Radius;
 use iced::widget::button;
-use iced::{Element, Task};
+use iced::{widget, Border, Element, Length, Task};
 use iced_aw::menu::Item;
-use iced_aw::{menu, menu_bar, menu_items, Menu, MenuBar};
+use iced_aw::{menu, menu_bar, menu_items};
 use prehnite_core::db::{
     acquire_err_handled, close_book_err_handled, open_book_err_handled, query, DBType,
 };
-use prehnite_core::i18n::i18n_w;
+use prehnite_core::i18n::{i18n, i18n_fmt, i18n_w};
 use prehnite_core::settings::SettingKey;
-use prehnite_core::util::alert::UnwrapOrErrorAlert;
+use prehnite_core::util::alert::{alert_info_spawn, UnwrapOrErrorAlert};
 use tracing::error;
 
 #[derive(Debug)]
@@ -29,6 +31,7 @@ pub struct PrehniteApp {
 
 #[derive(Clone, Debug)]
 pub enum RootMessage {
+    None,
     ChangePage(PrehnitePageId),
     BookNotOpened(BookNotOpenedMessage),
     BgInfoEditor(BackgroundInfoEditorMessage),
@@ -55,6 +58,8 @@ macro_rules! unwrap_page {
 #[derive(Clone, Debug)]
 pub enum MenuType {
     File,
+    Show,
+    Help,
 }
 
 #[derive(Clone, Debug)]
@@ -65,7 +70,8 @@ pub enum MenuBarMessage {
     CloseFile,
     OpenSettings,
     OpenBackgroundInfoEditor,
-    OpenListOfBibliographies,
+    OpenBibliographyEditor,
+    OpenVersionInfoDialog,
 }
 
 macro_rules! menu_button_maybe {
@@ -82,11 +88,19 @@ macro_rules! menu_button {
         menu_button_maybe!($i18n_id, Some($message))
     };
 }
-
 macro_rules! top_level_menu_button {
     ($i18n_id:expr, $message:expr) => {
         button(i18n_w($i18n_id))
-            .style(button::text)
+            .style(|t, s| {
+                let palette = t.extended_palette();
+                button::Style {
+                    border: Border::default()
+                        .color(palette.background.strong.color)
+                        .rounded(Radius::new(0))
+                        .width(1),
+                    ..button::text(t, s)
+                }
+            })
             .on_press($message)
     };
 }
@@ -101,11 +115,34 @@ fn menubar<'a>(is_book_opened: bool) -> Element<'a, MenuBarMessage> {
                 "close-file",
                 is_book_opened.then_some(MenuBarMessage::CloseFile)
             )),
+            (widget::rule::horizontal(1)),
+            (menu_button!("settings", MenuBarMessage::OpenSettings))
         )
         .max_width(180.0f32),
     );
-    let menu_bar = menu_bar!(file_menu).close_on_item_click_global(true);
-    menu_bar.into()
+    let show_menu: Item<MenuBarMessage, _, _> = Item::with_menu(
+        top_level_menu_button!("show", MenuBarMessage::MenuBtnPressed(MenuType::Show)),
+        menu!(
+            (menu_button!(
+                "background-info-editor",
+                MenuBarMessage::OpenBackgroundInfoEditor
+            )),
+            (menu_button!(
+                "bibliography-editor",
+                MenuBarMessage::OpenBibliographyEditor
+            )),
+        )
+        .max_width(180.0f32),
+    );
+    let help_menu: Item<MenuBarMessage, _, _> = Item::with_menu(
+        top_level_menu_button!("help", MenuBarMessage::MenuBtnPressed(MenuType::Help)),
+        menu!((menu_button!("version-info", MenuBarMessage::OpenVersionInfoDialog)))
+            .max_width(180.0f32),
+    );
+    let menu_bar = menu_bar![file_menu, show_menu, help_menu].close_on_item_click_global(true);
+    widget::column![menu_bar, widget::rule::horizontal(1)]
+        .width(Length::Fill)
+        .into()
 }
 
 impl PrehniteApp {
@@ -155,6 +192,7 @@ impl PrehniteApp {
     #[tracing::instrument]
     fn update(&mut self, message: RootMessage) -> Task<RootMessage> {
         match message {
+            RootMessage::None => {}
             RootMessage::BookNotOpened(msg) => {
                 let page = unwrap_page!(self, PrehnitePage::BookNotOpened);
                 match page.update(msg) {
@@ -208,6 +246,11 @@ impl PrehniteApp {
                 }
             }
             RootMessage::MenuBar(v) => match v {
+                MenuBarMessage::MenuBtnPressed(menu_type) => match menu_type {
+                    MenuType::File => {}
+                    MenuType::Show => {}
+                    MenuType::Help => {}
+                },
                 MenuBarMessage::NewFile => {
                     return Task::done(RootMessage::BookNotOpened(BookNotOpenedMessage::New));
                 }
@@ -223,8 +266,20 @@ impl PrehniteApp {
                 }
                 MenuBarMessage::OpenSettings => {}
                 MenuBarMessage::OpenBackgroundInfoEditor => {}
-                MenuBarMessage::OpenListOfBibliographies => {}
-                MenuBarMessage::MenuBtnPressed(_) => {}
+                MenuBarMessage::OpenBibliographyEditor => {}
+                MenuBarMessage::OpenVersionInfoDialog => {
+                    return Task::future(async {
+                        let mut args = FluentArgs::new();
+                        args.set("app-name", env!("CARGO_PKG_NAME"));
+                        args.set("version", env!("CARGO_PKG_VERSION"));
+                        alert_info_spawn((
+                            i18n("version-info").as_str(),
+                            i18n_fmt("version-info-detail", Some(&args)).as_str(),
+                        ))
+                        .await;
+                        RootMessage::None
+                    });
+                }
             },
             RootMessage::BookOpened => {
                 self.is_book_opened = true;
