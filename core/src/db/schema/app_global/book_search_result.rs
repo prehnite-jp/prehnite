@@ -1,10 +1,10 @@
 use crate::db::schema::{Bibliography, BibliographyAuthor, Publisher, RelBibliographyAuthor};
 use crate::db::util::cushion_types::{OptionString, VecString};
 use crate::db::util::get_optional;
+use crate::to_hash_map_key_name;
 use rhai::{CustomType, Dynamic, EvalAltResult, Position, TypeBuilder};
 use sqlx::{Acquire, SqliteConnection};
 use std::collections::HashMap;
-use crate::to_hash_map_key_name;
 
 #[derive(Default, Clone, CustomType, Debug, PartialEq)]
 pub struct BookSearchResult {

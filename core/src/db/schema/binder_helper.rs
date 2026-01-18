@@ -1,9 +1,9 @@
 use crate::db::schema::app_global::book_search_api::BookSearchApi;
 use crate::db::schema::{
     BackgroundInfo, BackgroundReference, Bibliography, BibliographyAuthor, Draft, Headline, Item,
-    ItemReference, Paragraph, ParagraphLink, ParagraphSummary, Setting, Publisher,
-    RelBackgroundAndItem, RelBibliographyAuthor, RelTagAndItem, ReturningId, Tag, Task,
-    TaskCategory, TaskTemplate,
+    ItemReference, Paragraph, ParagraphLink, ParagraphSummary, Publisher, RelBackgroundAndItem,
+    RelBibliographyAuthor, RelTagAndItem, ReturningId, Setting, Tag, Task, TaskCategory,
+    TaskTemplate,
 };
 use sqlx::query::{Query, QueryAs};
 use sqlx::sqlite::SqliteArguments;

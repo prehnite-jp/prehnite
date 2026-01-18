@@ -1,4 +1,3 @@
-use iced::widget::text;
 use iced::Element;
 use prehnite_core::i18n::i18n_w;
 
@@ -14,7 +13,7 @@ pub enum DraftEditorActions {
 pub struct DraftEditor {}
 
 impl DraftEditor {
-    pub fn update(&mut self, msg: DraftEditorMessage) -> DraftEditorActions {
+    pub fn update(&mut self, _msg: DraftEditorMessage) -> DraftEditorActions {
         DraftEditorActions::None
     }
 

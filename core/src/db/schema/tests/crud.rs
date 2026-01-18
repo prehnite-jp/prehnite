@@ -1,9 +1,13 @@
 use crate::db::schema::app_global::book_search_api::BookSearchApi;
+use crate::db::schema::app_global::{
+    AppGlobalDefaultBibliography, AppGlobalDefaultBibliographyAuthor, AppGlobalDefaultPublisher,
+    AppGlobalDefaultRelBibliographyAuthor, AppGlobalDefaultTag, AppGlobalDefaultTaskCategory,
+    AppGlobalDefaultTaskTemplate,
+};
 use crate::db::schema::*;
 use crate::test_util::{RandomValue, RandomValueVec};
 use sqlx::{SqliteConnection, SqlitePool};
 use std::cmp::max;
-use crate::db::schema::app_global::{AppGlobalDefaultBibliography, AppGlobalDefaultBibliographyAuthor, AppGlobalDefaultPublisher, AppGlobalDefaultRelBibliographyAuthor, AppGlobalDefaultTag, AppGlobalDefaultTaskCategory, AppGlobalDefaultTaskTemplate};
 
 const TEST_DATA_COUNT: usize = 100;
 

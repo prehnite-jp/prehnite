@@ -4,7 +4,7 @@ use iced::widget::pane_grid::{Axis, ResizeEvent};
 use iced::widget::{pane_grid, scrollable, Container};
 use iced::{widget, Element, Length};
 use prehnite_core::db::schema::{Item, ItemType};
-use prehnite_core::i18n::{i18n_w};
+use prehnite_core::i18n::i18n_w;
 use prehnite_core::util::container_style;
 use prehnite_core::widget::item::{ItemRow, ItemRowMessage};
 use std::collections::HashMap;

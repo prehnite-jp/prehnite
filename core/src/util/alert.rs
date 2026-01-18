@@ -2,7 +2,7 @@ use crate::db::DatabaseError;
 use crate::i18n::{i18n, DEFAULT_LANG_ID};
 use native_dialog::{MessageAlert, MessageDialogBuilder, MessageLevel};
 use sys_locale::get_locale;
-use tracing::{error, info, trace};
+use tracing::error;
 use unic_langid::LanguageIdentifier;
 
 pub trait UnwrapOrErrorAlert<T> {

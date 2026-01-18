@@ -1,12 +1,12 @@
 use crate::db::schema::app_global::book_search_api::BookSearchApi;
-use crate::db::schema::binder_helper::{Binder, placeholder_helper, placeholder_in_clause};
+use crate::db::schema::binder_helper::{placeholder_helper, placeholder_in_clause, Binder};
 use crate::db::schema::{
     BackgroundInfo, BackgroundReference, Bibliography, BibliographyAuthor, Draft, Headline, Item,
     ItemReference, Paragraph, ParagraphLink, ParagraphSummary, Publisher, RelBackgroundAndItem,
     RelBibliographyAuthor, RelTagAndItem, ReturningId, Setting, Tag, Task, TaskCategory,
     TaskTemplate,
 };
-use sqlx::{Acquire, Error, SqliteConnection, SqliteTransaction, SqliteExecutor};
+use sqlx::{Acquire, Error, SqliteConnection, SqliteExecutor, SqliteTransaction};
 
 const MAX_BIND_COUNT: usize = 30000; // sqlite 3.32.0 以降では32766が最大だが、マージンを取って30000
 

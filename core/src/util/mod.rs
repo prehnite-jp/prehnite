@@ -1,7 +1,7 @@
-pub mod app_global;
-pub mod file_dialog;
 pub mod alert;
+pub mod app_global;
 pub mod container_style;
+pub mod file_dialog;
 
 #[allow(unused)]
 #[macro_export]
@@ -20,7 +20,7 @@ macro_rules! opt_unwrap_or_continue {
     ($value: expr) => {
         match $value {
             Some(v) => v,
-            None => continue
+            None => continue,
         }
     };
 }

@@ -1,9 +1,9 @@
 mod crud;
 
+use crate::db::schema::app_global::book_search_api::BookSearchApi;
 use crate::db::schema::*;
 use crate::test_util::{RandomValue, RandomValueVec};
 use rand::Rng;
-use crate::db::schema::app_global::book_search_api::BookSearchApi;
 
 //noinspection RsSuperTraitIsNotImplemented: supress false positive
 impl RandomValue for BackgroundInfo {
@@ -200,9 +200,9 @@ impl RandomValue for TaskTemplate {
         }
     }
 }
-impl RandomValue for BookSearchApi{
+impl RandomValue for BookSearchApi {
     fn random_value() -> Self {
-        BookSearchApi{
+        BookSearchApi {
             id: 0,
             name: RandomValue::random_value(),
             detail: RandomValue::random_value(),

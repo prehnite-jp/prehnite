@@ -1,7 +1,5 @@
 use crate::db::query;
-use crate::db::schema::{
-    BackgroundInfo, Bibliography, Headline, Item, Paragraph,
-};
+use crate::db::schema::{BackgroundInfo, Bibliography, Headline, Item, Paragraph};
 use sqlx::{Error, SqliteConnection};
 
 impl BackgroundInfo {
