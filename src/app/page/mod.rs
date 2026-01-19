@@ -62,3 +62,16 @@ impl From<PrehnitePage> for PrehnitePageId {
         }
     }
 }
+
+#[macro_export]
+macro_rules! unwrap_page {
+    ($self: ident, $x:path) => {{
+        match &mut $self.page {
+            $x(page) => page,
+            _ => {
+                error!("invalid message received.");
+                return Task::none();
+            }
+        }
+    }};
+}

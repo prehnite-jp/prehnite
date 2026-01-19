@@ -60,3 +60,4 @@ bibliography-editor = 参考文献エディタ
 help = ヘルプ
 version-info = バージョン情報
 version-info-detail = {$app-name} v{$version}
+exit = 終了

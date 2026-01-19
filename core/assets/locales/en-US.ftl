@@ -60,3 +60,4 @@ bibliography-editor = Bibliography Editor
 help = Help
 version-info = Version info
 version-info-detail = {$app-name} v{$version}
+exit = Exit

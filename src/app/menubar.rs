@@ -1,0 +1,101 @@
+use iced_aw::menu_items;
+use crate::app::button;
+use crate::app::i18n_w;
+use crate::app::Border;
+use crate::app::Radius;
+use iced::{widget, Element, Length};
+use iced_aw::menu::Item;
+use iced_aw::{menu, menu_bar};
+
+#[derive(Clone, Debug)]
+pub enum MenuType {
+    File,
+    Show,
+    Help,
+}
+
+#[derive(Clone, Debug)]
+pub enum MenuBarMessage {
+    MenuBtnPressed(MenuType),
+    NewFile,
+    OpenFile,
+    CloseFile,
+    OpenSettings,
+    OpenBackgroundInfoEditor,
+    OpenBibliographyEditor,
+    OpenVersionInfoDialog,
+    Exit
+}
+
+macro_rules! menu_button_maybe {
+    ($i18n_id:expr, $message:expr) => {
+        button(i18n_w($i18n_id))
+            .style(button::text)
+            .width(150.0f32)
+            .on_press_maybe($message)
+    };
+}
+
+macro_rules! menu_button {
+    ($i18n_id:expr, $message:expr) => {
+        menu_button_maybe!($i18n_id, Some($message))
+    };
+}
+macro_rules! top_level_menu_button {
+    ($i18n_id:expr, $message:expr) => {
+        button(i18n_w($i18n_id))
+            .style(|t, s| {
+                let palette = t.extended_palette();
+                button::Style {
+                    border: Border::default()
+                        .color(palette.background.strong.color)
+                        .rounded(Radius::new(0))
+                        .width(1),
+                    ..button::text(t, s)
+                }
+            })
+            .on_press($message)
+    };
+}
+
+pub fn menubar<'a>(is_book_opened: bool) -> Element<'a, MenuBarMessage> {
+    let file_menu: Item<MenuBarMessage, _, _> = Item::with_menu(
+        top_level_menu_button!("file", MenuBarMessage::MenuBtnPressed(MenuType::File)),
+        menu!(
+            (menu_button!("new-file", MenuBarMessage::NewFile)),
+            (menu_button!("open-file", MenuBarMessage::OpenFile)),
+            (menu_button_maybe!(
+                "close-file",
+                is_book_opened.then_some(MenuBarMessage::CloseFile)
+            )),
+            (widget::rule::horizontal(1)),
+            (menu_button!("settings", MenuBarMessage::OpenSettings)),
+            (widget::rule::horizontal(1)),
+            (menu_button!("exit", MenuBarMessage::Exit)),
+        )
+        .max_width(180.0f32),
+    );
+    let show_menu: Item<MenuBarMessage, _, _> = Item::with_menu(
+        top_level_menu_button!("show", MenuBarMessage::MenuBtnPressed(MenuType::Show)),
+        menu!(
+            (menu_button!(
+                "background-info-editor",
+                MenuBarMessage::OpenBackgroundInfoEditor
+            )),
+            (menu_button!(
+                "bibliography-editor",
+                MenuBarMessage::OpenBibliographyEditor
+            )),
+        )
+        .max_width(180.0f32),
+    );
+    let help_menu: Item<MenuBarMessage, _, _> = Item::with_menu(
+        top_level_menu_button!("help", MenuBarMessage::MenuBtnPressed(MenuType::Help)),
+        menu!((menu_button!("version-info", MenuBarMessage::OpenVersionInfoDialog)))
+            .max_width(180.0f32),
+    );
+    let menu_bar = menu_bar![file_menu, show_menu, help_menu].close_on_item_click_global(true);
+    widget::column![menu_bar, widget::rule::horizontal(1)]
+        .width(Length::Fill)
+        .into()
+}

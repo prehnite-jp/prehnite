@@ -34,11 +34,12 @@ tokio.workspace = true
 sqlx.workspace = true
 iced_aw.workspace = true
 fluent-bundle.workspace = true
+image = "0.25.9"
 
 [workspace.dependencies]
 prehnite-core = { version = "0.0.2-alpha", path = "core" }
 chrono = "0.4"
-iced = { version = "0.14", features = ["tokio"] }
+iced = { version = "0.14", features = ["tokio", "image"] }
 iced_aw = { version = "0.13", features = ["menu"] }
 sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "chrono", "macros"] }
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "sync"] }
