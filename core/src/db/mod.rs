@@ -125,13 +125,11 @@ pub fn get_database() -> Arc<RwLock<Database>> {
 #[tracing::instrument]
 pub async fn acquire_err_handled(mode: DBType) -> Option<PoolConnection<Sqlite>> {
     match get_database().read().await.acquire(mode.clone()).await {
-        Ok(v) => match v {
-            None => {
-                error!("{} Database not connected.", mode);
-                None
-            }
-            Some(v) => Some(v),
-        },
+        Ok(Some(v)) => Some(v),
+        Ok(None) => {
+            error!("{} Database not connected.", mode);
+            None
+        }
         Err(e) => {
             error!("Failed to acquire {} Database. Error: {:#?}", mode, e);
             None

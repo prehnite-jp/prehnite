@@ -1,9 +1,6 @@
-mod menubar;
 mod page;
-mod resources;
 mod window;
 
-use crate::app::resources::APP_ICON_PNG;
 use crate::app::window::main_window::MainWindow;
 use crate::app::window::{Window, WindowMessage};
 use iced::border::Radius;
@@ -15,19 +12,26 @@ use prehnite_core::opt_unwrap_or_return;
 use std::collections::{BTreeMap, HashSet};
 use std::fmt::Debug;
 use tracing::error;
+use window::resources::APP_ICON_PNG;
 
 #[derive(Debug)]
 pub struct PrehniteApp {
+    main_window_id: Option<iced::window::Id>,
     window: BTreeMap<iced::window::Id, Box<dyn Window>>,
     window_was_shown: HashSet<iced::window::Id>,
 }
 
 #[derive(Clone, Debug)]
+pub enum WindowType {
+    MainWindow,
+}
+
+#[derive(Clone, Debug)]
 pub enum DaemonMessage {
-    OpenWindow,
+    OpenWindow(WindowType),
     WindowOpened(iced::window::Id),
     WindowMessage(iced::window::Id, WindowMessage),
-    WindowClosed(iced::window::Id)
+    WindowClosed(iced::window::Id),
 }
 
 impl PrehniteApp {
@@ -41,17 +45,27 @@ impl PrehniteApp {
     fn new() -> (Self, Task<DaemonMessage>) {
         (
             Self {
+                main_window_id: None,
                 window: Default::default(),
                 window_was_shown: Default::default(),
             },
-            Task::done(DaemonMessage::OpenWindow),
+            Task::done(DaemonMessage::OpenWindow(WindowType::MainWindow)),
         )
     }
 
     #[tracing::instrument]
     fn update(&mut self, message: DaemonMessage) -> Task<DaemonMessage> {
         match message {
-            DaemonMessage::OpenWindow => {
+            DaemonMessage::OpenWindow(w_type) => {
+                // メインウィンドウは一つまで
+                if let WindowType::MainWindow = w_type {
+                    if let Some(_) = self.main_window_id {
+                        return Task::none();
+                    }
+                }
+
+                // ウィンドウを構成
+                // 設定を作成
                 let mut settings = iced::window::Settings::default();
                 settings.icon = from_file_data(APP_ICON_PNG, Some(image::ImageFormat::Png))
                     .or_else(|e| {
@@ -59,15 +73,27 @@ impl PrehniteApp {
                         Err(e)
                     })
                     .ok();
+                // ウィンドウを開く
                 let (window_id, open_window_task) = iced::window::open(settings);
-                let (window, init_window_task) = MainWindow::new();
-                self.window.insert(window_id, Box::new(window));
+
+                // 指定されたタイプで構築
+                let (mut window, init_window_task) = match w_type {
+                    WindowType::MainWindow => {
+                        self.main_window_id = Some(window_id);
+                        MainWindow::new()
+                    }
+                };
+
+                // ウィンドウを登録し、開く
+                window.set_window_id(window_id);
+                self.window.insert(window_id, window);
                 return init_window_task
                     .map(move |msg| DaemonMessage::WindowMessage(window_id, msg))
                     .chain(open_window_task.map(DaemonMessage::WindowOpened));
             }
             DaemonMessage::WindowOpened(id) => {
                 self.window_was_shown.insert(id);
+                return iced::window::gain_focus(id);
             }
             DaemonMessage::WindowMessage(id, window_msg) => {
                 let window = opt_unwrap_or_return!(self.window.get_mut(&id), {
@@ -80,7 +106,7 @@ impl PrehniteApp {
             }
             DaemonMessage::WindowClosed(id) => {
                 self.window.remove(&id);
-                if self.window.is_empty(){
+                if self.window.is_empty() || Some(id) == self.main_window_id {
                     return iced::exit();
                 }
             }
@@ -100,7 +126,7 @@ impl PrehniteApp {
         v.title()
     }
 
-    fn subscription(&self)-> Subscription<DaemonMessage> {
+    fn subscription(&self) -> Subscription<DaemonMessage> {
         iced::window::close_events().map(DaemonMessage::WindowClosed)
     }
 }

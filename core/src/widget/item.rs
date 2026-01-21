@@ -61,8 +61,8 @@ impl ItemRow {
     ) -> iced::Element<'_, ItemRowMessage> {
         widget::Container::new(widget::Column::with_children(list.iter().filter_map(
             |(_, v)| {
-                match &v.item_type {
-                    ItemType::Paragraph(_) => Some(
+                if let ItemType::Paragraph(_) = &v.item_type {
+                    Some(
                         Self::row_container(
                             v.id,
                             Self::paragraph_view(v),
@@ -72,8 +72,9 @@ impl ItemRow {
                                 .unwrap_or(false),
                         )
                         .into(),
-                    ),
-                    _ => None,
+                    )
+                } else {
+                    None
                 }
             },
         )))

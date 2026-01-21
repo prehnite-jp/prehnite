@@ -63,10 +63,7 @@ pub enum OpenPrehniteBookStatus {
 
 impl OpenPrehniteBookStatus {
     pub fn is_success(&self) -> bool {
-        match self {
-            OpenPrehniteBookStatus::Success => true,
-            _ => false,
-        }
+        OpenPrehniteBookStatus::Success == *self
     }
 }
 
