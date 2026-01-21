@@ -1,7 +1,8 @@
 mod page;
 mod window;
 
-use crate::app::window::main_window::MainWindow;
+use crate::app::window::main_window::{MainWindow, MainWindowMessage};
+use crate::app::window::version_info_window::VersionInfoWindow;
 use crate::app::window::{Window, WindowMessage};
 use iced::border::Radius;
 use iced::widget::{button, space};
@@ -24,6 +25,7 @@ pub struct PrehniteApp {
 #[derive(Clone, Debug)]
 pub enum WindowType {
     MainWindow,
+    VersionInfoWindow,
 }
 
 #[derive(Clone, Debug)]
@@ -73,6 +75,15 @@ impl PrehniteApp {
                         Err(e)
                     })
                     .ok();
+                (settings.size, settings.resizable) = match w_type {
+                    WindowType::MainWindow => {
+                        (MainWindow::default_size(), MainWindow::default_resizable())
+                    }
+                    WindowType::VersionInfoWindow => (
+                        VersionInfoWindow::default_size(),
+                        VersionInfoWindow::default_resizable(),
+                    ),
+                };
                 // ウィンドウを開く
                 let (window_id, open_window_task) = iced::window::open(settings);
 
@@ -82,6 +93,7 @@ impl PrehniteApp {
                         self.main_window_id = Some(window_id);
                         MainWindow::new()
                     }
+                    WindowType::VersionInfoWindow => VersionInfoWindow::new(),
                 };
 
                 // ウィンドウを登録し、開く
@@ -96,6 +108,13 @@ impl PrehniteApp {
                 return iced::window::gain_focus(id);
             }
             DaemonMessage::WindowMessage(id, window_msg) => {
+                // デーモンに移譲されたメッセージを処理
+                if let WindowMessage::MainWindowMessage(MainWindowMessage::OpenVersionInfoWindow) =
+                    window_msg
+                {
+                    return Task::done(DaemonMessage::OpenWindow(WindowType::VersionInfoWindow));
+                }
+                // ウィンドウごとのメッセージを処理
                 let window = opt_unwrap_or_return!(self.window.get_mut(&id), {
                     error!("Failed to get window. WindowId: {id}");
                     Task::none()

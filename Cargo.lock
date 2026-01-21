@@ -3755,7 +3755,6 @@ dependencies = [
  "iced",
  "iced_aw",
  "image",
- "native-dialog",
  "prehnite-core",
  "sqlx",
  "tokio",

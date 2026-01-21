@@ -1,4 +1,3 @@
-use iced::futures::FutureExt;
 use crate::app::page::background_info_editor::{
     BackgroundInfoEditorActions, BackgroundInfoEditorMessage,
 };
@@ -11,13 +10,14 @@ use crate::app::page::{PrehnitePage, PrehnitePageId};
 use crate::app::window::menubar::{menubar, MenuBarMessage, MenuType};
 use crate::app::window::{Window, WindowMessage};
 use crate::util::app_version_info;
+use iced::futures::FutureExt;
 use iced::{Element, Task};
 use prehnite_core::db::{
     acquire_err_handled, close_book_err_handled, open_book_err_handled, query, DBType,
 };
-use prehnite_core::i18n::{i18n, i18n_w};
+use prehnite_core::i18n::{i18n_w};
 use prehnite_core::settings::SettingKey;
-use prehnite_core::util::alert::{alert_info_spawn, UnwrapOrErrorAlert};
+use prehnite_core::util::alert::{UnwrapOrErrorAlert};
 use tracing::error;
 
 #[derive(Clone, Debug)]
@@ -32,6 +32,7 @@ pub enum MainWindowMessage {
     ParagraphEditor(ParagraphEditorMessage),
     MenuBar(MenuBarMessage),
     BookOpened,
+    OpenVersionInfoWindow,
 }
 
 #[derive(Debug)]
@@ -152,15 +153,8 @@ impl MainWindow {
                 MenuBarMessage::OpenSettings => {}
                 MenuBarMessage::OpenBackgroundInfoEditor => {}
                 MenuBarMessage::OpenBibliographyEditor => {}
-                MenuBarMessage::OpenVersionInfoDialog => {
-                    return Task::future(async {
-                        alert_info_spawn((
-                            i18n("version-info").as_str(),
-                            app_version_info().as_str(),
-                        ))
-                        .await;
-                        MainWindowMessage::None
-                    });
+                MenuBarMessage::OpenVersionInfoWindow => {
+                    return Task::done(MainWindowMessage::OpenVersionInfoWindow);
                 }
                 MenuBarMessage::Exit => {
                     return iced::exit();
@@ -170,6 +164,7 @@ impl MainWindow {
                 self.is_book_opened = true;
                 return Task::done(MainWindowMessage::ChangePage(PrehnitePageId::ItemList));
             }
+            MainWindowMessage::OpenVersionInfoWindow => {}
         }
         Task::none()
     }

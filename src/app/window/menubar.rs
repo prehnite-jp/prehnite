@@ -23,7 +23,7 @@ pub enum MenuBarMessage {
     OpenSettings,
     OpenBackgroundInfoEditor,
     OpenBibliographyEditor,
-    OpenVersionInfoDialog,
+    OpenVersionInfoWindow,
     Exit
 }
 
@@ -91,7 +91,7 @@ pub fn menubar<'a>(is_book_opened: bool) -> Element<'a, MenuBarMessage> {
     );
     let help_menu: Item<MenuBarMessage, _, _> = Item::with_menu(
         top_level_menu_button!("help", MenuBarMessage::MenuBtnPressed(MenuType::Help)),
-        menu!((menu_button!("version-info", MenuBarMessage::OpenVersionInfoDialog)))
+        menu!((menu_button!("version-info", MenuBarMessage::OpenVersionInfoWindow)))
             .max_width(180.0f32),
     );
     let menu_bar = menu_bar![file_menu, show_menu, help_menu].close_on_item_click_global(true);
