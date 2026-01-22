@@ -6,6 +6,7 @@ use sqlx::SqliteConnection;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::sync::{Arc, LazyLock, PoisonError, RwLock, RwLockReadGuard};
+use sys_locale::get_locale;
 use tracing::{debug, error};
 use unic_langid::{LanguageIdentifier, LanguageIdentifierError};
 
@@ -15,6 +16,18 @@ pub const DEFAULT_LANG_ID: &str = "en-US";
 
 static CURRENT_RESOURCE_BUNDLE: LazyLock<Arc<RwLock<CurrentI18nBundle>>> =
     LazyLock::new(|| Arc::new(RwLock::new(CurrentI18nBundle::new(None))));
+
+pub fn get_locale_lang_id() -> String {
+    get_locale().unwrap_or(DEFAULT_LANG_ID.into())
+}
+
+pub fn get_locale_language() -> String {
+    if let Ok(v) = get_locale_lang_id().parse::<LanguageIdentifier>() {
+        v.language.to_string()
+    } else {
+        "en".to_string()
+    }
+}
 
 pub struct CurrentI18nBundle {
     bundle: Option<FluentBundle<FluentResource>>,
@@ -222,14 +235,9 @@ pub async fn initialize_i18n_from_db(conn: &mut SqliteConnection) -> Result<(), 
         .await?
         .map(|v| v.setting_value)
         .unwrap_or(None);
-    change_lang_bundle(
-        conn,
-        lang_id
-            .unwrap_or(sys_locale::get_locale().unwrap_or(DEFAULT_LANG_ID.to_string()))
-            .as_str(),
-    )
-    .await
-    .expect("lang_id not found.");
+    change_lang_bundle(conn, lang_id.unwrap_or(get_locale_lang_id()).as_str())
+        .await
+        .expect("lang_id not found.");
     Ok(())
 }
 

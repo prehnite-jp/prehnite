@@ -1,5 +1,5 @@
 use iced::widget::{button, center};
-use iced::{Alignment, Element, Task};
+use iced::{window, Alignment, Element, Task};
 use prehnite_core::i18n::i18n_w;
 use prehnite_core::util::file_dialog::{select_and_open_prehnite_book_file, FileOpe};
 
@@ -31,22 +31,27 @@ pub enum BookNotOpenedActions {
 pub struct BookNotOpened;
 
 impl BookNotOpened {
-    fn open_or_new_file(msg: BookNotOpenedMessage) -> BookNotOpenedActions {
-        BookNotOpenedActions::Run(Task::future(async {
-            if select_and_open_prehnite_book_file(msg.into())
-                .await
-                .is_success()
-            {
-                BookNotOpenedMessage::Opened
-            } else {
-                BookNotOpenedMessage::NotOpened
-            }
-        }))
+    fn open_or_new_file(window_id: window::Id, msg: BookNotOpenedMessage) -> BookNotOpenedActions {
+        BookNotOpenedActions::Run(
+            select_and_open_prehnite_book_file(window_id, msg.into()).map(|v| {
+                if v.is_success() {
+                    BookNotOpenedMessage::Opened
+                } else {
+                    BookNotOpenedMessage::NotOpened
+                }
+            }),
+        )
     }
 
-    pub fn update(&mut self, msg: BookNotOpenedMessage) -> BookNotOpenedActions {
+    pub fn update(
+        &mut self,
+        window_id: window::Id,
+        msg: BookNotOpenedMessage,
+    ) -> BookNotOpenedActions {
         match msg {
-            BookNotOpenedMessage::Open | BookNotOpenedMessage::New => Self::open_or_new_file(msg),
+            BookNotOpenedMessage::Open | BookNotOpenedMessage::New => {
+                Self::open_or_new_file(window_id, msg)
+            }
             BookNotOpenedMessage::Opened => BookNotOpenedActions::Opened,
             BookNotOpenedMessage::NotOpened => BookNotOpenedActions::NotOpened,
         }

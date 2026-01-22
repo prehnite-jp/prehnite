@@ -15,14 +15,13 @@ use iced::{Element, Task};
 use prehnite_core::db::{
     acquire_err_handled, close_book_err_handled, open_book_err_handled, query, DBType,
 };
-use prehnite_core::i18n::{i18n_w};
+use prehnite_core::i18n::i18n_w;
 use prehnite_core::settings::SettingKey;
-use prehnite_core::util::alert::{UnwrapOrErrorAlert};
+use prehnite_core::util::alert::UnwrapOrErrorAlert;
 use tracing::error;
 
 #[derive(Clone, Debug)]
 pub enum MainWindowMessage {
-    None,
     ChangePage(PrehnitePageId),
     BookNotOpened(BookNotOpenedMessage),
     BgInfoEditor(BackgroundInfoEditorMessage),
@@ -74,10 +73,9 @@ impl MainWindow {
 
     fn update_impl(&mut self, message: MainWindowMessage) -> Task<MainWindowMessage> {
         match message {
-            MainWindowMessage::None => {}
             MainWindowMessage::BookNotOpened(msg) => {
                 let page = crate::unwrap_page!(self, PrehnitePage::BookNotOpened);
-                match page.update(msg) {
+                match page.update(self.window_id.unwrap(), msg) {
                     BookNotOpenedActions::Run(v) => return v.map(MainWindowMessage::BookNotOpened),
                     BookNotOpenedActions::Opened => {
                         return Task::done(MainWindowMessage::BookOpened);

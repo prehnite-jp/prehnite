@@ -12,6 +12,7 @@ use crate::util::app_global::global_dir;
 use crate::util::file_dialog::OpenPrehniteBookStatus;
 use chrono::Duration;
 use log::LevelFilter;
+use native_dialog::MessageLevel;
 use sqlx::pool::PoolConnection;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use sqlx::{ConnectOptions, Sqlite, SqlitePool};
@@ -24,7 +25,7 @@ use tracing::error;
 impl UnwrapOrErrorAlert<PoolConnection<Sqlite>> for Option<PoolConnection<Sqlite>> {
     fn unwrap_or_alert(self) -> PoolConnection<Sqlite> {
         self.unwrap_or_else(|| {
-            alert_i18n_show(("error", "cant-connect-database"));
+            alert_i18n_show(("error", "cant-connect-database"), MessageLevel::Error);
             panic!()
         })
     }
@@ -159,7 +160,7 @@ pub async fn open_book_err_handled(book_path: PathBuf) -> bool {
         }
         Err(e) => {
             error!("Failed to open the book. {}", e);
-            alert_i18n_spawn(("error", "book-open-error")).await;
+            alert_i18n_spawn(("error", "book-open-error"), MessageLevel::Error).await;
             false
         }
     }

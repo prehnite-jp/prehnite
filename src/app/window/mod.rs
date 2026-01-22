@@ -7,7 +7,7 @@ use crate::app::window::main_window::MainWindowMessage;
 use crate::app::window::resources::APP_ICON_PNG;
 use crate::app::window::version_info_window::VersionInfoWindowMessage;
 use iced::window::icon::from_file_data;
-use iced::{window, Element, Size, Task};
+use iced::{window, Element, Task};
 use std::fmt::Debug;
 use tracing::error;
 

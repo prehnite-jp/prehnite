@@ -4,14 +4,23 @@ use crate::i18n::i18n;
 use crate::opt_unwrap_or_return;
 use crate::settings::SettingKey;
 use crate::util::alert::alert_i18n_spawn;
-use native_dialog::FileDialogBuilder;
+use iced::window::raw_window_handle::HasWindowHandle;
+use iced::{window, Task};
+use native_dialog::{FileDialogBuilder, MessageLevel};
 use std::path::PathBuf;
 use tracing::{debug, error, trace};
 
-fn prehnite_file_dialog_builder(title_i18n_id: &str) -> FileDialogBuilder {
-    FileDialogBuilder::default()
+fn prehnite_file_dialog_builder(
+    title_i18n_id: &str,
+    owner: &Option<&dyn HasWindowHandle>,
+) -> FileDialogBuilder {
+    let v = FileDialogBuilder::default()
         .set_title(i18n(title_i18n_id))
-        .add_filter("prehnite book", ["prehnite"])
+        .add_filter("prehnite book", ["prehnite"]);
+    match owner {
+        None => v,
+        Some(w) => v.set_owner(w),
+    }
 }
 
 fn unwrap_dialog_result(value: native_dialog::Result<Option<PathBuf>>) -> Option<PathBuf> {
@@ -30,22 +39,18 @@ fn unwrap_dialog_result(value: native_dialog::Result<Option<PathBuf>>) -> Option
     }
 }
 
-async fn dialog_new_prehnite_book() -> Option<PathBuf> {
-    unwrap_dialog_result(
-        prehnite_file_dialog_builder("new-file")
-            .save_single_file()
-            .spawn()
-            .await,
-    )
+fn dialog_new_prehnite_book(window_id: window::Id) -> Task<Option<PathBuf>> {
+    window::run(window_id, |w| {
+        prehnite_file_dialog_builder("new-file", &Some(w)).save_single_file()
+    })
+    .then(|v| Task::future(async { unwrap_dialog_result(v.spawn().await) }))
 }
 
-async fn dialog_open_prehnite_book() -> Option<PathBuf> {
-    unwrap_dialog_result(
-        prehnite_file_dialog_builder("open-file")
-            .open_single_file()
-            .spawn()
-            .await,
-    )
+fn dialog_open_prehnite_book(window_id: window::Id) -> Task<Option<PathBuf>> {
+    window::run(window_id, |w| {
+        prehnite_file_dialog_builder("open-file", &Some(w)).open_single_file()
+    })
+    .then(|v| Task::future(async { unwrap_dialog_result(v.spawn().await) }))
 }
 
 #[derive(Clone, Debug)]
@@ -67,17 +72,8 @@ impl OpenPrehniteBookStatus {
     }
 }
 
-#[tracing::instrument]
-pub async fn select_and_open_prehnite_book_file(ope: FileOpe) -> OpenPrehniteBookStatus {
-    let book_path = opt_unwrap_or_return!(
-        match &ope {
-            FileOpe::New => dialog_new_prehnite_book().await,
-            FileOpe::Open => dialog_open_prehnite_book().await,
-        },
-        OpenPrehniteBookStatus::NotSelected
-    );
-    debug!("Opening the book: {:#?}", book_path);
-    match &ope {
+async fn prehnite_book_file_process(book_path: PathBuf, ope: FileOpe) -> OpenPrehniteBookStatus {
+    match ope {
         FileOpe::New => match tokio::fs::remove_file(book_path.clone()).await {
             Ok(_) => {}
             Err(e) => {
@@ -86,7 +82,7 @@ pub async fn select_and_open_prehnite_book_file(ope: FileOpe) -> OpenPrehniteBoo
                     .unwrap_or(true)
                 {
                     error!("Failed to remove file ({book_path:#?}): {e}");
-                    alert_i18n_spawn(("error", "permission-denied")).await;
+                    alert_i18n_spawn(("error", "permission-denied"), MessageLevel::Error).await;
                     return OpenPrehniteBookStatus::Failed;
                 }
             }
@@ -97,7 +93,7 @@ pub async fn select_and_open_prehnite_book_file(ope: FileOpe) -> OpenPrehniteBoo
                 .unwrap_or(false)
             {
                 error!("File does not exist ({book_path:#?})");
-                alert_i18n_spawn(("error", "file-notfound")).await;
+                alert_i18n_spawn(("error", "file-notfound"), MessageLevel::Error).await;
                 Setting::restore(
                     opt_unwrap_or_return!(
                         acquire_err_handled(DBType::AppGlobal).await,
@@ -117,4 +113,21 @@ pub async fn select_and_open_prehnite_book_file(ope: FileOpe) -> OpenPrehniteBoo
     } else {
         OpenPrehniteBookStatus::Failed
     }
+}
+
+#[tracing::instrument]
+pub fn select_and_open_prehnite_book_file(
+    window_id: window::Id,
+    ope: FileOpe,
+) -> Task<OpenPrehniteBookStatus> {
+    let file_dialog_result = match &ope {
+        FileOpe::New => dialog_new_prehnite_book(window_id),
+        FileOpe::Open => dialog_open_prehnite_book(window_id),
+    };
+    file_dialog_result.then(move |book_path| {
+        let book_path =
+            opt_unwrap_or_return!(book_path, Task::done(OpenPrehniteBookStatus::NotSelected));
+        debug!("Opening the book: {:#?}", book_path);
+        Task::future(prehnite_book_file_process(book_path, ope.clone()))
+    })
 }

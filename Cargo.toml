@@ -35,6 +35,7 @@ sqlx.workspace = true
 iced_aw.workspace = true
 fluent-bundle.workspace = true
 image.workspace = true
+native-dialog.workspace = true
 
 [workspace.dependencies]
 prehnite-core = { version = "0.0.2-alpha", path = "core" }
