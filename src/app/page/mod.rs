@@ -1,5 +1,4 @@
 use crate::app::page::background_info_editor::BackgroundInfoEditor;
-use crate::app::page::book_not_opened::BookNotOpened;
 use crate::app::page::draft_editor::DraftEditor;
 use crate::app::page::headline_editor::HeadlineEditor;
 use crate::app::page::item_list::ItemList;
@@ -27,7 +26,7 @@ pub enum PrehnitePageId {
 pub enum PrehnitePage {
     #[default]
     NowLoading,
-    BookNotOpened(BookNotOpened),
+    BookNotOpened,
     BgInfoEditor(BackgroundInfoEditor),
     DraftEditor(DraftEditor),
     HeadlineEditor(HeadlineEditor),
@@ -39,7 +38,7 @@ impl From<PrehnitePageId> for PrehnitePage {
     fn from(value: PrehnitePageId) -> Self {
         match value {
             PrehnitePageId::NowLoading => PrehnitePage::NowLoading,
-            PrehnitePageId::BookNotOpened => PrehnitePage::BookNotOpened(Default::default()),
+            PrehnitePageId::BookNotOpened => PrehnitePage::BookNotOpened,
             PrehnitePageId::BgInfoEditor => PrehnitePage::BgInfoEditor(Default::default()),
             PrehnitePageId::DraftEditor => PrehnitePage::DraftEditor(Default::default()),
             PrehnitePageId::HeadlineEditor => PrehnitePage::HeadlineEditor(Default::default()),
@@ -53,7 +52,7 @@ impl From<PrehnitePage> for PrehnitePageId {
     fn from(value: PrehnitePage) -> Self {
         match value {
             PrehnitePage::NowLoading => PrehnitePageId::NowLoading,
-            PrehnitePage::BookNotOpened(_) => PrehnitePageId::BookNotOpened,
+            PrehnitePage::BookNotOpened => PrehnitePageId::BookNotOpened,
             PrehnitePage::BgInfoEditor(_) => PrehnitePageId::BgInfoEditor,
             PrehnitePage::DraftEditor(_) => PrehnitePageId::DraftEditor,
             PrehnitePage::HeadlineEditor(_) => PrehnitePageId::HeadlineEditor,

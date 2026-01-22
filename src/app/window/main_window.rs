@@ -1,7 +1,7 @@
 use crate::app::page::background_info_editor::{
     BackgroundInfoEditorActions, BackgroundInfoEditorMessage,
 };
-use crate::app::page::book_not_opened::{BookNotOpenedActions, BookNotOpenedMessage};
+use crate::app::page::book_not_opened::BookNotOpened;
 use crate::app::page::draft_editor::{DraftEditorActions, DraftEditorMessage};
 use crate::app::page::headline_editor::{HeadlineEditorActions, HeadlineEditorMessage};
 use crate::app::page::item_list::{ItemListActions, ItemListMessage};
@@ -11,19 +11,37 @@ use crate::app::window::menubar::{menubar, MenuBarMessage, MenuType};
 use crate::app::window::{Window, WindowMessage};
 use crate::util::app_version_info;
 use iced::futures::FutureExt;
-use iced::{Element, Task};
+use iced::{window, Element, Task};
 use prehnite_core::db::{
     acquire_err_handled, close_book_err_handled, open_book_err_handled, query, DBType,
 };
 use prehnite_core::i18n::i18n_w;
 use prehnite_core::settings::SettingKey;
 use prehnite_core::util::alert::UnwrapOrErrorAlert;
+use prehnite_core::util::file_dialog::{select_and_open_prehnite_book_file, FileOpe};
 use tracing::error;
+
+impl Into<FileOpe> for BookOpenerMessage {
+    fn into(self) -> FileOpe {
+        match self {
+            BookOpenerMessage::New => FileOpe::New,
+            _ => FileOpe::Open,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum BookOpenerMessage {
+    Open,
+    New,
+    Opened,
+    NotOpened,
+}
 
 #[derive(Clone, Debug)]
 pub enum MainWindowMessage {
+    BookOpener(BookOpenerMessage),
     ChangePage(PrehnitePageId),
-    BookNotOpened(BookNotOpenedMessage),
     BgInfoEditor(BackgroundInfoEditorMessage),
     DraftEditor(DraftEditorMessage),
     HeadlineEditor(HeadlineEditorMessage),
@@ -38,7 +56,7 @@ pub enum MainWindowMessage {
 pub struct MainWindow {
     page: PrehnitePage,
     is_book_opened: bool,
-    window_id: Option<iced::window::Id>,
+    window_id: Option<window::Id>,
 }
 
 impl MainWindow {
@@ -71,16 +89,25 @@ impl MainWindow {
         }
     }
 
+    pub fn book_opener(&self, msg: BookOpenerMessage) -> Task<BookOpenerMessage> {
+        select_and_open_prehnite_book_file(self.window_id.unwrap(), msg.into()).map(|v| {
+            if v.is_success() {
+                BookOpenerMessage::Opened
+            } else {
+                BookOpenerMessage::NotOpened
+            }
+        })
+    }
+
     fn update_impl(&mut self, message: MainWindowMessage) -> Task<MainWindowMessage> {
         match message {
-            MainWindowMessage::BookNotOpened(msg) => {
-                let page = crate::unwrap_page!(self, PrehnitePage::BookNotOpened);
-                match page.update(self.window_id.unwrap(), msg) {
-                    BookNotOpenedActions::Run(v) => return v.map(MainWindowMessage::BookNotOpened),
-                    BookNotOpenedActions::Opened => {
-                        return Task::done(MainWindowMessage::BookOpened);
+            MainWindowMessage::BookOpener(msg) => {
+                match msg {
+                    BookOpenerMessage::Open | BookOpenerMessage::New => {
+                        return self.book_opener(msg).map(MainWindowMessage::BookOpener);
                     }
-                    BookNotOpenedActions::NotOpened => {}
+                    BookOpenerMessage::Opened => return Task::done(MainWindowMessage::BookOpened),
+                    BookOpenerMessage::NotOpened => {}
                 };
             }
             MainWindowMessage::BgInfoEditor(msg) => {
@@ -134,12 +161,10 @@ impl MainWindow {
                     MenuType::Help => {}
                 },
                 MenuBarMessage::NewFile => {
-                    return Task::done(MainWindowMessage::BookNotOpened(BookNotOpenedMessage::New));
+                    return Task::done(MainWindowMessage::BookOpener(BookOpenerMessage::New));
                 }
                 MenuBarMessage::OpenFile => {
-                    return Task::done(MainWindowMessage::BookNotOpened(
-                        BookNotOpenedMessage::Open,
-                    ));
+                    return Task::done(MainWindowMessage::BookOpener(BookOpenerMessage::Open));
                 }
                 MenuBarMessage::CloseFile => {
                     self.is_book_opened = false;
@@ -172,7 +197,8 @@ impl MainWindow {
             menubar(self.is_book_opened).map(MainWindowMessage::MenuBar),
             match &self.page {
                 PrehnitePage::NowLoading => i18n_w("now-loading").into(),
-                PrehnitePage::BookNotOpened(v) => v.view().map(MainWindowMessage::BookNotOpened),
+                PrehnitePage::BookNotOpened =>
+                    BookNotOpened::view().map(MainWindowMessage::BookOpener),
                 PrehnitePage::BgInfoEditor(v) => v.view().map(MainWindowMessage::BgInfoEditor),
                 PrehnitePage::DraftEditor(v) => v.view().map(MainWindowMessage::DraftEditor),
                 PrehnitePage::HeadlineEditor(v) => v.view().map(MainWindowMessage::HeadlineEditor),
@@ -215,7 +241,7 @@ impl Window for MainWindow {
         app_version_info()
     }
 
-    fn set_window_id(&mut self, window_id: iced::window::Id) {
+    fn set_window_id(&mut self, window_id: window::Id) {
         self.window_id = Some(window_id);
     }
 }

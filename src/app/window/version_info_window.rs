@@ -78,9 +78,7 @@ impl Window for VersionInfoWindow {
         Settings {
             size: Size::new(400.0f32, 400.0f32),
             resizable: false,
-            closeable: false,
             minimizable: false,
-            level: window::Level::AlwaysOnTop,
             ..app_default_window_settings()
         }
     }
