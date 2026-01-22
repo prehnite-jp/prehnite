@@ -1,12 +1,7 @@
-use crate::app::page::background_info_editor::{
-    BackgroundInfoEditorActions, BackgroundInfoEditorMessage,
-};
-use crate::app::page::book_not_opened::BookNotOpened;
-use crate::app::page::draft_editor::{DraftEditorActions, DraftEditorMessage};
-use crate::app::page::headline_editor::{HeadlineEditorActions, HeadlineEditorMessage};
-use crate::app::page::item_list::{ItemListActions, ItemListMessage};
-use crate::app::page::paragraph_editor::{ParagraphEditorActions, ParagraphEditorMessage};
-use crate::app::page::{PrehnitePage, PrehnitePageId};
+pub mod page;
+use crate::app::window::main_window::page::book_not_opened::BookNotOpened;
+use crate::app::window::main_window::page::item_list::{ItemListActions, ItemListMessage};
+use crate::app::window::main_window::page::{MainWindowPage, MainWindowPageId};
 use crate::app::window::menubar::{menubar, MenuBarMessage, MenuType};
 use crate::app::window::{Window, WindowMessage};
 use crate::util::app_version_info;
@@ -41,12 +36,8 @@ pub enum BookOpenerMessage {
 #[derive(Clone, Debug)]
 pub enum MainWindowMessage {
     BookOpener(BookOpenerMessage),
-    ChangePage(PrehnitePageId),
-    BgInfoEditor(BackgroundInfoEditorMessage),
-    DraftEditor(DraftEditorMessage),
-    HeadlineEditor(HeadlineEditorMessage),
+    ChangePage(MainWindowPageId),
     ItemList(ItemListMessage),
-    ParagraphEditor(ParagraphEditorMessage),
     MenuBar(MenuBarMessage),
     BookOpened,
     OpenVersionInfoWindow,
@@ -54,7 +45,7 @@ pub enum MainWindowMessage {
 
 #[derive(Debug)]
 pub struct MainWindow {
-    page: PrehnitePage,
+    page: MainWindowPage,
     is_book_opened: bool,
     window_id: Option<window::Id>,
 }
@@ -72,7 +63,7 @@ impl MainWindow {
                 None
             });
         fn return_err() -> MainWindowMessage {
-            MainWindowMessage::ChangePage(PrehnitePageId::BookNotOpened)
+            MainWindowMessage::ChangePage(MainWindowPageId::BookNotOpened)
         }
         match last_opened
             .and_then(|v| v.setting_value)
@@ -110,48 +101,20 @@ impl MainWindow {
                     BookOpenerMessage::NotOpened => {}
                 };
             }
-            MainWindowMessage::BgInfoEditor(msg) => {
-                let page = crate::unwrap_page!(self, PrehnitePage::BgInfoEditor);
-                match page.update(msg) {
-                    BackgroundInfoEditorActions::None => {}
-                }
-            }
-            MainWindowMessage::DraftEditor(msg) => {
-                let page = crate::unwrap_page!(self, PrehnitePage::DraftEditor);
-                match page.update(msg) {
-                    DraftEditorActions::None => {}
-                }
-            }
-            MainWindowMessage::HeadlineEditor(msg) => {
-                let page = crate::unwrap_page!(self, PrehnitePage::HeadlineEditor);
-                match page.update(msg) {
-                    HeadlineEditorActions::None => {}
-                }
-            }
             MainWindowMessage::ItemList(msg) => {
-                let page = crate::unwrap_page!(self, PrehnitePage::ItemList);
+                let page = crate::unwrap_page!(self, MainWindowPage::ItemList);
                 return match page.update(msg) {
                     ItemListActions::Run(v) => v.map(MainWindowMessage::ItemList),
                 };
             }
-            MainWindowMessage::ParagraphEditor(msg) => {
-                let page = crate::unwrap_page!(self, PrehnitePage::ParagraphEditor);
-                match page.update(msg) {
-                    ParagraphEditorActions::None => {}
-                }
-            }
             MainWindowMessage::ChangePage(page) => {
                 self.page = page.clone().into();
                 match page {
-                    PrehnitePageId::NowLoading => {}
-                    PrehnitePageId::BookNotOpened => {}
-                    PrehnitePageId::BgInfoEditor => {}
-                    PrehnitePageId::DraftEditor => {}
-                    PrehnitePageId::HeadlineEditor => {}
-                    PrehnitePageId::ItemList => {
+                    MainWindowPageId::NowLoading => {}
+                    MainWindowPageId::BookNotOpened => {}
+                    MainWindowPageId::ItemList => {
                         return Task::done(MainWindowMessage::ItemList(ItemListMessage::LoadItems));
                     }
-                    PrehnitePageId::ParagraphEditor => {}
                 }
             }
             MainWindowMessage::MenuBar(v) => match v {
@@ -170,7 +133,7 @@ impl MainWindow {
                     self.is_book_opened = false;
                     return Task::future(async {
                         close_book_err_handled().await;
-                        MainWindowMessage::ChangePage(PrehnitePageId::BookNotOpened)
+                        MainWindowMessage::ChangePage(MainWindowPageId::BookNotOpened)
                     });
                 }
                 MenuBarMessage::OpenSettings => {}
@@ -185,7 +148,7 @@ impl MainWindow {
             },
             MainWindowMessage::BookOpened => {
                 self.is_book_opened = true;
-                return Task::done(MainWindowMessage::ChangePage(PrehnitePageId::ItemList));
+                return Task::done(MainWindowMessage::ChangePage(MainWindowPageId::ItemList));
             }
             MainWindowMessage::OpenVersionInfoWindow => {}
         }
@@ -196,15 +159,10 @@ impl MainWindow {
         Element::from(iced::widget::column![
             menubar(self.is_book_opened).map(MainWindowMessage::MenuBar),
             match &self.page {
-                PrehnitePage::NowLoading => i18n_w("now-loading").into(),
-                PrehnitePage::BookNotOpened =>
+                MainWindowPage::NowLoading => i18n_w("now-loading").into(),
+                MainWindowPage::BookNotOpened =>
                     BookNotOpened::view().map(MainWindowMessage::BookOpener),
-                PrehnitePage::BgInfoEditor(v) => v.view().map(MainWindowMessage::BgInfoEditor),
-                PrehnitePage::DraftEditor(v) => v.view().map(MainWindowMessage::DraftEditor),
-                PrehnitePage::HeadlineEditor(v) => v.view().map(MainWindowMessage::HeadlineEditor),
-                PrehnitePage::ItemList(v) => v.view().map(MainWindowMessage::ItemList),
-                PrehnitePage::ParagraphEditor(v) =>
-                    v.view().map(MainWindowMessage::ParagraphEditor),
+                MainWindowPage::ItemList(v) => v.view().map(MainWindowMessage::ItemList),
             }
         ])
     }

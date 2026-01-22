@@ -1,4 +1,3 @@
-mod page;
 mod window;
 
 use crate::app::window::main_window::{MainWindow, MainWindowMessage};
