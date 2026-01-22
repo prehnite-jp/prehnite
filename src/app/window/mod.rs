@@ -1,9 +1,8 @@
 pub mod main_window;
-pub mod resources;
 pub mod version_info_window;
 
 use crate::app::window::main_window::MainWindowMessage;
-use crate::app::window::resources::APP_ICON_PNG;
+use crate::app::resources::APP_ICON_PNG;
 use crate::app::window::version_info_window::VersionInfoWindowMessage;
 use iced::window::icon::from_file_data;
 use iced::{window, Element, Task};

@@ -1,4 +1,4 @@
-use crate::app::window::resources::APP_ICON_PNG;
+use crate::app::resources::APP_ICON_PNG;
 use crate::app::window::{app_default_window_settings, Window, WindowMessage};
 use crate::util::app_version_info;
 use iced::alignment::Horizontal;

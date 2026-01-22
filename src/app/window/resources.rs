@@ -1,1 +1,0 @@
-pub const APP_ICON_PNG: &[u8] = include_bytes!("../../../assets/icon/icon.png");
