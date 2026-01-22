@@ -1,19 +1,21 @@
+mod book_opener;
+mod menubar;
 pub mod page;
+
+use crate::app::window::main_window::book_opener::book_opener_handler;
+use crate::app::window::main_window::menubar::{menubar, menubar_handler, MenuBarMessage};
 use crate::app::window::main_window::page::book_not_opened::BookNotOpened;
 use crate::app::window::main_window::page::item_list::{ItemListActions, ItemListMessage};
 use crate::app::window::main_window::page::{MainWindowPage, MainWindowPageId};
-use crate::app::window::menubar::{menubar, MenuBarMessage, MenuType};
 use crate::app::window::{Window, WindowMessage};
 use crate::util::app_version_info;
 use iced::futures::FutureExt;
 use iced::{window, Element, Task};
-use prehnite_core::db::{
-    acquire_err_handled, close_book_err_handled, open_book_err_handled, query, DBType,
-};
+use prehnite_core::db::{acquire_err_handled, open_book_err_handled, query, DBType};
 use prehnite_core::i18n::i18n_w;
 use prehnite_core::settings::SettingKey;
 use prehnite_core::util::alert::UnwrapOrErrorAlert;
-use prehnite_core::util::file_dialog::{select_and_open_prehnite_book_file, FileOpe};
+use prehnite_core::util::file_dialog::FileOpe;
 use tracing::error;
 
 impl Into<FileOpe> for BookOpenerMessage {
@@ -80,77 +82,32 @@ impl MainWindow {
         }
     }
 
-    pub fn book_opener(&self, msg: BookOpenerMessage) -> Task<BookOpenerMessage> {
-        select_and_open_prehnite_book_file(self.window_id.unwrap(), msg.into()).map(|v| {
-            if v.is_success() {
-                BookOpenerMessage::Opened
-            } else {
-                BookOpenerMessage::NotOpened
-            }
-        })
-    }
-
     fn update_impl(&mut self, message: MainWindowMessage) -> Task<MainWindowMessage> {
         match message {
-            MainWindowMessage::BookOpener(msg) => {
-                match msg {
-                    BookOpenerMessage::Open | BookOpenerMessage::New => {
-                        return self.book_opener(msg).map(MainWindowMessage::BookOpener);
-                    }
-                    BookOpenerMessage::Opened => return Task::done(MainWindowMessage::BookOpened),
-                    BookOpenerMessage::NotOpened => {}
-                };
-            }
+            MainWindowMessage::BookOpener(msg) => return book_opener_handler(self, msg),
             MainWindowMessage::ItemList(msg) => {
-                let page = crate::unwrap_page!(self, MainWindowPage::ItemList);
-                return match page.update(msg) {
-                    ItemListActions::Run(v) => v.map(MainWindowMessage::ItemList),
-                };
+                if let MainWindowPage::ItemList(page) = &mut self.page {
+                    return match page.update(msg) {
+                        ItemListActions::Run(v) => v.map(MainWindowMessage::ItemList),
+                    };
+                }
+                error!("invalid message received.");
             }
             MainWindowMessage::ChangePage(page) => {
                 self.page = page.clone().into();
                 match page {
-                    MainWindowPageId::NowLoading => {}
-                    MainWindowPageId::BookNotOpened => {}
                     MainWindowPageId::ItemList => {
                         return Task::done(MainWindowMessage::ItemList(ItemListMessage::LoadItems));
                     }
+                    _ => {}
                 }
             }
-            MainWindowMessage::MenuBar(v) => match v {
-                MenuBarMessage::MenuBtnPressed(menu_type) => match menu_type {
-                    MenuType::File => {}
-                    MenuType::Show => {}
-                    MenuType::Help => {}
-                },
-                MenuBarMessage::NewFile => {
-                    return Task::done(MainWindowMessage::BookOpener(BookOpenerMessage::New));
-                }
-                MenuBarMessage::OpenFile => {
-                    return Task::done(MainWindowMessage::BookOpener(BookOpenerMessage::Open));
-                }
-                MenuBarMessage::CloseFile => {
-                    self.is_book_opened = false;
-                    return Task::future(async {
-                        close_book_err_handled().await;
-                        MainWindowMessage::ChangePage(MainWindowPageId::BookNotOpened)
-                    });
-                }
-                MenuBarMessage::OpenSettings => {}
-                MenuBarMessage::OpenBackgroundInfoEditor => {}
-                MenuBarMessage::OpenBibliographyEditor => {}
-                MenuBarMessage::OpenVersionInfoWindow => {
-                    return Task::done(MainWindowMessage::OpenVersionInfoWindow);
-                }
-                MenuBarMessage::Exit => {
-                    return iced::exit();
-                }
-            },
+            MainWindowMessage::MenuBar(v) => return menubar_handler(self, v),
             MainWindowMessage::BookOpened => {
                 self.is_book_opened = true;
                 return Task::done(MainWindowMessage::ChangePage(MainWindowPageId::ItemList));
             }
-            MainWindowMessage::OpenVersionInfoWindow => {}
+            MainWindowMessage::OpenVersionInfoWindow => { /* handled by daemon*/ }
         }
         Task::none()
     }

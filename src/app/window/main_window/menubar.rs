@@ -1,11 +1,14 @@
-use iced_aw::menu_items;
 use crate::app::button;
 use crate::app::i18n_w;
+use crate::app::window::main_window::page::MainWindowPageId;
+use crate::app::window::main_window::{BookOpenerMessage, MainWindow, MainWindowMessage};
 use crate::app::Border;
 use crate::app::Radius;
-use iced::{widget, Element, Length};
+use iced::{widget, Element, Length, Task};
 use iced_aw::menu::Item;
+use iced_aw::menu_items;
 use iced_aw::{menu, menu_bar};
+use prehnite_core::db::close_book_err_handled;
 
 #[derive(Clone, Debug)]
 pub enum MenuType {
@@ -24,7 +27,7 @@ pub enum MenuBarMessage {
     OpenBackgroundInfoEditor,
     OpenBibliographyEditor,
     OpenVersionInfoWindow,
-    Exit
+    Exit,
 }
 
 macro_rules! menu_button_maybe {
@@ -98,4 +101,33 @@ pub fn menubar<'a>(is_book_opened: bool) -> Element<'a, MenuBarMessage> {
     widget::column![menu_bar, widget::rule::horizontal(1)]
         .width(Length::Fill)
         .into()
+}
+
+pub fn menubar_handler(main_window: &mut MainWindow, msg: MenuBarMessage) -> Task<MainWindowMessage> {
+    match msg {
+        MenuBarMessage::MenuBtnPressed(_) => {}
+        MenuBarMessage::NewFile => {
+            return Task::done(MainWindowMessage::BookOpener(BookOpenerMessage::New));
+        }
+        MenuBarMessage::OpenFile => {
+            return Task::done(MainWindowMessage::BookOpener(BookOpenerMessage::Open));
+        }
+        MenuBarMessage::CloseFile => {
+            main_window.is_book_opened = false;
+            return Task::future(async {
+                close_book_err_handled().await;
+                MainWindowMessage::ChangePage(MainWindowPageId::BookNotOpened)
+            });
+        }
+        MenuBarMessage::OpenSettings => {}
+        MenuBarMessage::OpenBackgroundInfoEditor => {}
+        MenuBarMessage::OpenBibliographyEditor => {}
+        MenuBarMessage::OpenVersionInfoWindow => {
+            return Task::done(MainWindowMessage::OpenVersionInfoWindow);
+        }
+        MenuBarMessage::Exit => {
+            return iced::exit();
+        }
+    }
+    Task::none()
 }

@@ -1,5 +1,4 @@
 pub mod main_window;
-mod menubar;
 pub mod resources;
 pub mod version_info_window;
 
