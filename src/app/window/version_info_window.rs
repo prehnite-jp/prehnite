@@ -1,9 +1,10 @@
 use crate::app::window::resources::APP_ICON_PNG;
-use crate::app::window::{Window, WindowMessage};
+use crate::app::window::{app_default_window_settings, Window, WindowMessage};
 use crate::util::app_version_info;
 use iced::alignment::Horizontal;
 use iced::widget::image::Handle;
 use iced::widget::{button, text, Container};
+use iced::window::Settings;
 use iced::{window, Element, Length, Size, Task};
 use prehnite_core::i18n::{i18n, i18n_w};
 
@@ -70,17 +71,17 @@ impl Window for VersionInfoWindow {
         self.window_id = Some(window_id)
     }
 
-    fn default_resizable() -> bool
+    fn window_settings() -> Settings
     where
         Self: Sized,
     {
-        false
-    }
-
-    fn default_size() -> Size
-    where
-        Self: Sized,
-    {
-        Size::new(400.0f32, 400.0f32)
+        Settings {
+            size: Size::new(400.0f32, 400.0f32),
+            resizable: false,
+            closeable: false,
+            minimizable: false,
+            level: window::Level::AlwaysOnTop,
+            ..app_default_window_settings()
+        }
     }
 }

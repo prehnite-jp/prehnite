@@ -68,21 +68,9 @@ impl PrehniteApp {
 
                 // ウィンドウを構成
                 // 設定を作成
-                let mut settings = iced::window::Settings::default();
-                settings.icon = from_file_data(APP_ICON_PNG, Some(image::ImageFormat::Png))
-                    .or_else(|e| {
-                        error!("Failed to setup app icon. Error: {e:#?}");
-                        Err(e)
-                    })
-                    .ok();
-                (settings.size, settings.resizable) = match w_type {
-                    WindowType::MainWindow => {
-                        (MainWindow::default_size(), MainWindow::default_resizable())
-                    }
-                    WindowType::VersionInfoWindow => (
-                        VersionInfoWindow::default_size(),
-                        VersionInfoWindow::default_resizable(),
-                    ),
+                let mut settings = match w_type {
+                    WindowType::MainWindow => MainWindow::window_settings(),
+                    WindowType::VersionInfoWindow => VersionInfoWindow::window_settings(),
                 };
                 // ウィンドウを開く
                 let (window_id, open_window_task) = iced::window::open(settings);

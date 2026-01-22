@@ -4,9 +4,24 @@ pub mod resources;
 pub mod version_info_window;
 
 use crate::app::window::main_window::MainWindowMessage;
+use crate::app::window::resources::APP_ICON_PNG;
 use crate::app::window::version_info_window::VersionInfoWindowMessage;
+use iced::window::icon::from_file_data;
 use iced::{window, Element, Size, Task};
 use std::fmt::Debug;
+use tracing::error;
+
+pub fn app_default_window_settings() -> window::Settings {
+    window::Settings {
+        icon: from_file_data(APP_ICON_PNG, Some(image::ImageFormat::Png))
+            .or_else(|e| {
+                error!("Failed to setup app icon. Error: {e:#?}");
+                Err(e)
+            })
+            .ok(),
+        ..Default::default()
+    }
+}
 
 #[derive(Clone, Debug)]
 pub enum WindowMessage {
@@ -27,17 +42,10 @@ pub trait Window: Debug {
 
     fn set_window_id(&mut self, window_id: window::Id);
 
-    fn default_resizable() -> bool
+    fn window_settings() -> window::Settings
     where
         Self: Sized,
     {
-        true
-    }
-
-    fn default_size() -> Size
-    where
-        Self: Sized,
-    {
-        Size::new(1024.0, 768.0)
+        app_default_window_settings()
     }
 }
