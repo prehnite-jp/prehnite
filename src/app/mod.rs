@@ -19,6 +19,15 @@ pub enum WindowType {
     VersionInfoWindow,
 }
 
+impl WindowType {
+    pub fn open_window(&self) -> (iced::window::Id, Task<iced::window::Id>) {
+        iced::window::open(match self {
+            WindowType::MainWindow => MainWindow::window_settings(),
+            WindowType::VersionInfoWindow => VersionInfoWindow::window_settings(),
+        })
+    }
+}
+
 #[derive(Debug)]
 struct TypedWindow {
     pub w_type: WindowType,
@@ -73,32 +82,35 @@ impl PrehniteApp {
         )
     }
 
+    fn before_window_open(&mut self, window_type: &WindowType) -> Option<Task<DaemonMessage>> {
+        match window_type {
+            WindowType::MainWindow => self
+                .main_window_id
+                .and_then(|id| Some(iced::window::gain_focus(id))),
+            WindowType::VersionInfoWindow => self
+                .version_info_window_id
+                .and_then(|id| Some(iced::window::gain_focus(id))),
+        }
+    }
+
+    fn on_window_close(&mut self, window: Option<TypedWindow>) -> Task<DaemonMessage> {
+        if let Some((w_type, _)) = window.map(|v| v.into()) {
+            match w_type {
+                WindowType::MainWindow => return iced::exit(),
+                WindowType::VersionInfoWindow => self.version_info_window_id = None,
+            }
+        }
+        Task::none()
+    }
+
     #[tracing::instrument]
     fn update(&mut self, message: DaemonMessage) -> Task<DaemonMessage> {
         match message {
             DaemonMessage::OpenWindow(w_type) => {
-                // 一部ウィンドウを排他的にする
-                match w_type {
-                    WindowType::MainWindow => {
-                        if let Some(id) = self.main_window_id {
-                            return iced::window::gain_focus(id);
-                        }
-                    }
-                    WindowType::VersionInfoWindow => {
-                        if let Some(id) = self.version_info_window_id {
-                            return iced::window::gain_focus(id);
-                        }
-                    }
+                if let Some(task) = self.before_window_open(&w_type) {
+                    return task;
                 }
-
-                // ウィンドウを構成
-                // 設定を作成
-                let settings = match w_type {
-                    WindowType::MainWindow => MainWindow::window_settings(),
-                    WindowType::VersionInfoWindow => VersionInfoWindow::window_settings(),
-                };
-                // ウィンドウを開く
-                let (window_id, open_window_task) = iced::window::open(settings);
+                let (window_id, open_window_task) = w_type.open_window();
 
                 // 指定されたタイプで構築
                 let (mut window, init_window_task) = match w_type {
@@ -115,13 +127,13 @@ impl PrehniteApp {
                 // ウィンドウを登録し、開く
                 window.set_window_id(window_id);
                 self.window.insert(window_id, (w_type, window).into());
-                return init_window_task
+                init_window_task
                     .map(move |msg| DaemonMessage::WindowMessage(window_id, msg))
-                    .chain(open_window_task.map(DaemonMessage::WindowOpened));
+                    .chain(open_window_task.map(DaemonMessage::WindowOpened))
             }
             DaemonMessage::WindowOpened(id) => {
                 self.window_was_shown.insert(id);
-                return iced::window::gain_focus(id);
+                iced::window::gain_focus(id)
             }
             DaemonMessage::WindowMessage(id, window_msg) => {
                 // デーモンに移譲されたメッセージを処理
@@ -135,10 +147,10 @@ impl PrehniteApp {
                     error!("Failed to get window. WindowId: {id}");
                     Task::none()
                 });
-                return window
+                window
                     .window
                     .update(window_msg)
-                    .map(move |msg| DaemonMessage::WindowMessage(id, msg));
+                    .map(move |msg| DaemonMessage::WindowMessage(id, msg))
             }
             DaemonMessage::WindowClosed(id) => {
                 let typed_window = self.window.remove(&id);
@@ -146,16 +158,9 @@ impl PrehniteApp {
                 if self.window.is_empty() {
                     return iced::exit();
                 }
-                // 一部ウィンドウタイプの終了時処理
-                if let Some((w_type, _)) = typed_window.map(|v| v.into()) {
-                    match w_type {
-                        WindowType::MainWindow => return iced::exit(),
-                        WindowType::VersionInfoWindow => self.version_info_window_id = None,
-                    }
-                }
+                self.on_window_close(typed_window)
             }
         }
-        Task::none()
     }
 
     #[tracing::instrument]
