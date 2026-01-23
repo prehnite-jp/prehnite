@@ -1,7 +1,6 @@
 # prehnite
 
-[![crate-name at crates.io](https://img.shields.io/crates/v/prehnite.svg)](https://crates.io/crates/prehnite)
-[![Rust CI](https://github.com/saku-shirakura/prehnite/actions/workflows/rust.yml/badge.svg)](https://github.com/saku-shirakura/prehnite/actions/workflows/rust.yml)
+[![CI](https://github.com/saku-shirakura/prehnite/actions/workflows/rust.yml/badge.svg)](https://github.com/saku-shirakura/prehnite/actions/workflows/rust.yml)
 
 Writing support software that helps you create coherent sentences
 

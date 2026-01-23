@@ -1,4 +1,4 @@
-name: Rust CI
+name: CI
 
 on:
   push:
@@ -16,6 +16,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - name: Check dependency license
+        uses: EmbarkStudios/cargo-deny-action@v1
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
         with:
