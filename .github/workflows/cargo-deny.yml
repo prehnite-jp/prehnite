@@ -13,3 +13,5 @@ jobs:
         with:
           submodules: true
       - uses: EmbarkStudios/cargo-deny-action@v1
+        with:
+          rust-version: 1.92
