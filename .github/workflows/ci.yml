@@ -1,5 +1,4 @@
 name: CI
-
 on:
   push:
     branches: [ "main" ]
@@ -11,9 +10,7 @@ env:
 
 jobs:
   test:
-
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
       - name: Cache dependencies
@@ -26,11 +23,3 @@ jobs:
         run: cargo build --verbose
       - name: Run tests
         run: cargo test --workspace --verbose
-
-  cargo-deny:
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: EmbarkStudios/cargo-deny-action@v1

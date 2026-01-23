@@ -1,6 +1,6 @@
 # prehnite
 
-[![CI](https://github.com/saku-shirakura/prehnite/actions/workflows/rust.yml/badge.svg)](https://github.com/saku-shirakura/prehnite/actions/workflows/rust.yml)
+[![CI](https://github.com/saku-shirakura/prehnite/actions/workflows/ci.yml/badge.svg)](https://github.com/saku-shirakura/prehnite/actions/workflows/ci.yml)
 
 Writing support software that helps you create coherent sentences
 
