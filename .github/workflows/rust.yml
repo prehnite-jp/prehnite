@@ -10,16 +10,12 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  test:
 
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
-      - name: Check dependency license
-        uses: EmbarkStudios/cargo-deny-action@v1
-        with:
-          manifest-path: ./Cargo.toml
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
         with:
@@ -30,3 +26,11 @@ jobs:
         run: cargo build --verbose
       - name: Run tests
         run: cargo test --workspace --verbose
+
+  cargo-deny:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v1
