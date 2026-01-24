@@ -1,10 +1,9 @@
 use iced::{Application, Daemon, Program};
 use iced_graphics::text::font_system;
 use std::collections::HashSet;
-use std::sync::{Arc, LockResult, OnceLock};
+use std::sync::{OnceLock};
 use tracing::error;
 
-pub mod assets;
 pub mod fonts;
 
 #[tracing::instrument]
