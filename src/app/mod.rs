@@ -4,12 +4,12 @@ mod window;
 use crate::app::window::main_window::{MainWindow, MainWindowMessage};
 use crate::app::window::version_info_window::VersionInfoWindow;
 use crate::app::window::{Window, WindowMessage};
-use crate::assets::fonts::{material_symbols_outlined, noto_sans, noto_sans_jp};
 use iced::border::Radius;
 use iced::widget::{button, space};
 use iced::{Border, Element, Font, Subscription, Task};
 use prehnite_core::i18n::i18n_w;
 use prehnite_core::opt_unwrap_or_return;
+use prehnite_font_manager::{FontLoader};
 use std::collections::{BTreeMap, HashSet};
 use std::fmt::Debug;
 use tracing::error;
@@ -68,9 +68,7 @@ impl PrehniteApp {
         iced::daemon(Self::new, Self::update, Self::view)
             .title(Self::title)
             .subscription(Self::subscription)
-            .font(noto_sans::FONT)
-            .font(noto_sans_jp::FONT)
-            .font(material_symbols_outlined::FONT)
+            .load_all_prehnite_bundled_font()
             .default_font(Font::with_name("Meiryo")) // FIXME: NotoSansを使用するようにする。
             .run()
     }
