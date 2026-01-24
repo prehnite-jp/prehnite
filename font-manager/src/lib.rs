@@ -1,14 +1,13 @@
 use iced::{Application, Daemon, Program};
 use iced_graphics::text::font_system;
-use std::collections::HashSet;
 use std::sync::{OnceLock};
 use tracing::error;
 
 pub mod fonts;
 
 #[tracing::instrument]
-fn font_list() -> HashSet<String> {
-    match font_system().write() {
+fn font_list() -> Vec<String> {
+    let mut font_list: Vec<String> = match font_system().write() {
         Ok(mut v) => v
             .raw()
             .db()
@@ -19,13 +18,17 @@ fn font_list() -> HashSet<String> {
             error!("Failed to lock font_system. {e:#?}");
             Default::default()
         }
-    }
+    };
+    font_list.sort();
+    font_list.dedup();
+    font_list
 }
 
-pub fn get_global_font_list() -> &'static HashSet<String> {
-    static FONT_LIST: OnceLock<HashSet<String>> = OnceLock::new();
+pub fn get_global_font_list() -> &'static Vec<String> {
+    static FONT_LIST: OnceLock<Vec<String>> = OnceLock::new();
     FONT_LIST.get_or_init(|| font_list())
 }
+
 
 pub trait FontLoader {
     fn load_all_prehnite_bundled_font(self) -> Self;
