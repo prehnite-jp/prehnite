@@ -10,28 +10,21 @@ macro_rules! font_mod {
 
 font_mod!(
     noto_sans,
-    "",
+    "Noto Sans",
     "../assets/fonts/Noto_Sans/NotoSans-VariableFont_wdth,wght.ttf",
     "../assets/fonts/Noto_Sans/OFL.txt"
 );
 
 font_mod!(
-    noto_sans_italic,
-    "",
-    "../assets/fonts/Noto_Sans/NotoSans-Italic-VariableFont_wdth,wght.ttf",
-    "../assets/fonts/Noto_Sans/OFL.txt"
-);
-
-font_mod!(
-    noto_sans_jp,
-    "",
-    "../assets/fonts/Noto_Sans_JP/NotoSansJP-VariableFont_wght.ttf",
-    "../assets/fonts/Noto_Sans_JP/OFL.txt"
+    line_seed_jp,
+    "LINE Seed JP",
+    "../assets/fonts/LINE_Seed_JP/LINESeedJP-Regular.ttf",
+    "../assets/fonts/LINE_Seed_JP/OFL.txt"
 );
 
 font_mod!(
     material_symbols_outlined,
-    "",
+    "Material Symbols Rounded",
     "../assets/fonts/Material_Symbols_Outlined/MaterialSymbolsOutlined-VariableFont_FILL,GRAD,opsz,wght.ttf",
     "../assets/fonts/Material_Symbols_Outlined/LICENSE.txt"
 );

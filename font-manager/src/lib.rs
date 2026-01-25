@@ -1,6 +1,6 @@
 use iced::{Application, Daemon, Program};
 use iced_graphics::text::font_system;
-use std::sync::{OnceLock};
+use std::sync::OnceLock;
 use tracing::error;
 
 pub mod fonts;
@@ -12,7 +12,7 @@ fn font_list() -> Vec<String> {
             .raw()
             .db()
             .faces()
-            .filter_map(|v| v.families.first().and_then(|v| Some(v.0.clone())))
+            .filter_map(|v| v.families.first().map(|v| v.0.clone()))
             .collect(),
         Err(e) => {
             error!("Failed to lock font_system. {e:#?}");
@@ -29,7 +29,6 @@ pub fn get_global_font_list() -> &'static Vec<String> {
     FONT_LIST.get_or_init(|| font_list())
 }
 
-
 pub trait FontLoader {
     fn load_all_prehnite_bundled_font(self) -> Self;
 }
@@ -37,8 +36,7 @@ pub trait FontLoader {
 impl<P: Program> FontLoader for Daemon<P> {
     fn load_all_prehnite_bundled_font(self) -> Self {
         self.font(fonts::noto_sans::FONT)
-            .font(fonts::noto_sans_italic::FONT)
-            .font(fonts::noto_sans_jp::FONT)
+            .font(fonts::line_seed_jp::FONT)
             .font(fonts::material_symbols_outlined::FONT)
     }
 }
@@ -46,8 +44,7 @@ impl<P: Program> FontLoader for Daemon<P> {
 impl<P: Program> FontLoader for Application<P> {
     fn load_all_prehnite_bundled_font(self) -> Self {
         self.font(fonts::noto_sans::FONT)
-            .font(fonts::noto_sans_italic::FONT)
-            .font(fonts::noto_sans_jp::FONT)
+            .font(fonts::line_seed_jp::FONT)
             .font(fonts::material_symbols_outlined::FONT)
     }
 }
