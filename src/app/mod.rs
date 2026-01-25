@@ -9,7 +9,7 @@ use iced::widget::{button, space};
 use iced::{Border, Element, Font, Subscription, Task};
 use prehnite_core::i18n::i18n_w;
 use prehnite_core::opt_unwrap_or_return;
-use prehnite_font_manager::{FontLoader};
+use prehnite_font_manager::{get_default_font_family, FontLoader};
 use std::collections::{BTreeMap, HashSet};
 use std::fmt::Debug;
 use tracing::error;
@@ -69,7 +69,7 @@ impl PrehniteApp {
             .title(Self::title)
             .subscription(Self::subscription)
             .load_all_prehnite_bundled_font()
-            .default_font(Font::with_name("Meiryo")) // FIXME: NotoSansを使用するようにする。
+            .default_font(Font::with_name(get_default_font_family()))
             .run()
     }
 

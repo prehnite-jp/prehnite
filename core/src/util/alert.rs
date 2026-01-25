@@ -1,5 +1,5 @@
 use crate::db::DatabaseError;
-use crate::i18n::get_locale_lang_id;
+use crate::i18n::{get_locale_language};
 use iced::{window, Task};
 use native_dialog::{MessageAlert, MessageLevel};
 use std::fmt::Debug;
@@ -270,7 +270,7 @@ Example (created in the runtime directory): PREHNITE_GLOBAL_DIR_PATH = \".\"";
 pub fn fatal_init_db_error() -> MessageAlert {
     builder::alert_(
         &None,
-        match get_locale_lang_id().as_str() {
+        match get_locale_language().as_str() {
             "ja" => (FATAL_JA, FATAL_INIT_DB_ERROR_MESSAGE_JA),
             &_ => (FATAL_EN, FATAL_INIT_DB_ERROR_MESSAGE_EN),
         },
@@ -281,7 +281,7 @@ pub fn fatal_init_db_error() -> MessageAlert {
 const FATAL_INIT_APP_ERROR_MESSAGE_JA: &str = "アプリケーションの初期化に失敗しました。";
 const FATAL_INIT_APP_ERROR_MESSAGE_EN: &str = "Application initialization failed.";
 pub fn fatal_initialize_app_error_db(e: DatabaseError) -> MessageAlert {
-    let (title, err_msg) = match get_locale_lang_id().as_str() {
+    let (title, err_msg) = match get_locale_language().as_str() {
         "ja" => (FATAL_JA, FATAL_INIT_APP_ERROR_MESSAGE_JA),
         &_ => (FATAL_EN, FATAL_INIT_APP_ERROR_MESSAGE_EN),
     };

@@ -1,6 +1,7 @@
 use iced::{Application, Daemon, Program};
 use iced_graphics::text::font_system;
-use std::sync::OnceLock;
+use prehnite_core::i18n::get_locale_language;
+use std::sync::{LazyLock, OnceLock};
 use tracing::error;
 
 pub mod fonts;
@@ -27,6 +28,15 @@ fn font_list() -> Vec<String> {
 pub fn get_global_font_list() -> &'static Vec<String> {
     static FONT_LIST: OnceLock<Vec<String>> = OnceLock::new();
     FONT_LIST.get_or_init(|| font_list())
+}
+
+pub fn get_default_font_family() -> &'static str {
+    static EN_DEFAULT_FONT: &&str = &fonts::noto_sans::NAME;
+    static JA_DEFAULT_FONT: &&str = &fonts::line_seed_jp::NAME;
+    match get_locale_language().as_str() {
+        "ja" => *JA_DEFAULT_FONT,
+        _ => *EN_DEFAULT_FONT,
+    }
 }
 
 pub trait FontLoader {
