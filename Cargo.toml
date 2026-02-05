@@ -23,6 +23,9 @@ homepage = "https://prehnite.jp/"
 rust-version = "1.92"
 publish = false
 
+[features]
+debug = ["iced/debug"]
+
 [dependencies]
 prehnite-core.workspace = true
 iced.workspace = true
