@@ -41,14 +41,11 @@ impl VersionInfoWindow {
 }
 
 impl Window for VersionInfoWindow {
-    fn new() -> (Box<dyn Window>, Task<WindowMessage>)
+    fn new() -> Self
     where
         Self: Sized,
     {
-        (
-            Box::new(VersionInfoWindow { window_id: None }),
-            Task::none(),
-        )
+        VersionInfoWindow { window_id: None }
     }
 
     fn update(&mut self, message: WindowMessage) -> Task<WindowMessage> {

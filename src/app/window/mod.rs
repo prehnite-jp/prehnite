@@ -1,8 +1,10 @@
 pub mod main_window;
+pub mod setting_window;
 pub mod version_info_window;
 
-use crate::app::window::main_window::MainWindowMessage;
 use crate::app::resources::APP_ICON_PNG;
+use crate::app::window::main_window::MainWindowMessage;
+use crate::app::window::setting_window::SettingWindowMessage;
 use crate::app::window::version_info_window::VersionInfoWindowMessage;
 use iced::window::icon::from_file_data;
 use iced::{window, Element, Task};
@@ -25,12 +27,20 @@ pub fn app_default_window_settings() -> window::Settings {
 pub enum WindowMessage {
     MainWindowMessage(MainWindowMessage),
     AboutWindowMessage(VersionInfoWindowMessage),
+    SettingWindowMessage(SettingWindowMessage),
 }
 
 pub trait Window: Debug {
-    fn new() -> (Box<dyn Window>, Task<WindowMessage>)
+    fn new() -> Self
     where
         Self: Sized;
+
+    fn init_task() -> Task<WindowMessage>
+    where
+        Self: Sized,
+    {
+        Task::none()
+    }
 
     fn update(&mut self, message: WindowMessage) -> Task<WindowMessage>;
 

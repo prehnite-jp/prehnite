@@ -126,15 +126,16 @@ impl MainWindow {
 }
 
 impl Window for MainWindow {
-    fn new() -> (Box<dyn Window>, Task<WindowMessage>) {
-        (
-            Box::new(Self {
-                page: Default::default(),
-                is_book_opened: false,
-                window_id: None,
-            }),
-            Task::future(Self::open_last_opened_book().map(WindowMessage::MainWindowMessage)),
-        )
+    fn new() -> Self {
+        Self {
+            page: Default::default(),
+            is_book_opened: false,
+            window_id: None,
+        }
+    }
+
+    fn init_task() -> Task<WindowMessage> {
+        Task::future(Self::open_last_opened_book().map(WindowMessage::MainWindowMessage))
     }
 
     #[tracing::instrument]
