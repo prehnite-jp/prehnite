@@ -1,7 +1,7 @@
 use iced::{Application, Daemon, Program};
 use iced_graphics::text::font_system;
 use prehnite_core::i18n::get_locale_language;
-use std::sync::{LazyLock, OnceLock};
+use std::sync::{OnceLock};
 use tracing::error;
 
 pub mod fonts;
@@ -32,7 +32,7 @@ pub fn get_global_font_list() -> &'static Vec<String> {
 
 pub fn get_default_font_family() -> &'static str {
     static EN_DEFAULT_FONT: &&str = &fonts::noto_sans::NAME;
-    static JA_DEFAULT_FONT: &&str = &fonts::line_seed_jp::NAME;
+    static JA_DEFAULT_FONT: &&str = &fonts::sawarabi_gothic::NAME;
     match get_locale_language().as_str() {
         "ja" => *JA_DEFAULT_FONT,
         _ => *EN_DEFAULT_FONT,
@@ -46,7 +46,7 @@ pub trait FontLoader {
 impl<P: Program> FontLoader for Daemon<P> {
     fn load_all_prehnite_bundled_font(self) -> Self {
         self.font(fonts::noto_sans::FONT)
-            .font(fonts::line_seed_jp::FONT)
+            .font(fonts::sawarabi_gothic::FONT)
             .font(fonts::material_symbols_outlined::FONT)
     }
 }
@@ -54,7 +54,7 @@ impl<P: Program> FontLoader for Daemon<P> {
 impl<P: Program> FontLoader for Application<P> {
     fn load_all_prehnite_bundled_font(self) -> Self {
         self.font(fonts::noto_sans::FONT)
-            .font(fonts::line_seed_jp::FONT)
+            .font(fonts::sawarabi_gothic::FONT)
             .font(fonts::material_symbols_outlined::FONT)
     }
 }

@@ -16,10 +16,10 @@ font_mod!(
 );
 
 font_mod!(
-    line_seed_jp,
-    "LINE Seed JP",
-    "../assets/fonts/LINE_Seed_JP/LINESeedJP-Regular.ttf",
-    "../assets/fonts/LINE_Seed_JP/OFL.txt"
+    sawarabi_gothic,
+    "Sawarabi Gothic",
+    "../assets/fonts/Sawarabi_Gothic/SawarabiGothic-Regular.ttf",
+    "../assets/fonts/Sawarabi_Gothic/OFL.txt"
 );
 
 font_mod!(
