@@ -1,6 +1,7 @@
 use crate::db::schema::{Item, ItemType};
 use crate::i18n::i18n;
-use iced::{widget, Length};
+use crate::util::container_style;
+use iced::{widget, Border, Length};
 use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
@@ -91,12 +92,15 @@ impl ItemRow {
                 .clip(true)
                 .width(Length::Fill)
                 .style(move |v| {
-                    let style = widget::container::bordered_box(v);
-                    let mut border = style.border;
-                    if focused {
-                        border = border.color(iced::color!(0x000080));
-                    }
-                    style.border(border)
+                    let style = container_style::rect_bordered(v);
+                    style.border(Border {
+                        color: if focused {
+                            iced::color!(0x000080)
+                        } else {
+                            style.border.color
+                        },
+                        ..style.border
+                    })
                 }),
         )
         .on_press(ItemRowMessage::Selected(item_id))

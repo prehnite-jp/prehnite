@@ -134,7 +134,7 @@ impl ItemList {
         )))
         .width(Length::Fill)
         .height(Length::Fill)
-        .style(widget::container::bordered_box)
+        .style(container_style::rect_bordered)
     }
 
     fn get_item_paragraph_or_headline(&'_ self) -> Option<&'_ Item> {
@@ -161,7 +161,7 @@ impl ItemList {
                 ItemType::Paragraph(p) => {
                     p.and_then(|p| {
                         p.accepted_draft
-                            .and_then(|d| Some(Element::from(widget::text(d.body))))
+                            .map(|d| Element::from(widget::text(d.body)))
                     })
                 }
             }
@@ -184,8 +184,8 @@ impl ItemList {
         widget::pane_grid(&self.item_list_pane, |_, state, _| {
             pane_grid::Content::new(
                 scrollable(match state {
-                    ItemListPane::PaneList => self.item_list_panel().padding(1),
-                    ItemListPane::PaneDetails => self.item_detail_panel().padding(1),
+                    ItemListPane::PaneList => self.item_list_panel(),
+                    ItemListPane::PaneDetails => self.item_detail_panel(),
                 })
                 .spacing(1),
             )
