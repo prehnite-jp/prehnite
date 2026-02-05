@@ -32,10 +32,6 @@ macro_rules! window_opener {
 
 impl WindowType {
     pub fn open_window(&self) -> (iced::window::Id, Task<iced::window::Id>) {
-        iced::window::open(match self {
-            WindowType::MainWindow => MainWindow::window_settings(),
-            WindowType::VersionInfoWindow => VersionInfoWindow::window_settings(),
-        })
         iced::window::open(window_opener!(
             self,
             (WindowType::MainWindow, MainWindow),
@@ -114,12 +110,6 @@ impl PrehniteApp {
 
     fn before_window_open(&mut self, window_type: &WindowType) -> Option<Task<DaemonMessage>> {
         match window_type {
-            WindowType::MainWindow => self
-                .main_window_id
-                .and_then(|id| Some(iced::window::gain_focus(id))),
-            WindowType::VersionInfoWindow => self
-                .version_info_window_id
-                .and_then(|id| Some(iced::window::gain_focus(id))),
             WindowType::MainWindow => self.main_window_id.map(iced::window::gain_focus),
             WindowType::VersionInfoWindow => {
                 self.version_info_window_id.map(iced::window::gain_focus)
@@ -146,8 +136,6 @@ impl PrehniteApp {
                 }
                 let (window_id, open_window_task) = w_type.open_window();
 
-                // 指定されたタイプで構築
-                let (mut window, init_window_task) = match w_type {
                 // ウィンドウを構築
                 let (mut window, init_window_task): (Box<dyn Window>, Task<WindowMessage>) = window_creator!(
                     w_type,
@@ -179,10 +167,6 @@ impl PrehniteApp {
             }
             DaemonMessage::WindowMessage(id, window_msg) => {
                 // デーモンに移譲されたメッセージを処理
-                if let WindowMessage::MainWindowMessage(MainWindowMessage::OpenVersionInfoWindow) =
-                    window_msg
-                {
-                    return Task::done(DaemonMessage::OpenWindow(WindowType::VersionInfoWindow));
                 match &window_msg {
                     WindowMessage::MainWindowMessage(MainWindowMessage::OpenVersionInfoWindow) => {
                         return Task::done(DaemonMessage::OpenWindow(WindowType::VersionInfoWindow));
