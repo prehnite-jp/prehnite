@@ -3,13 +3,14 @@ use crate::db::schema::Setting;
 use sqlx::SqliteConnection;
 use std::fmt::Display;
 
-const KEY_LOCALE: &str = "locale";
-const KEY_LAST_OPENED: &str = "last-opened-file";
+// G: global, B: book
+const G_KEY_LOCALE: &str = "locale";
+const G_KEY_LAST_OPENED: &str = "last-opened-file";
 
 #[derive(Clone, Debug)]
 pub enum SettingKey {
-    Locale,
-    LastOpened,
+    GLocale,
+    GLastOpened,
 }
 
 impl Display for SettingKey {
@@ -18,8 +19,8 @@ impl Display for SettingKey {
             f,
             "{}",
             match self {
-                SettingKey::Locale => KEY_LOCALE.to_string(),
-                SettingKey::LastOpened => KEY_LAST_OPENED.to_string(),
+                SettingKey::GLocale => G_KEY_LOCALE.to_string(),
+                SettingKey::GLastOpened => G_KEY_LAST_OPENED.to_string(),
             }
         )
     }
@@ -28,8 +29,8 @@ impl Display for SettingKey {
 impl SettingKey {
     fn default_setting_value(&self) -> Option<String> {
         match self {
-            SettingKey::Locale => sys_locale::get_locale(),
-            SettingKey::LastOpened => None,
+            SettingKey::GLocale => sys_locale::get_locale(),
+            SettingKey::GLastOpened => None,
         }
     }
 }
@@ -41,8 +42,8 @@ impl Setting {
     }
 
     pub async fn retore_all(conn: &mut SqliteConnection) -> Result<(), sqlx::Error> {
-        Self::restore(conn, SettingKey::Locale).await?;
-        Self::restore(conn, SettingKey::LastOpened).await?;
+        Self::restore(conn, SettingKey::GLocale).await?;
+        Self::restore(conn, SettingKey::GLastOpened).await?;
         Ok(())
     }
 }

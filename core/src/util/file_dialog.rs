@@ -100,7 +100,7 @@ async fn prehnite_book_file_process(book_path: PathBuf, ope: FileOpe) -> OpenPre
                         OpenPrehniteBookStatus::Failed
                     )
                     .as_mut(),
-                    SettingKey::LastOpened,
+                    SettingKey::GLastOpened,
                 )
                 .await
                 .unwrap_or_default();

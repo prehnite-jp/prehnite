@@ -58,7 +58,7 @@ impl MainWindow {
         let mut conn = acquire_err_handled(DBType::AppGlobal)
             .await
             .unwrap_or_alert();
-        let last_opened = query::fetch_setting(&mut conn, SettingKey::LastOpened)
+        let last_opened = query::fetch_setting(&mut conn, SettingKey::GLastOpened)
             .await
             .unwrap_or_else(|e| {
                 error!("Failed to fetch last opened settings. Error: {:#?}", e);

@@ -152,7 +152,7 @@ pub async fn open_book_err_handled(book_path: PathBuf) -> bool {
                     .await
                     .unwrap()
                     .as_mut(),
-                SettingKey::LastOpened,
+                SettingKey::GLastOpened,
                 book_path.to_str().map(|v| v.to_string()),
             )
             .await;
@@ -179,7 +179,7 @@ pub async fn close_book_err_handled() {
             .await
             .unwrap()
             .as_mut(),
-        SettingKey::LastOpened,
+        SettingKey::GLastOpened,
         None,
     )
     .await;
