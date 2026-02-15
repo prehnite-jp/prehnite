@@ -2,6 +2,7 @@ pub mod resources;
 mod window;
 
 use crate::app::window::main_window::{MainWindow, MainWindowMessage};
+use crate::app::window::setting_window::SettingWindow;
 use crate::app::window::version_info_window::VersionInfoWindow;
 use crate::app::window::{Window, WindowMessage};
 use iced::border::Radius;
@@ -18,6 +19,7 @@ use tracing::error;
 pub enum WindowType {
     MainWindow,
     VersionInfoWindow,
+    SettingWindow,
 }
 
 macro_rules! window_opener {
@@ -36,6 +38,7 @@ impl WindowType {
             self,
             (WindowType::MainWindow, MainWindow),
             (WindowType::VersionInfoWindow, VersionInfoWindow),
+            (WindowType::SettingWindow, SettingWindow)
         ))
     }
 }
@@ -62,6 +65,7 @@ impl From<TypedWindow> for (WindowType, Box<dyn Window>) {
 pub struct PrehniteApp {
     main_window_id: Option<iced::window::Id>,
     version_info_window_id: Option<iced::window::Id>,
+    setting_window_id: Option<iced::window::Id>,
     window: BTreeMap<iced::window::Id, TypedWindow>,
     window_was_shown: HashSet<iced::window::Id>,
 }
@@ -101,6 +105,7 @@ impl PrehniteApp {
             Self {
                 main_window_id: None,
                 version_info_window_id: None,
+                setting_window_id: None,
                 window: Default::default(),
                 window_was_shown: Default::default(),
             },
@@ -114,6 +119,7 @@ impl PrehniteApp {
             WindowType::VersionInfoWindow => {
                 self.version_info_window_id.map(iced::window::gain_focus)
             }
+            WindowType::SettingWindow => self.setting_window_id.map(iced::window::gain_focus),
         }
     }
 
@@ -122,6 +128,7 @@ impl PrehniteApp {
             match w_type {
                 WindowType::MainWindow => return iced::exit(),
                 WindowType::VersionInfoWindow => self.version_info_window_id = None,
+                WindowType::SettingWindow => self.setting_window_id = None,
             }
         }
         Task::none()
@@ -141,6 +148,7 @@ impl PrehniteApp {
                     w_type,
                     (WindowType::MainWindow, MainWindow),
                     (WindowType::VersionInfoWindow, VersionInfoWindow),
+                    (WindowType::SettingWindow, SettingWindow)
                 );
 
                 // 最大1つまでに限定されているウィンドウのIDを保持
@@ -150,7 +158,9 @@ impl PrehniteApp {
                     }
                     WindowType::VersionInfoWindow => {
                         self.version_info_window_id = Some(window_id);
-                        VersionInfoWindow::new()
+                    }
+                    WindowType::SettingWindow => {
+                        self.setting_window_id = Some(window_id);
                     }
                 };
 
@@ -170,6 +180,9 @@ impl PrehniteApp {
                 match &window_msg {
                     WindowMessage::MainWindowMessage(MainWindowMessage::OpenVersionInfoWindow) => {
                         return Task::done(DaemonMessage::OpenWindow(WindowType::VersionInfoWindow));
+                    }
+                    WindowMessage::MainWindowMessage(MainWindowMessage::OpenSettingWindow) => {
+                        return Task::done(DaemonMessage::OpenWindow(WindowType::SettingWindow));
                     }
                     _ => {}
                 }

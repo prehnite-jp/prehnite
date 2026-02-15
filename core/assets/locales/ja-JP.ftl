@@ -62,3 +62,7 @@ version-info = バージョン情報
 version-info-detail = {$app-name} v{$version}
 exit = 終了
 close = 閉じる
+settings.category.general = 全般
+settings.entry.locale = 言語と地域
+settings.entry.font = フォント
+settings.entry.auto-open-last-opened-file = 最後に閉じたファイルを自動で開く

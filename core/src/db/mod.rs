@@ -6,7 +6,7 @@ mod util;
 
 use crate::db::migrate::migrate;
 use crate::on_error_logging;
-use crate::settings::SettingKey;
+use crate::settings::{GlobalSettingKey, SettingKey};
 use crate::util::alert::{alert_i18n_show, alert_i18n_spawn, UnwrapOrErrorAlert};
 use crate::util::app_global::global_dir;
 use crate::util::file_dialog::OpenPrehniteBookStatus;
@@ -31,7 +31,7 @@ impl UnwrapOrErrorAlert<PoolConnection<Sqlite>> for Option<PoolConnection<Sqlite
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum DBType {
     PrehniteBook,
     AppGlobal,
@@ -152,7 +152,7 @@ pub async fn open_book_err_handled(book_path: PathBuf) -> bool {
                     .await
                     .unwrap()
                     .as_mut(),
-                SettingKey::GLastOpened,
+                SettingKey::Global(GlobalSettingKey::LastOpened),
                 book_path.to_str().map(|v| v.to_string()),
             )
             .await;
@@ -179,7 +179,7 @@ pub async fn close_book_err_handled() {
             .await
             .unwrap()
             .as_mut(),
-        SettingKey::GLastOpened,
+        SettingKey::Global(GlobalSettingKey::LastOpened),
         None,
     )
     .await;

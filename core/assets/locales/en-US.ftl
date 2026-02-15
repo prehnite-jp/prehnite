@@ -62,3 +62,7 @@ version-info = Version info
 version-info-detail = {$app-name} v{$version}
 exit = Exit
 close = Close
+settings.category.general = General
+settings.entry.locale = Locale
+settings.entry.font = Font
+settings.entry.auto-open-last-opened-file = Automatically open the last opened file

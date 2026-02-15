@@ -13,7 +13,7 @@ use iced::futures::FutureExt;
 use iced::{window, Element, Task};
 use prehnite_core::db::{acquire_err_handled, open_book_err_handled, query, DBType};
 use prehnite_core::i18n::i18n_w;
-use prehnite_core::settings::SettingKey;
+use prehnite_core::settings::{GlobalSettingKey};
 use prehnite_core::util::alert::UnwrapOrErrorAlert;
 use prehnite_core::util::file_dialog::FileOpe;
 use tracing::error;
@@ -43,6 +43,7 @@ pub enum MainWindowMessage {
     MenuBar(MenuBarMessage),
     BookOpened,
     OpenVersionInfoWindow,
+    OpenSettingWindow,
 }
 
 #[derive(Debug)]
@@ -58,7 +59,7 @@ impl MainWindow {
         let mut conn = acquire_err_handled(DBType::AppGlobal)
             .await
             .unwrap_or_alert();
-        let last_opened = query::fetch_setting(&mut conn, SettingKey::GLastOpened)
+        let last_opened = query::fetch_setting(&mut conn, GlobalSettingKey::LastOpened.into())
             .await
             .unwrap_or_else(|e| {
                 error!("Failed to fetch last opened settings. Error: {:#?}", e);
@@ -108,6 +109,7 @@ impl MainWindow {
                 return Task::done(MainWindowMessage::ChangePage(MainWindowPageId::ItemList));
             }
             MainWindowMessage::OpenVersionInfoWindow => { /* handled by daemon*/ }
+            MainWindowMessage::OpenSettingWindow => { /* handled by daemon*/ }
         }
         Task::none()
     }
