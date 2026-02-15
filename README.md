@@ -20,9 +20,3 @@ This version includes a data layer implementation and the ability to list items 
 Features such as text editing are not included.
 
 (テキスト編集などの主要機能は存在しません。)
-
-## release
-
-A new version will be released on the 16th of each month, with the latest version working at that time.
-
-(新バージョンは毎月16日にその時点で動作する最新バージョンを公開します。)
