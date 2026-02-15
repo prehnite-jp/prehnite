@@ -1,5 +1,5 @@
 use crate::db::DatabaseError;
-use crate::i18n::{get_locale_language};
+use crate::i18n::get_locale_language;
 use iced::{window, Task};
 use native_dialog::{MessageAlert, MessageLevel};
 use std::fmt::Debug;
@@ -300,4 +300,15 @@ pub fn fatal_initialize_app_error_db(e: DatabaseError) -> MessageAlert {
         ),
         MessageLevel::Error,
     )
+}
+
+const FATAL_INIT_SETTING_REGISTRY_ERROR_MESSAGE_JA: &str =
+    "設定レジストリの読み込みに失敗しました。";
+const FATAL_INIT_SETTING_REGISTRY_ERROR_MESSAGE_EN: &str = "Failed to load settings registry.";
+pub fn fatal_initialize_setting_registry_error() -> MessageAlert {
+    let (title, err_msg) = match get_locale_language().as_str() {
+        "ja" => (FATAL_JA, FATAL_INIT_SETTING_REGISTRY_ERROR_MESSAGE_JA),
+        &_ => (FATAL_EN, FATAL_INIT_SETTING_REGISTRY_ERROR_MESSAGE_EN),
+    };
+    builder::alert_(&None, (title, err_msg), MessageLevel::Error)
 }

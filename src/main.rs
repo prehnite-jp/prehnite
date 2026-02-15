@@ -6,7 +6,10 @@ use crate::app::PrehniteApp;
 use prehnite_core::db::{get_database, initialize_db, DBType, DatabaseError};
 use prehnite_core::i18n::initialize_i18n_from_db;
 use prehnite_core::log::initialize_logger;
-use prehnite_core::util::alert::fatal_initialize_app_error_db;
+use prehnite_core::settings::registry::SettingRegistry;
+use prehnite_core::util::alert::{
+    fatal_initialize_app_error_db, fatal_initialize_setting_registry_error,
+};
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 use tracing::error;
@@ -14,6 +17,7 @@ use tracing::error;
 #[derive(Debug)]
 enum InitializeError {
     DatabaseError(DatabaseError),
+    LoadSettingRegistry,
 }
 
 impl Display for InitializeError {
@@ -42,6 +46,9 @@ async fn initializer() {
     async fn func() -> Result<(), InitializeError> {
         initialize_logger();
         initialize_db().await?;
+        if !SettingRegistry::load(DBType::AppGlobal).await {
+            return Err(InitializeError::LoadSettingRegistry);
+        };
         initialize_i18n_from_db(
             get_database()
                 .read()
@@ -61,6 +68,9 @@ async fn initializer() {
         match e {
             InitializeError::DatabaseError(e) => {
                 fatal_initialize_app_error_db(e).show().unwrap();
+            }
+            InitializeError::LoadSettingRegistry => {
+                fatal_initialize_setting_registry_error().show().unwrap();
             }
         }
         panic!()
