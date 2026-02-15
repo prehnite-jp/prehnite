@@ -11,13 +11,13 @@ use tracing::error;
 
 fn registry() -> SettingRegistry {
     SettingRegistry::default().add_category(
-        SettingCategory::new("settings.category.general")
+        SettingCategory::new("settings_category_general")
             .add(
                 SettingEntry::new(
                     GlobalSettingKey::Locale.into(),
                     sys_locale::get_locale().into(),
                 )
-                .display_key("settings.entry.locale"),
+                .display_key("settings_entry_locale"),
             )
             .add(SettingEntry::new(
                 GlobalSettingKey::Font.into(),
@@ -32,7 +32,7 @@ fn registry() -> SettingRegistry {
             )
             .add(
                 SettingEntry::new(GlobalSettingKey::AutoOpenLastOpened.into(), true.into())
-                    .display_key("settings.entry.auto-open-last-opened-file"),
+                    .display_key("settings_entry_auto-open-last-opened-file"),
             ),
     )
 }
