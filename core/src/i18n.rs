@@ -1,5 +1,5 @@
-use crate::db::query;
-use crate::settings::{GlobalSettingKey, SettingKey};
+use crate::settings::registry::SettingRegistry;
+use crate::settings::GlobalSettingKey;
 use fluent_bundle::concurrent::FluentBundle;
 use fluent_bundle::{FluentArgs, FluentError, FluentResource};
 use sqlx::SqliteConnection;
@@ -54,6 +54,7 @@ pub enum I18nError {
     FailedToAddResource(Vec<FluentError>),
     DbError(sqlx::Error),
     FailedToLockLangBundle,
+    FailedToApplySetting,
 }
 
 impl Display for I18nError {
@@ -146,7 +147,34 @@ macro_rules! error_failed_to_lock_lang_bundle {
 }
 
 #[tracing::instrument]
-pub async fn change_lang_bundle(
+pub async fn change_lang_bundle(arg_lang_id_str: &str) -> Result<(), I18nError> {
+    let (lang_id, lang_id_str): (LanguageIdentifier, &str) = match arg_lang_id_str.parse() {
+        Ok(v) => (v, arg_lang_id_str),
+        Err(e) => {
+            debug!("Parse failed!! set default lang_id ...");
+            debug!("Error: {e:#?}");
+            (DEFAULT_LANG_ID.parse()?, DEFAULT_LANG_ID)
+        }
+    };
+    if error_failed_to_lock_lang_bundle!(CURRENT_RESOURCE_BUNDLE.read())
+        .get_bundle()
+        .is_none_or(|v| !v.locales.contains(&lang_id))
+    {
+        error_failed_to_lock_lang_bundle!(CURRENT_RESOURCE_BUNDLE.write())
+            .set_bundle(Some(parse_lang_bundle(lang_id_str)?));
+        if !SettingRegistry::immediate_apply(
+            GlobalSettingKey::Locale.into(),
+            lang_id.to_string().into(),
+        )
+        .await
+        {
+            return Err(I18nError::FailedToApplySetting);
+        };
+    }
+    Ok(())
+}
+
+pub async fn change_lang_bundle_with_conn(
     conn: &mut SqliteConnection,
     arg_lang_id_str: &str,
 ) -> Result<(), I18nError> {
@@ -164,7 +192,15 @@ pub async fn change_lang_bundle(
     {
         error_failed_to_lock_lang_bundle!(CURRENT_RESOURCE_BUNDLE.write())
             .set_bundle(Some(parse_lang_bundle(lang_id_str)?));
-        query::update_setting(conn, SettingKey::Global(GlobalSettingKey::Locale), Some(lang_id.to_string())).await?
+        if !SettingRegistry::immediate_apply_with_conn(
+            conn,
+            GlobalSettingKey::Locale.into(),
+            lang_id.to_string().into(),
+        )
+        .await
+        {
+            return Err(I18nError::FailedToApplySetting);
+        };
     }
     Ok(())
 }
@@ -230,12 +266,21 @@ pub fn i18n_fmt(id: &str, args: Option<&FluentArgs<'_>>) -> String {
     })
 }
 
-pub async fn initialize_i18n_from_db(conn: &mut SqliteConnection) -> Result<(), sqlx::Error> {
-    let lang_id = query::fetch_setting(conn, SettingKey::Global(GlobalSettingKey::Locale))
-        .await?
-        .map(|v| v.setting_value)
-        .unwrap_or(None);
-    change_lang_bundle(conn, lang_id.unwrap_or(get_locale_lang_id()).as_str())
+pub async fn initialize_i18n_from_db() -> Result<(), sqlx::Error> {
+    let lang_id = SettingRegistry::get_applied(GlobalSettingKey::Locale.into())
+        .and_then(|v| v.try_into().ok());
+    change_lang_bundle(lang_id.unwrap_or(get_locale_lang_id()).as_str())
+        .await
+        .expect("lang_id not found.");
+    Ok(())
+}
+
+pub async fn initialize_i18n_from_db_with_conn(
+    conn: &mut SqliteConnection,
+) -> Result<(), sqlx::Error> {
+    let lang_id = SettingRegistry::get_applied(GlobalSettingKey::Locale.into())
+        .and_then(|v| v.try_into().ok());
+    change_lang_bundle_with_conn(conn, lang_id.unwrap_or(get_locale_lang_id()).as_str())
         .await
         .expect("lang_id not found.");
     Ok(())
@@ -244,7 +289,8 @@ pub async fn initialize_i18n_from_db(conn: &mut SqliteConnection) -> Result<(), 
 #[cfg(test)]
 mod tests {
     use crate::i18n::{
-        change_lang_bundle, get_lang_bundle, parse_lang_bundle, try_get_ftl_str, SUPPORTED_LANG_ID,
+        change_lang_bundle_with_conn, get_lang_bundle, parse_lang_bundle,
+        try_get_ftl_str, SUPPORTED_LANG_ID,
     };
     use sqlx::SqlitePool;
 
@@ -259,7 +305,7 @@ mod tests {
     async fn valid_check_ftl(pool: SqlitePool) {
         let mut conn = pool.acquire().await.unwrap();
         for i in SUPPORTED_LANG_ID {
-            change_lang_bundle(&mut conn, i)
+            change_lang_bundle_with_conn(&mut *conn, i)
                 .await
                 .expect(format!("Failed to parse ftl: {}", i).as_str());
             assert!(

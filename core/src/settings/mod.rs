@@ -1,6 +1,9 @@
 pub mod registry;
 pub mod value;
 
+use crate::db::{acquire_err_handled, DBType};
+use sqlx::pool::PoolConnection;
+use sqlx::Sqlite;
 use std::fmt::Display;
 
 macro_rules! key_impl {
@@ -83,6 +86,21 @@ pub enum SettingKey {
     Book(BookSettingKey),
 }
 
+impl Into<DBType> for SettingKey {
+    fn into(self) -> DBType {
+        match self {
+            SettingKey::Global(_) => DBType::AppGlobal,
+            SettingKey::Book(_) => DBType::PrehniteBook,
+        }
+    }
+}
+
+impl SettingKey {
+    pub async fn get_conn(self) -> Option<PoolConnection<Sqlite>> {
+        acquire_err_handled(self.into()).await
+    }
+}
+
 impl From<GlobalSettingKey> for SettingKey {
     fn from(value: GlobalSettingKey) -> Self {
         Self::Global(value)
@@ -143,11 +161,13 @@ impl SettingCategory {
 
 #[derive(Debug, Clone)]
 pub struct SettingEntry {
-    pub setting_key: SettingKey,
-    pub display_key: &'static str,
+    setting_key: SettingKey,
+    display_key: &'static str,
     // この値によって設定値の型が決定されます。
-    pub default_value: SettingValueType,
-    pub is_visible: bool,
+    default_value: SettingValueType,
+    is_visible: bool,
+    // 選択可能な値リスト
+    selectable_values: Option<&'static [&'static str]>,
 }
 
 impl SettingEntry {
@@ -157,7 +177,24 @@ impl SettingEntry {
             display_key: setting_key.as_str(),
             default_value,
             is_visible: true,
+            selectable_values: None,
         }
+    }
+
+    pub fn display(&self) -> String {
+        i18n(self.display_key)
+    }
+
+    pub fn is_visible(&self) -> bool {
+        self.is_visible
+    }
+
+    pub fn selectable(&self) -> Option<&'static [&str]> {
+        self.selectable_values
+    }
+
+    pub fn default_value(&self) -> &SettingValueType {
+        &self.default_value
     }
 
     fn visibility(mut self, is_visible: bool) -> Self {
@@ -167,6 +204,11 @@ impl SettingEntry {
 
     fn display_key(mut self, display_key: &'static str) -> Self {
         self.display_key = display_key;
+        self
+    }
+
+    fn selectable_values(mut self, values: &'static [&str]) -> Self {
+        self.selectable_values = Some(values);
         self
     }
 }

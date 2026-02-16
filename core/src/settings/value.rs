@@ -100,10 +100,9 @@ pub struct SettingValue {
 
 impl SettingValue {
     #[tracing::instrument]
-    pub async fn apply(&mut self, conn: &mut SqliteConnection, setting_key: SettingKey) -> bool {
-        query::update_setting(conn, setting_key, self.temporary.clone().try_into().ok())
+    pub async fn save(&self, conn: &mut SqliteConnection, setting_key: SettingKey) -> bool {
+        query::update_setting(conn, setting_key, self.applied.clone().try_into().ok())
             .await
-            .inspect(|_| self.set_applied(self.temporary.clone()))
             .inspect_err(|e| error!("Failed to apply settings. E: {:?}", e))
             .is_ok()
     }
@@ -115,8 +114,12 @@ impl SettingValue {
         }
     }
 
-    fn set_applied(&mut self, v: SettingValueType) {
+    pub(super) fn set_applied(&mut self, v: SettingValueType) {
         self.applied = v;
+    }
+
+    pub(super) fn apply(&mut self) {
+        self.set_applied(self.temporary.clone())
     }
 
     pub fn set(&mut self, v: SettingValueType) {

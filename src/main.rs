@@ -3,7 +3,7 @@ mod db;
 mod util;
 
 use crate::app::PrehniteApp;
-use prehnite_core::db::{get_database, initialize_db, DBType, DatabaseError};
+use prehnite_core::db::{initialize_db, DBType, DatabaseError};
 use prehnite_core::i18n::initialize_i18n_from_db;
 use prehnite_core::log::initialize_logger;
 use prehnite_core::settings::registry::SettingRegistry;
@@ -49,16 +49,7 @@ async fn initializer() {
         if !SettingRegistry::load(DBType::AppGlobal).await {
             return Err(InitializeError::LoadSettingRegistry);
         };
-        initialize_i18n_from_db(
-            get_database()
-                .read()
-                .await
-                .acquire(DBType::AppGlobal)
-                .await?
-                .unwrap()
-                .as_mut(),
-        )
-        .await?;
+        initialize_i18n_from_db().await?;
         Ok(())
     }
 

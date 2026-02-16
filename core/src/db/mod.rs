@@ -6,6 +6,7 @@ mod util;
 
 use crate::db::migrate::migrate;
 use crate::on_error_logging;
+use crate::settings::registry::SettingRegistry;
 use crate::settings::{GlobalSettingKey, SettingKey};
 use crate::util::alert::{alert_i18n_show, alert_i18n_spawn, UnwrapOrErrorAlert};
 use crate::util::app_global::global_dir;
@@ -147,15 +148,10 @@ pub async fn open_book_err_handled(book_path: PathBuf) -> bool {
         .await;
     match r {
         Ok(_) => {
-            query::update_setting(
-                acquire_err_handled(DBType::AppGlobal)
-                    .await
-                    .unwrap()
-                    .as_mut(),
-                SettingKey::Global(GlobalSettingKey::LastOpened),
-                book_path.to_str().map(|v| v.to_string()),
-            )
-            .await;
+            SettingRegistry::immediate_apply(
+                GlobalSettingKey::LastOpened.into(),
+                book_path.to_str().into(),
+            );
             true
         }
         Err(e) => {
@@ -174,15 +170,10 @@ pub async fn close_book_err_handled() {
         .write()
         .await
         .set_pool(None);
-    query::update_setting(
-        acquire_err_handled(DBType::AppGlobal)
-            .await
-            .unwrap()
-            .as_mut(),
-        SettingKey::Global(GlobalSettingKey::LastOpened),
-        None,
-    )
-    .await;
+    SettingRegistry::immediate_apply(
+        GlobalSettingKey::LastOpened.into(),
+        Option::<String>::from(None).into(),
+    );
 }
 
 #[derive(Debug)]

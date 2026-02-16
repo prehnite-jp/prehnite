@@ -11,10 +11,11 @@ use crate::app::window::{Window, WindowMessage};
 use crate::util::app_version_info;
 use iced::futures::FutureExt;
 use iced::{window, Element, Task};
-use prehnite_core::db::{acquire_err_handled, open_book_err_handled, query, DBType};
+use prehnite_core::db::{open_book_err_handled, DBType};
 use prehnite_core::i18n::i18n_w;
-use prehnite_core::settings::{GlobalSettingKey};
-use prehnite_core::util::alert::UnwrapOrErrorAlert;
+use prehnite_core::settings::registry::SettingRegistry;
+use prehnite_core::settings::value::SettingValueType;
+use prehnite_core::settings::GlobalSettingKey;
 use prehnite_core::util::file_dialog::FileOpe;
 use tracing::error;
 
@@ -56,20 +57,12 @@ pub struct MainWindow {
 impl MainWindow {
     #[tracing::instrument]
     async fn open_last_opened_book() -> MainWindowMessage {
-        let mut conn = acquire_err_handled(DBType::AppGlobal)
-            .await
-            .unwrap_or_alert();
-        let last_opened = query::fetch_setting(&mut conn, GlobalSettingKey::LastOpened.into())
-            .await
-            .unwrap_or_else(|e| {
-                error!("Failed to fetch last opened settings. Error: {:#?}", e);
-                None
-            });
+        let last_opened = SettingRegistry::get_applied(GlobalSettingKey::LastOpened.into());
         fn return_err() -> MainWindowMessage {
             MainWindowMessage::ChangePage(MainWindowPageId::BookNotOpened)
         }
         match last_opened
-            .and_then(|v| v.setting_value)
+            .and_then(|v| String::try_from(v).ok())
             .and_then(|v| v.parse().ok())
         {
             None => return_err(),
@@ -106,7 +99,10 @@ impl MainWindow {
             MainWindowMessage::MenuBar(v) => return menubar_handler(self, v),
             MainWindowMessage::BookOpened => {
                 self.is_book_opened = true;
-                return Task::done(MainWindowMessage::ChangePage(MainWindowPageId::ItemList));
+                return Task::future(async {
+                    SettingRegistry::load(DBType::PrehniteBook).await;
+                    MainWindowMessage::ChangePage(MainWindowPageId::ItemList)
+                });
             }
             MainWindowMessage::OpenVersionInfoWindow => { /* handled by daemon*/ }
             MainWindowMessage::OpenSettingWindow => { /* handled by daemon*/ }
@@ -137,7 +133,17 @@ impl Window for MainWindow {
     }
 
     fn init_task() -> Task<WindowMessage> {
-        Task::future(Self::open_last_opened_book().map(WindowMessage::MainWindowMessage))
+        if SettingRegistry::get_applied(GlobalSettingKey::AutoOpenLastOpened.into())
+            .and_then(|v| match v {
+                SettingValueType::Bool(v) => v,
+                _ => None,
+            })
+            .unwrap_or(true)
+        {
+            Task::future(Self::open_last_opened_book().map(WindowMessage::MainWindowMessage))
+        } else {
+            Task::none()
+        }
     }
 
     #[tracing::instrument]

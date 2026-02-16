@@ -1,4 +1,4 @@
-use crate::db::{open_book_err_handled, DBType};
+use crate::db::open_book_err_handled;
 use crate::i18n::i18n;
 use crate::opt_unwrap_or_return;
 use crate::util::alert::alert_i18n_spawn;
