@@ -14,7 +14,7 @@ rust-version.workspace = true
 members = ["core", "font-manager"]
 
 [workspace.package]
-version = "0.0.2-alpha"
+version = "0.0.1-alpha"
 edition = "2024"
 license = "Zlib"
 authors = ["saku-shirakura<saku@sakushira.com>"]
@@ -41,8 +41,8 @@ serde_json.workspace = true
 prehnite-font-manager.workspace = true
 
 [workspace.dependencies]
-prehnite-core = { version = "0.0.2-alpha", path = "core" }
-prehnite-font-manager = { version = "0.0.2-alpha", path = "font-manager" }
+prehnite-core = { version = "0.0.1-alpha", path = "core" }
+prehnite-font-manager = { version = "0.0.1-alpha", path = "font-manager" }
 #prehnite-settings = { version = "0.0.1", git = "https://github.com/saku-shirakura/prehnite-settings.git" }
 #prehnite-local-data-manager = { version = "0.0.1", git = "https://github.com/saku-shirakura/prehnite-local-data-manager.git" }
 chrono = "0.4"
