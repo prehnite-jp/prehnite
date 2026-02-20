@@ -9,6 +9,7 @@ use std::sync::{Arc, LazyLock, PoisonError, RwLock, RwLockReadGuard};
 use sys_locale::get_locale;
 use tracing::{debug, error};
 use unic_langid::{LanguageIdentifier, LanguageIdentifierError};
+use crate::widget::font::ftext;
 
 pub const SUPPORTED_LANG_ID: &[&str] = &["en-US", "ja-JP"];
 
@@ -214,11 +215,11 @@ pub fn i18n(id: &str) -> String {
 }
 
 pub fn i18n_w(id: &str) -> iced::widget::Text<'_> {
-    iced::widget::text(i18n_fmt(id, None))
+    ftext(i18n_fmt(id, None))
 }
 
 pub fn i18n_fmt_w<'a>(id: &str, args: Option<&FluentArgs<'_>>) -> iced::widget::Text<'a> {
-    iced::widget::text(i18n_fmt(id, args))
+    ftext(i18n_fmt(id, args))
 }
 
 #[tracing::instrument]
@@ -267,8 +268,8 @@ pub fn i18n_fmt(id: &str, args: Option<&FluentArgs<'_>>) -> String {
 }
 
 pub async fn initialize_i18n_from_db() -> Result<(), sqlx::Error> {
-    let lang_id = SettingRegistry::get_applied(GlobalSettingKey::Locale.into())
-        .and_then(|v| v.try_into().ok());
+    let lang_id = SettingRegistry::get(&GlobalSettingKey::Locale.into())
+        .and_then(|v| v.to_opt_string());
     change_lang_bundle(lang_id.unwrap_or(get_locale_lang_id()).as_str())
         .await
         .expect("lang_id not found.");
@@ -278,8 +279,8 @@ pub async fn initialize_i18n_from_db() -> Result<(), sqlx::Error> {
 pub async fn initialize_i18n_from_db_with_conn(
     conn: &mut SqliteConnection,
 ) -> Result<(), sqlx::Error> {
-    let lang_id = SettingRegistry::get_applied(GlobalSettingKey::Locale.into())
-        .and_then(|v| v.try_into().ok());
+    let lang_id = SettingRegistry::get(&GlobalSettingKey::Locale.into())
+        .and_then(|v| v.to_opt_string());
     change_lang_bundle_with_conn(conn, lang_id.unwrap_or(get_locale_lang_id()).as_str())
         .await
         .expect("lang_id not found.");

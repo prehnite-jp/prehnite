@@ -43,6 +43,8 @@ prehnite-font-manager.workspace = true
 [workspace.dependencies]
 prehnite-core = { version = "0.0.2-alpha", path = "core" }
 prehnite-font-manager = { version = "0.0.2-alpha", path = "font-manager" }
+#prehnite-settings = { version = "0.0.1", git = "https://github.com/saku-shirakura/prehnite-settings.git" }
+#prehnite-local-data-manager = { version = "0.0.1", git = "https://github.com/saku-shirakura/prehnite-local-data-manager.git" }
 chrono = "0.4"
 iced = { version = "0.14", features = ["tokio", "image"] }
 iced_aw = { version = "0.13", features = ["menu"] }

@@ -1,6 +1,7 @@
 use crate::db::schema::{Item, ItemType};
 use crate::i18n::i18n;
 use crate::util::container_style;
+use crate::widget::font::{ftext, get_font};
 use iced::{widget, Border, Length};
 use std::collections::HashMap;
 
@@ -34,10 +35,11 @@ impl ItemRow {
 
     fn headline_view(item: &Item) -> iced::Element<'_, ItemRowMessage> {
         widget::column![
-            widget::text(&item.title)
+            ftext(&item.title)
                 .size(20)
                 .wrapping(widget::text::Wrapping::None),
             widget::text!["{}: {}", i18n("task"), task_progress_status_str(item)]
+                .font(get_font())
                 .wrapping(widget::text::Wrapping::None)
         ]
         .padding(10)
@@ -46,10 +48,11 @@ impl ItemRow {
 
     fn paragraph_view(item: &Item) -> iced::Element<'_, ItemRowMessage> {
         widget::column![
-            widget::text(&item.title)
+            ftext(&item.title)
                 .size(20)
                 .wrapping(widget::text::Wrapping::None),
             widget::text!["{}: {}", i18n("task"), task_progress_status_str(item)]
+                .font(get_font())
                 .wrapping(widget::text::Wrapping::None),
         ]
         .padding(10)

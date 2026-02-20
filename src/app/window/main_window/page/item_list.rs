@@ -9,6 +9,7 @@ use prehnite_core::util::container_style;
 use prehnite_core::widget::item::{ItemRow, ItemRowMessage};
 use std::collections::HashMap;
 use tracing::error;
+use prehnite_core::widget::font::ftext;
 
 #[derive(Clone, Debug)]
 pub enum ItemListMessage {
@@ -153,7 +154,7 @@ impl ItemList {
     fn item_detail(item: &Item) -> Element<'_, ItemListMessage> {
         widget::column![
             i18n_w(item.item_type.as_ref()),
-            widget::text(&item.title),
+            ftext(&item.title),
             match item.item_type.clone() {
                 ItemType::Headline(_) => {
                     None
@@ -161,7 +162,7 @@ impl ItemList {
                 ItemType::Paragraph(p) => {
                     p.and_then(|p| {
                         p.accepted_draft
-                            .map(|d| Element::from(widget::text(d.body)))
+                            .map(|d| Element::from(ftext(d.body)))
                     })
                 }
             }

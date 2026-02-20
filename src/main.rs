@@ -7,12 +7,14 @@ use prehnite_core::db::{initialize_db, DBType, DatabaseError};
 use prehnite_core::i18n::initialize_i18n_from_db;
 use prehnite_core::log::initialize_logger;
 use prehnite_core::settings::registry::SettingRegistry;
+use prehnite_core::settings::GlobalSettingKey;
 use prehnite_core::util::alert::{
     fatal_initialize_app_error_db, fatal_initialize_setting_registry_error,
 };
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 use tracing::error;
+use prehnite_font_manager::get_default_font_family;
 
 #[derive(Debug)]
 enum InitializeError {
@@ -50,6 +52,11 @@ async fn initializer() {
             return Err(InitializeError::LoadSettingRegistry);
         };
         initialize_i18n_from_db().await?;
+        if let None =
+            SettingRegistry::get(&GlobalSettingKey::Font.into()).and_then(|v| v.get::<String>())
+        {
+            SettingRegistry::immediate_apply(GlobalSettingKey::Font.into(), get_default_font_family().into()).await;
+        }
         Ok(())
     }
 

@@ -14,7 +14,6 @@ use iced::{window, Element, Task};
 use prehnite_core::db::{open_book_err_handled, DBType};
 use prehnite_core::i18n::i18n_w;
 use prehnite_core::settings::registry::SettingRegistry;
-use prehnite_core::settings::value::SettingValueType;
 use prehnite_core::settings::GlobalSettingKey;
 use prehnite_core::util::file_dialog::FileOpe;
 use tracing::error;
@@ -47,6 +46,12 @@ pub enum MainWindowMessage {
     OpenSettingWindow,
 }
 
+impl From<MainWindowMessage> for WindowMessage {
+    fn from(value: MainWindowMessage) -> Self {
+        Self::MainWindowMessage(value)
+    }
+}
+
 #[derive(Debug)]
 pub struct MainWindow {
     page: MainWindowPage,
@@ -57,12 +62,12 @@ pub struct MainWindow {
 impl MainWindow {
     #[tracing::instrument]
     async fn open_last_opened_book() -> MainWindowMessage {
-        let last_opened = SettingRegistry::get_applied(GlobalSettingKey::LastOpened.into());
+        let last_opened = SettingRegistry::get(&GlobalSettingKey::LastOpened.into());
         fn return_err() -> MainWindowMessage {
             MainWindowMessage::ChangePage(MainWindowPageId::BookNotOpened)
         }
         match last_opened
-            .and_then(|v| String::try_from(v).ok())
+            .and_then(|v| v.to_opt_string())
             .and_then(|v| v.parse().ok())
         {
             None => return_err(),
@@ -133,16 +138,13 @@ impl Window for MainWindow {
     }
 
     fn init_task() -> Task<WindowMessage> {
-        if SettingRegistry::get_applied(GlobalSettingKey::AutoOpenLastOpened.into())
-            .and_then(|v| match v {
-                SettingValueType::Bool(v) => v,
-                _ => None,
-            })
+        if SettingRegistry::get(&GlobalSettingKey::AutoOpenLastOpened.into())
+            .and_then(|v| v.get())
             .unwrap_or(true)
         {
             Task::future(Self::open_last_opened_book().map(WindowMessage::MainWindowMessage))
         } else {
-            Task::none()
+            Task::done(MainWindowMessage::ChangePage(MainWindowPageId::BookNotOpened).into())
         }
     }
 

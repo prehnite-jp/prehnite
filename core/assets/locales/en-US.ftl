@@ -66,3 +66,7 @@ settings_category_general = General
 settings_entry_locale = Locale
 settings_entry_font = Font
 settings_entry_auto-open-last-opened-file = Automatically open the last opened file
+unknown=unknown
+apply=Apply
+cancel=Cancel
+search=Search

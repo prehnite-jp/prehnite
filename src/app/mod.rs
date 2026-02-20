@@ -2,15 +2,18 @@ pub mod resources;
 mod window;
 
 use crate::app::window::main_window::{MainWindow, MainWindowMessage};
-use crate::app::window::setting_window::SettingWindow;
+use crate::app::window::setting_window::{SettingWindow};
 use crate::app::window::version_info_window::VersionInfoWindow;
 use crate::app::window::{Window, WindowMessage};
 use iced::border::Radius;
 use iced::widget::{button, space};
 use iced::{Border, Element, Font, Subscription, Task};
-use prehnite_core::i18n::i18n_w;
+use prehnite_core::i18n::{change_lang_bundle, i18n_w, DEFAULT_LANG_ID};
 use prehnite_core::opt_unwrap_or_return;
-use prehnite_font_manager::{get_default_font_family, FontLoader};
+use prehnite_core::settings::registry::SettingRegistry;
+use prehnite_core::settings::GlobalSettingKey;
+use prehnite_core::widget::font::{get_default_font, set_default_font, set_font};
+use prehnite_font_manager::{get_default_font_family, get_global_font_list, FontLoader};
 use std::collections::{BTreeMap, HashSet};
 use std::fmt::Debug;
 use tracing::error;
@@ -76,6 +79,7 @@ pub enum DaemonMessage {
     WindowOpened(iced::window::Id),
     WindowMessage(iced::window::Id, WindowMessage),
     WindowClosed(iced::window::Id),
+    ReloadFont,
 }
 
 macro_rules! window_creator {
@@ -92,11 +96,12 @@ macro_rules! window_creator {
 
 impl PrehniteApp {
     pub fn run() -> Result<(), iced::Error> {
+        set_default_font(Font::with_name(get_default_font_family()));
         iced::daemon(Self::new, Self::update, Self::view)
             .title(Self::title)
             .subscription(Self::subscription)
             .load_all_prehnite_bundled_font()
-            .default_font(Font::with_name(get_default_font_family()))
+            .default_font(get_default_font())
             .run()
     }
 
@@ -109,7 +114,9 @@ impl PrehniteApp {
                 window: Default::default(),
                 window_was_shown: Default::default(),
             },
-            Task::done(DaemonMessage::OpenWindow(WindowType::MainWindow)),
+            Task::done(DaemonMessage::ReloadFont).chain(Task::done(DaemonMessage::OpenWindow(
+                WindowType::MainWindow,
+            ))),
         )
     }
 
@@ -179,10 +186,24 @@ impl PrehniteApp {
                 // デーモンに移譲されたメッセージを処理
                 match &window_msg {
                     WindowMessage::MainWindowMessage(MainWindowMessage::OpenVersionInfoWindow) => {
-                        return Task::done(DaemonMessage::OpenWindow(WindowType::VersionInfoWindow));
+                        return Task::done(DaemonMessage::OpenWindow(
+                            WindowType::VersionInfoWindow,
+                        ));
                     }
                     WindowMessage::MainWindowMessage(MainWindowMessage::OpenSettingWindow) => {
                         return Task::done(DaemonMessage::OpenWindow(WindowType::SettingWindow));
+                    }
+                    WindowMessage::ReloadFont => {
+                        return Task::done(DaemonMessage::ReloadFont);
+                    }
+                    WindowMessage::ReloadLanguage => {
+                        return Task::future(async {
+                            let lang_id = SettingRegistry::get(&GlobalSettingKey::Locale.into())
+                                .and_then(|v| v.get::<String>())
+                                .unwrap_or(DEFAULT_LANG_ID.to_string());
+                            change_lang_bundle(lang_id.as_str()).await
+                        })
+                        .discard();
                     }
                     _ => {}
                 }
@@ -203,6 +224,13 @@ impl PrehniteApp {
                     return iced::exit();
                 }
                 self.on_window_close(typed_window)
+            }
+            DaemonMessage::ReloadFont => {
+                let v = SettingRegistry::get(&GlobalSettingKey::Font.into())
+                    .and_then(|v| v.get::<String>())
+                    .and_then(|v| get_global_font_list().iter().filter(|x| **x == v).next());
+                set_font(v);
+                Task::none()
             }
         }
     }

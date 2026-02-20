@@ -2,7 +2,7 @@ use crate::db::schema::Setting;
 use crate::db::{acquire_err_handled, DBType};
 use crate::i18n::{DEFAULT_LANG_ID, SUPPORTED_LANG_ID};
 use crate::opt_unwrap_or_return;
-use crate::settings::value::{SettingValue, SettingValueType};
+use crate::settings::value::SettingValueType;
 use crate::settings::{
     BookSettingKey, GlobalSettingKey, SettingCategory, SettingEntry, SettingKey,
 };
@@ -31,10 +31,11 @@ fn registry() -> SettingRegistry {
                     .display_key("settings_entry_locale")
                     .selectable_values(SUPPORTED_LANG_ID),
             )
-            .add(SettingEntry::new(
-                GlobalSettingKey::Font.into(),
-                Option::<bool>::None.into(),
-            ))
+            .add(
+                SettingEntry::new(GlobalSettingKey::Font.into(), Option::<String>::None.into())
+                    .selectable_values(&[])
+                    .display_key("settings_entry_font"),
+            )
             .add(
                 SettingEntry::new(
                     GlobalSettingKey::LastOpened.into(),
@@ -53,19 +54,18 @@ fn registry() -> SettingRegistry {
 pub struct SettingRegistry {
     pub categories: Vec<SettingCategory>,
     pub entries: HashMap<SettingKey, SettingEntry>,
-    pub values: HashMap<SettingKey, SettingValue>,
+    values: RwLock<HashMap<SettingKey, SettingValueType>>,
 }
 
-static REGISTRY: LazyLock<Arc<RwLock<SettingRegistry>>> =
-    LazyLock::new(|| Arc::new(RwLock::new(registry())));
+static REGISTRY: LazyLock<Arc<SettingRegistry>> = LazyLock::new(|| Arc::new(registry()));
 
 impl SettingRegistry {
     fn add_category(mut self, category: SettingCategory) -> Self {
         category.entries.iter().for_each(|e| {
-            self.values.insert(
-                e.setting_key.clone(),
-                SettingValue::new(e.default_value.clone()),
-            );
+            self.values
+                .write()
+                .unwrap()
+                .insert(e.setting_key.clone(), e.default_value.clone());
         });
         self.categories.push(category);
         if let Some(c) = self.categories.last() {
@@ -77,39 +77,67 @@ impl SettingRegistry {
     }
 
     #[tracing::instrument]
-    async fn impl_load(target: DBType) -> Option<HashMap<SettingKey, SettingValue>> {
-        let mut values: HashMap<SettingKey, SettingValue> = HashMap::new();
-        let mut conn = match acquire_err_handled(target).await {
-            None => {
-                return None;
-            }
-            Some(conn) => conn,
-        };
-        match Setting::select_all(&mut *conn).await {
-            Ok(v) => {
-                for x in v.into_iter() {
-                    let raw_key = x.setting_key;
-                    if let Ok(key) = match target {
-                        DBType::AppGlobal => {
-                            GlobalSettingKey::try_from(raw_key.as_str()).map(|v| v.into())
+    pub fn get(key: &SettingKey) -> Option<SettingValueType> {
+        Some(REGISTRY.values.read().unwrap().get(key)?.clone())
+    }
+
+    #[tracing::instrument]
+    pub async fn load(target: DBType) -> bool {
+        let values = opt_unwrap_or_return!(
+            async {
+                let mut values: HashMap<SettingKey, SettingValueType> = HashMap::new();
+                let mut conn = match acquire_err_handled(target).await {
+                    None => {
+                        return None;
+                    }
+                    Some(conn) => conn,
+                };
+                match Setting::select_all(&mut *conn).await {
+                    Ok(v) => {
+                        for x in v.into_iter() {
+                            let raw_key = x.setting_key;
+                            if let Ok(key) = match target {
+                                DBType::AppGlobal => {
+                                    GlobalSettingKey::try_from(raw_key.as_str()).map(|v| v.into())
+                                }
+                                DBType::PrehniteBook => {
+                                    BookSettingKey::try_from(raw_key.as_str()).map(|v| v.into())
+                                }
+                            } {
+                                values.insert(
+                                    key,
+                                    match REGISTRY.entries.get(&key) {
+                                        None => SettingValueType::String(x.setting_value),
+                                        Some(v) => v.default_value.converter(x.setting_value),
+                                    },
+                                );
+                            }
                         }
-                        DBType::PrehniteBook => {
-                            BookSettingKey::try_from(raw_key.as_str()).map(|v| v.into())
-                        }
-                    } {
-                        values.insert(key, SettingValue::new(x.setting_value.into()));
+                        Some(values)
+                    }
+                    Err(e) => {
+                        error!("Failed to fetch settings. E: {e:?}");
+                        None
                     }
                 }
-                Some(values)
+            }
+            .await,
+            false
+        );
+        match REGISTRY.values.write() {
+            Ok(mut v) => {
+                v.extend(values);
+                true
             }
             Err(e) => {
-                error!("Failed to fetch settings. E: {e:?}");
-                None
+                error!("Failed to lock setting registry. E: {:?}", e);
+                false
             }
         }
     }
 
-    async fn impl_save(&self, target: DBType) -> bool {
+    #[tracing::instrument]
+    pub async fn save(target: DBType) -> bool {
         let mut conn = match acquire_err_handled(target).await {
             None => {
                 return false;
@@ -123,7 +151,7 @@ impl SettingRegistry {
                 return false;
             }
         };
-        for entry in self
+        for entry in REGISTRY
             .entries
             .values()
             .filter(|v| match v.setting_key {
@@ -133,7 +161,7 @@ impl SettingRegistry {
             .into_iter()
         {
             // 保存
-            if !self.impl_save_by_key(&mut *tx, entry.setting_key).await {
+            if !Self::save_by_key_with_conn(&mut *tx, entry.setting_key).await {
                 if let Err(e) = tx.rollback().await {
                     error!("Rollback failed!! E: {e:?}")
                 }
@@ -147,95 +175,6 @@ impl SettingRegistry {
         true
     }
 
-    async fn impl_save_by_key(&self, conn: &mut SqliteConnection, key: SettingKey) -> bool {
-        self.values
-            .get(&key)
-            .expect("Failed to get value")
-            .save(&mut *conn, key)
-            .await
-    }
-
-    #[tracing::instrument]
-    fn impl_get_applied(&self, key: &SettingKey) -> Option<SettingValueType> {
-        Some(self.values.get(key)?.applied.clone())
-    }
-
-    #[tracing::instrument]
-    fn impl_set_value(&mut self, key: &SettingKey, value: SettingValueType) -> bool {
-        self.values
-            .get_mut(key)
-            .and_then(|v| {
-                v.temporary = value;
-                Some(())
-            })
-            .is_some()
-    }
-
-    fn impl_restore_default(&mut self, key: SettingKey) {
-        let default = self
-            .entries
-            .get(&key)
-            .expect("Failed to get setting entry.")
-            .default_value
-            .clone();
-        match self.values.get_mut(&key) {
-            None => {
-                self.values.insert(key, SettingValue::new(default));
-            }
-            Some(v) => v.set(default),
-        };
-    }
-
-    fn get_registry() -> Arc<RwLock<SettingRegistry>> {
-        REGISTRY.clone()
-    }
-}
-
-impl SettingRegistry {
-    #[tracing::instrument]
-    pub fn get_applied(key: SettingKey) -> Option<SettingValueType> {
-        Self::get_registry()
-            .read()
-            .map(|v| v.impl_get_applied(&key))
-            .inspect_err(|e| error!("Failed to lock setting registry. E: {:?}", e))
-            .unwrap_or_default()
-    }
-
-    #[tracing::instrument]
-    pub fn set_value(key: SettingKey, value: SettingValueType) -> bool {
-        Self::get_registry()
-            .write()
-            .map(|mut v| v.impl_set_value(&key, value))
-            .inspect_err(|e| error!("Failed to lock setting registry. E: {:?}", e))
-            .unwrap_or_default()
-    }
-
-    #[tracing::instrument]
-    pub async fn load(target: DBType) -> bool {
-        let values = opt_unwrap_or_return!(Self::impl_load(target).await, false);
-        match Self::get_registry().write() {
-            Ok(mut v) => {
-                v.values.extend(values);
-                true
-            }
-            Err(e) => {
-                error!("Failed to lock setting registry. E: {:?}", e);
-                false
-            }
-        }
-    }
-
-    #[tracing::instrument]
-    pub async fn save(target: DBType) -> bool {
-        match Self::get_registry().read() {
-            Ok(v) => v.impl_save(target).await,
-            Err(e) => {
-                error!("Failed to lock setting registry. E: {:?}", e);
-                false
-            }
-        }
-    }
-
     #[tracing::instrument]
     pub async fn save_by_key(key: SettingKey) -> bool {
         Self::save_by_key_with_conn(
@@ -244,72 +183,32 @@ impl SettingRegistry {
                 Some(v) => v,
             },
             key,
-        ).await
+        )
+        .await
     }
 
     pub async fn save_by_key_with_conn(conn: &mut SqliteConnection, key: SettingKey) -> bool {
-        match Self::get_registry().read() {
-            Ok(v) => v.impl_save_by_key(conn, key).await,
-            Err(e) => {
-                error!("Failed to lock setting registry. E: {:?}", e);
-                false
-            }
-        }
+        let v = REGISTRY
+            .values
+            .read()
+            .unwrap()
+            .get(&key)
+            .expect("Failed to get value")
+            .clone();
+        v.save(&mut *conn, key).await
     }
 
     #[tracing::instrument]
-    pub fn restore_default(key: SettingKey) -> bool {
-        match Self::get_registry().write() {
-            Ok(mut v) => v.impl_restore_default(key),
-            Err(e) => {
-                error!("Failed to lock setting registry. E: {:?}", e);
-                return false;
-            }
-        };
-        true
-    }
-
-    #[tracing::instrument]
-    pub fn get_default(key: SettingKey) -> bool {
-        match Self::get_registry().write() {
-            Ok(mut v) => v.impl_restore_default(key),
-            Err(e) => {
-                error!("Failed to lock setting registry. E: {:?}", e);
-                return false;
-            }
-        };
-        true
-    }
-
-    #[tracing::instrument]
-    pub async fn apply(key: SettingKey) -> bool {
-        match Self::get_registry().write() {
-            Ok(mut v) => {
-                if !v.values.contains_key(&key) {
-                    return false;
-                }
-                match v.values.get_mut(&key) {
-                    None => return false,
-                    Some(v) => v.apply(),
-                }
-            }
-            Err(e) => {
-                error!("Failed to lock setting registry. E: {:?}", e);
-                return false;
-            }
-        };
-        Self::save_by_key(key.into()).await
+    pub fn get_default(key: SettingKey) -> Option<SettingValueType> {
+        REGISTRY.entries.get(&key).map(|v| v.default_value.clone())
     }
 
     pub async fn immediate_apply(key: SettingKey, value: SettingValueType) -> bool {
-        match Self::get_registry().write() {
-            Ok(mut v) => {
-                if !v.impl_set_value(&key, value.clone()) {
-                    return false;
-                }
-                match v.values.get_mut(&key) {
+        match REGISTRY.values.write() {
+            Ok(mut values) => {
+                match values.get_mut(&key) {
                     None => {}
-                    Some(v) => v.set_applied(value),
+                    Some(v) => *v = value,
                 };
             }
             Err(e) => {
@@ -325,14 +224,11 @@ impl SettingRegistry {
         key: SettingKey,
         value: SettingValueType,
     ) -> bool {
-        match Self::get_registry().write() {
-            Ok(mut v) => {
-                if !v.impl_set_value(&key, value.clone()) {
-                    return false;
-                }
-                match v.values.get_mut(&key) {
+        match REGISTRY.values.write() {
+            Ok(mut values) => {
+                match values.get_mut(&key) {
                     None => {}
-                    Some(v) => v.set_applied(value),
+                    Some(v) => *v = value,
                 };
             }
             Err(e) => {
@@ -341,5 +237,17 @@ impl SettingRegistry {
             }
         };
         Self::save_by_key_with_conn(conn, key).await
+    }
+
+    pub fn get_values() -> HashMap<SettingKey, SettingValueType> {
+        REGISTRY.values.read().unwrap().clone()
+    }
+
+    pub fn get_categories() -> &'static Vec<SettingCategory> {
+        &REGISTRY.categories
+    }
+
+    pub fn get_entries() -> &'static HashMap<SettingKey, SettingEntry> {
+        &REGISTRY.entries
     }
 }

@@ -1,6 +1,9 @@
 use crate::db::open_book_err_handled;
 use crate::i18n::i18n;
 use crate::opt_unwrap_or_return;
+use crate::settings::registry::SettingRegistry;
+use crate::settings::value::SettingValueType;
+use crate::settings::GlobalSettingKey;
 use crate::util::alert::alert_i18n_spawn;
 use iced::window::raw_window_handle::HasWindowHandle;
 use iced::{window, Task};
@@ -92,7 +95,11 @@ async fn prehnite_book_file_process(book_path: PathBuf, ope: FileOpe) -> OpenPre
             {
                 error!("File does not exist ({book_path:#?})");
                 alert_i18n_spawn(("error", "file-notfound"), MessageLevel::Error).await;
-                todo!("リストアを実装する。");
+                SettingRegistry::immediate_apply(
+                    GlobalSettingKey::LastOpened.into(),
+                    SettingValueType::String(None),
+                )
+                .await;
                 return OpenPrehniteBookStatus::Failed;
             }
         }

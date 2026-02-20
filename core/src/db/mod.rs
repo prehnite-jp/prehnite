@@ -19,7 +19,7 @@ use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use sqlx::{ConnectOptions, Sqlite, SqlitePool};
 use std::fmt::{Debug, Display, Formatter};
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, OnceLock};
+use std::sync::{Arc, LazyLock, LockResult, OnceLock};
 use tokio::sync::RwLock;
 use tracing::error;
 
@@ -151,7 +151,7 @@ pub async fn open_book_err_handled(book_path: PathBuf) -> bool {
             SettingRegistry::immediate_apply(
                 GlobalSettingKey::LastOpened.into(),
                 book_path.to_str().into(),
-            );
+            ).await;
             true
         }
         Err(e) => {
@@ -173,7 +173,24 @@ pub async fn close_book_err_handled() {
     SettingRegistry::immediate_apply(
         GlobalSettingKey::LastOpened.into(),
         Option::<String>::from(None).into(),
-    );
+    ).await;
+}
+
+static IS_PREHNITE_BOOK_OPENED: LazyLock<Arc<std::sync::RwLock<DbOpenedStatus>>> =
+    LazyLock::new(|| Arc::new(std::sync::RwLock::new(DbOpenedStatus::default())));
+
+struct DbOpenedStatus(bool);
+
+impl Default for DbOpenedStatus {
+    fn default() -> Self {
+        Self(false)
+    }
+}
+
+impl DbOpenedStatus {
+    fn set(&mut self, v: bool) {
+        self.0 = v;
+    }
 }
 
 #[derive(Debug)]
@@ -256,6 +273,7 @@ impl Database {
             .write()
             .await
             .set_pool(Some(pool));
+        IS_PREHNITE_BOOK_OPENED.write().expect("Failed to lock is_book_opened").set(true);
         Ok(())
     }
 
@@ -275,5 +293,13 @@ impl Database {
                 Some(v) => Some(v.acquire().await?),
             },
         })
+    }
+
+    pub fn is_book_opened() -> bool {
+        IS_PREHNITE_BOOK_OPENED
+            .clone()
+            .read()
+            .map(|v| v.0)
+            .unwrap_or_default()
     }
 }

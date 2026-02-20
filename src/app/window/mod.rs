@@ -28,6 +28,8 @@ pub enum WindowMessage {
     MainWindowMessage(MainWindowMessage),
     AboutWindowMessage(VersionInfoWindowMessage),
     SettingWindowMessage(SettingWindowMessage),
+    ReloadFont,
+    ReloadLanguage,
 }
 
 pub trait Window: Debug {

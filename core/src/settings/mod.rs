@@ -2,9 +2,10 @@ pub mod registry;
 pub mod value;
 
 use crate::db::{acquire_err_handled, DBType};
+use log::error;
 use sqlx::pool::PoolConnection;
 use sqlx::Sqlite;
-use std::fmt::Display;
+use std::fmt::{Display, Formatter};
 
 macro_rules! key_impl {
     ($x:ty) => {
@@ -123,7 +124,7 @@ impl SettingKey {
 }
 
 impl Display for SettingKey {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.as_str())
     }
 }
@@ -131,7 +132,7 @@ impl Display for SettingKey {
 use crate::i18n::i18n;
 use crate::settings::value::SettingValueType;
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct SettingCategory {
     category_name_i18n_key: &'static str,
     entries: Vec<SettingEntry>,
@@ -167,7 +168,19 @@ pub struct SettingEntry {
     default_value: SettingValueType,
     is_visible: bool,
     // 選択可能な値リスト
-    selectable_values: Option<&'static [&'static str]>,
+    selectable_values: Option<Vec<String>>,
+}
+
+impl From<SettingEntry> for String {
+    fn from(value: SettingEntry) -> Self {
+        value.get_display()
+    }
+}
+
+impl Display for SettingEntry {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.get_display())
+    }
 }
 
 impl SettingEntry {
@@ -181,16 +194,20 @@ impl SettingEntry {
         }
     }
 
-    pub fn display(&self) -> String {
+    pub fn get_setting_key(&self) -> SettingKey {
+        self.setting_key
+    }
+
+    pub fn get_display(&self) -> String {
         i18n(self.display_key)
     }
 
-    pub fn is_visible(&self) -> bool {
+    pub fn get_is_visible(&self) -> bool {
         self.is_visible
     }
 
-    pub fn selectable(&self) -> Option<&'static [&str]> {
-        self.selectable_values
+    pub fn get_selectable_values(&self) -> Option<Vec<String>> {
+        self.selectable_values.clone()
     }
 
     pub fn default_value(&self) -> &SettingValueType {
@@ -207,8 +224,14 @@ impl SettingEntry {
         self
     }
 
+    #[tracing::instrument]
     fn selectable_values(mut self, values: &'static [&str]) -> Self {
-        self.selectable_values = Some(values);
+        if let SettingValueType::String(_) = self.default_value {
+            self.selectable_values = Some(values.iter().map(|v| v.to_string()).collect());
+        } else {
+            error!("Selectable Values Not Allowed!!");
+            panic!("Selectable Values Not Allowed!!")
+        }
         self
     }
 }

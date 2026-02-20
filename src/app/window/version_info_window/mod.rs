@@ -3,10 +3,11 @@ use crate::app::window::{app_default_window_settings, Window, WindowMessage};
 use crate::util::app_version_info;
 use iced::alignment::Horizontal;
 use iced::widget::image::Handle;
-use iced::widget::{button, text, Container};
+use iced::widget::{button, Container};
 use iced::window::Settings;
 use iced::{window, Element, Length, Size, Task};
 use prehnite_core::i18n::{i18n, i18n_w};
+use prehnite_core::widget::font::ftext;
 
 #[derive(Clone, Debug)]
 pub enum VersionInfoWindowMessage {
@@ -29,7 +30,7 @@ impl VersionInfoWindow {
         Container::new(
             iced::widget::column![
                 iced::widget::image(Handle::from_bytes(APP_ICON_PNG)),
-                text(app_version_info()),
+                ftext(app_version_info()),
                 Element::new(iced::widget::space().height(10)),
                 button(i18n_w("close")).on_press(VersionInfoWindowMessage::Close)
             ]

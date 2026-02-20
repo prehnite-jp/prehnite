@@ -11,24 +11,35 @@ pub enum SettingValueType {
     String(Option<String>),
 }
 
-macro_rules! setting_value_type_to_string(
-    ($v:ident) => {
-        $v.map(|v| v.to_string()).ok_or(())
-    }
-);
-
-impl TryFrom<SettingValueType> for String {
-    type Error = ();
-
-    fn try_from(value: SettingValueType) -> Result<Self, Self::Error> {
-        match value {
-            SettingValueType::Bool(v) => setting_value_type_to_string!(v),
-            SettingValueType::Int(v) => setting_value_type_to_string!(v),
-            SettingValueType::Float(v) => setting_value_type_to_string!(v),
-            SettingValueType::String(v) => v.ok_or(()),
-        }
+impl From<SettingValueType> for Option<bool> {
+    fn from(value: SettingValueType) -> Self {
+        value.bool()
     }
 }
+
+impl From<SettingValueType> for Option<i64> {
+    fn from(value: SettingValueType) -> Self {
+        value.int()
+    }
+}
+
+impl From<SettingValueType> for Option<String> {
+    fn from(value: SettingValueType) -> Self {
+        value.string()
+    }
+}
+
+impl From<SettingValueType> for Option<f64> {
+    fn from(value: SettingValueType) -> Self {
+        value.float()
+    }
+}
+
+macro_rules! setting_value_type_to_string(
+    ($v:ident) => {
+        $v.map(|v| v.to_string())
+    }
+);
 
 macro_rules! auto_impl_from_non_option(
     ($($t:ty),*) => {
@@ -90,47 +101,44 @@ impl SettingValueType {
     pub fn set(mut self, v: SettingValueType) {
         self = v;
     }
-}
 
-#[derive(Debug)]
-pub struct SettingValue {
-    pub(super) applied: SettingValueType,
-    pub(super) temporary: SettingValueType,
-}
-
-impl SettingValue {
     #[tracing::instrument]
     pub async fn save(&self, conn: &mut SqliteConnection, setting_key: SettingKey) -> bool {
-        query::update_setting(conn, setting_key, self.applied.clone().try_into().ok())
+        query::update_setting(conn, setting_key, self.clone().to_opt_string())
             .await
             .inspect_err(|e| error!("Failed to apply settings. E: {:?}", e))
             .is_ok()
     }
 
-    pub(super) fn new(value: SettingValueType) -> Self {
-        Self {
-            applied: value.clone(),
-            temporary: value,
+    pub fn get<T>(self) -> Option<T>
+    where
+        Option<T>: From<SettingValueType>,
+    {
+        Option::<T>::from(self)
+    }
+
+    pub fn to_opt_string(self) -> Option<String> {
+        match self {
+            SettingValueType::Bool(v) => setting_value_type_to_string!(v),
+            SettingValueType::Int(v) => setting_value_type_to_string!(v),
+            SettingValueType::Float(v) => setting_value_type_to_string!(v),
+            SettingValueType::String(v) => v,
         }
     }
 
-    pub(super) fn set_applied(&mut self, v: SettingValueType) {
-        self.applied = v;
+    fn bool(self) -> Option<bool> {
+        if let Self::Bool(v) = self { v } else { None }
     }
 
-    pub(super) fn apply(&mut self) {
-        self.set_applied(self.temporary.clone())
+    fn int(self) -> Option<i64> {
+        if let Self::Int(v) = self { v } else { None }
     }
 
-    pub fn set(&mut self, v: SettingValueType) {
-        self.temporary = v;
+    fn string(self) -> Option<String> {
+        if let Self::String(v) = self { v } else { None }
     }
 
-    pub fn get(&self) -> SettingValueType {
-        self.applied.clone()
-    }
-
-    pub fn get_tmp(&self) -> SettingValueType {
-        self.temporary.clone()
+    fn float(self) -> Option<f64> {
+        if let Self::Float(v) = self { v } else { None }
     }
 }
