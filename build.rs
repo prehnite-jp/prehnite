@@ -1,24 +1,20 @@
 #![allow(unused)]
-#[cfg(target_os = "windows")]
-fn set_icon() {
-    extern crate embed_resource;
-    embed_resource::compile(
-        "assets/platform/win/prehnite.exe.icon.rc",
-        embed_resource::NONE,
-    )
-        .manifest_optional()
-        .unwrap();
-}
+use std::path::{Path, PathBuf};
+use std::str::FromStr;
+use std::sync::Arc;
+use prehnite_builder::gen_license_info_list;
 
-#[cfg(not(any(target_os = "windows")))]
-fn set_icon() {
-    println!("Configure software icon skipped.")
+fn common() {
+    gen_license_info_list();
 }
 
 #[cfg(not(debug_assertions))]
 fn main() {
+    common();
     set_icon()
 }
 
 #[cfg(debug_assertions)]
-fn main() {}
+fn main() {
+    common();
+}
