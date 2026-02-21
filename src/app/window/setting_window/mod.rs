@@ -6,7 +6,7 @@ use iced::widget::{
     button, container, pane_grid, pick_list, scrollable, space, text_input, Container, MouseArea,
 };
 use iced::window::{Id, Settings};
-use iced::{widget, Color, Element, Length, Task};
+use iced::{widget, Element, Length, Task};
 use prehnite_core::db::Database;
 use prehnite_core::i18n::{i18n, i18n_w};
 use prehnite_core::settings::registry::SettingRegistry;
@@ -86,7 +86,7 @@ impl SettingWindow {
         let mut style = container::bordered_box(theme);
         style.border.radius = Radius::new(0);
         if !is_focused {
-            style = style.background(Color::WHITE);
+            style = style.background(theme.palette().background);
         }
         style
     }
