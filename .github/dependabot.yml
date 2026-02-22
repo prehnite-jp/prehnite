@@ -8,6 +8,7 @@ updates:
   - package-ecosystem: "cargo" # See documentation for possible values
     directory: "/" # Location of package manifests
     schedule:
-      interval: "daily"
+      interval: "weekly"
+      day: "monday"
       timezone: "Asia/Tokyo"
       time: "10:00"
