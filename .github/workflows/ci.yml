@@ -2,7 +2,7 @@ name: CI
 on:
   push:
     paths:
-      - ci.yml
+      - .github/workflows/ci.yml
       - Cargo.toml
       - Cargo.lock
       - '**/assets/**'
