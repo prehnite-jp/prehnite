@@ -1,9 +1,17 @@
 name: cargo-deny
 on:
   push:
-    branches: [ "main" ]
+    paths:
+      - cargo-deny.yml
+      - Cargo.toml
+      - Cargo.lock
+      - deny.toml
   pull_request:
-    branches: [ "main" ]
+    paths:
+      - cargo-deny.yml
+      - Cargo.toml
+      - Cargo.lock
+      - deny.toml
 
 jobs:
   cargo-deny:

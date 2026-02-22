@@ -1,9 +1,23 @@
 name: CI
 on:
   push:
-    branches: [ "main" ]
+    paths:
+      - ci.yml
+      - Cargo.toml
+      - Cargo.lock
+      - '**/assets/**'
+      - '**/migrations/**'
+      - '**.rs'
+      - '**.ftl'
   pull_request:
-    branches: [ "main" ]
+    paths:
+      - ci.yml
+      - Cargo.toml
+      - Cargo.lock
+      - '**/assets/**'
+      - '**/migrations/**'
+      - '**.rs'
+      - '**.ftl'
 
 env:
   CARGO_TERM_COLOR: always
