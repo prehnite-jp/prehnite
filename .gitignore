@@ -47,6 +47,6 @@ target/
 /scratch/*
 !/scratch/README.MD
 *.log
-core/target/
+**/target/
 #Cargo.lock
 .idea/db-forest-config.xml
