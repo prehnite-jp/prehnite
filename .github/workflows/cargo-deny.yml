@@ -6,12 +6,6 @@ on:
       - Cargo.toml
       - Cargo.lock
       - deny.toml
-  pull_request:
-    paths:
-      - cargo-deny.yml
-      - Cargo.toml
-      - Cargo.lock
-      - deny.toml
 
 jobs:
   cargo-deny:
