@@ -31,4 +31,4 @@ tracing-appender.workspace = true
 iced.workspace = true
 
 [dev-dependencies]
-rand = "0.9"
+rand = "0.10"
