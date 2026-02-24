@@ -1,8 +1,9 @@
 use crate::app::resources::APP_ICON_PNG;
 use crate::app::window::{app_default_window_settings, Window, WindowMessage};
-use crate::util::app_version_info;
+use crate::util::{app_build_features, app_build_target, app_version_info};
 use iced::alignment::Horizontal;
 use iced::widget::image::Handle;
+use iced::widget::text::Wrapping;
 use iced::widget::{button, Container};
 use iced::window::Settings;
 use iced::{window, Element, Length, Size, Task};
@@ -30,7 +31,24 @@ impl VersionInfoWindow {
         Container::new(
             iced::widget::column![
                 iced::widget::image(Handle::from_bytes(APP_ICON_PNG)),
-                ftext(app_version_info()),
+                iced::widget::scrollable(
+                    Container::new(
+                        ftext(format!(
+                            "{}.build.{}{}",
+                            app_version_info(),
+                            app_build_target(),
+                            if app_build_features().is_empty() {
+                                "".to_string()
+                            } else {
+                                format!(".[{}]", app_build_features())
+                            }
+                        ))
+                        .wrapping(Wrapping::None)
+                    )
+                    .padding(15)
+                )
+                .width(300)
+                .horizontal(),
                 Element::new(iced::widget::space().height(10)),
                 button(i18n_w("close")).on_press(VersionInfoWindowMessage::Close)
             ]
