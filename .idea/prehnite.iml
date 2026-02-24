@@ -6,6 +6,8 @@
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/font-manager/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/builder/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/build-libs/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/license-bundle/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.idea/dataSources" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
       <excludeFolder url="file://$MODULE_DIR$/core/target" />

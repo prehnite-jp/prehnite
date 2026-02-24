@@ -1,0 +1,27 @@
+[package]
+name = "prehnite-build-libs"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[features]
+
+icon = []
+bundle_license = ["cargo-about", "krates"]
+
+[dependencies]
+cargo-about = { version = "0.8", optional = true }
+krates = { version = "0.20", optional = true }
+serde_json.workspace = true
+serde.workspace = true
+reqwest = { version = "=0.12.24", features = ["blocking"] }
+prehnite-license-bundle.workspace = true
+zip.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+embed-resource = "3.0"

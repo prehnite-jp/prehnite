@@ -11,7 +11,7 @@ homepage.workspace = true
 rust-version.workspace = true
 
 [workspace]
-members = ["core", "font-manager"]
+members = ["build-libs", "core", "font-manager", "license-bundle"]
 
 [workspace.package]
 version = "0.0.1-alpha"
@@ -24,7 +24,10 @@ rust-version = "1.92"
 publish = false
 
 [features]
+release = ["icon", "bundle_license"]
 debug = ["iced/debug"]
+icon = ["prehnite-build-libs/icon"]
+bundle_license = ["prehnite-build-libs/bundle_license"]
 
 [dependencies]
 prehnite-core.workspace = true
@@ -67,6 +70,8 @@ tracing-appender = "0.2"
 image = "0.25"
 serde_json = "1"
 iced_graphics = "0.14"
+prehnite-license-bundle = { version = "0.0.1-alpha", path = "license-bundle" }
+zip = "8"
 
-[target.'cfg(windows)'.build-dependencies]
-embed-resource = "3.0"
+[build-dependencies]
+prehnite-build-libs = { version = "0.0.1-alpha", path = "build-libs" }
