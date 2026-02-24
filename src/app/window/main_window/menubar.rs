@@ -28,6 +28,7 @@ pub enum MenuBarMessage {
     OpenBibliographyEditor,
     OpenVersionInfoWindow,
     Exit,
+    OpenLicenseInfoWindow,
 }
 
 macro_rules! menu_button_maybe {
@@ -85,8 +86,11 @@ pub fn menubar<'a>(is_book_opened: bool) -> Element<'a, MenuBarMessage> {
     );
     let help_menu: Item<MenuBarMessage, _, _> = Item::with_menu(
         top_level_menu_button!("help", MenuBarMessage::MenuBtnPressed(MenuType::Help)),
-        menu!((menu_button!("version-info", MenuBarMessage::OpenVersionInfoWindow)))
-            .max_width(180.0f32),
+        menu!(
+            (menu_button!("version-info", MenuBarMessage::OpenVersionInfoWindow)),
+            (menu_button!("license-info", MenuBarMessage::OpenLicenseInfoWindow))
+        )
+        .max_width(180.0f32),
     );
     let menu_bar = menu_bar![file_menu, show_menu, help_menu]
         .style(|t, s| {
@@ -132,6 +136,9 @@ pub fn menubar_handler(
         }
         MenuBarMessage::Exit => {
             return iced::exit();
+        }
+        MenuBarMessage::OpenLicenseInfoWindow => {
+            return Task::done(MainWindowMessage::OpenLicenseInfoWindow)
         }
     }
     Task::none()

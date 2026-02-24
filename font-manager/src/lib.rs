@@ -5,6 +5,7 @@ use std::sync::{OnceLock};
 use tracing::error;
 
 pub mod fonts;
+pub mod widget;
 
 #[tracing::instrument]
 fn font_list() -> Vec<String> {

@@ -9,7 +9,14 @@ pub fn get_default_license_bundle() -> LicenseBundle {
     font()
 }
 
-#[derive(Default, Serialize, Deserialize)]
+pub fn get_names_from_default_license_bundle() -> Vec<String> {
+    get_default_license_bundle()
+        .into_iter()
+        .map(|v| v.name)
+        .collect()
+}
+
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Package {
     pub name: String,
     pub authors: Vec<String>,
@@ -17,9 +24,10 @@ pub struct Package {
     pub repository: Option<String>,
     pub license_info: String,
     pub licenses: Vec<License>,
+    pub dependencies: Vec<String>,
 }
 
-#[derive(Default, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct License {
     pub full_text: String,
 }
@@ -51,5 +59,19 @@ impl Package {
     pub fn license_text(mut self, license: String) -> Self {
         self.licenses.push(License { full_text: license });
         self
+    }
+
+    pub fn dependencies(mut self, dependencies: Vec<String>) -> Self {
+        self.dependencies.extend(dependencies);
+        self
+    }
+
+    pub fn prehnite() -> Self {
+        Package::new("prehnite", "Zlib")
+            .author("saku shirakura<saku@sakushira.com>")
+            .homepage("https://prehnite.jp")
+            .repository("https://github.com/saku-shirakura/prehnite")
+            .license_text(include_str!("../../LICENSE").to_string())
+            .dependencies(get_names_from_default_license_bundle())
     }
 }

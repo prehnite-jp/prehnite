@@ -70,3 +70,5 @@ unknown=unknown
 apply=Apply
 cancel=Cancel
 search=Search
+license-info=License Information
+home=Home

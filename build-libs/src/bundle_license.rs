@@ -1,6 +1,8 @@
 use crate::util::set_env;
 use crate::{build_process, BuildProcess};
-use prehnite_license_bundle::get_default_license_bundle;
+use prehnite_license_bundle::{
+    get_default_license_bundle, get_names_from_default_license_bundle, Package,
+};
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -56,6 +58,12 @@ fn license_collector() -> prehnite_license_bundle::LicenseBundle {
                     full_text: crate::util::read_string_from_file(v.path.canonicalize().unwrap()),
                 })
                 .collect(),
+            dependencies: v
+                .krate
+                .dependencies
+                .iter()
+                .map(|v| v.name.clone())
+                .collect(),
         })
         .collect()
 }
@@ -68,6 +76,12 @@ impl BuildProcess for BundleLicense {
         let mut license = get_default_license_bundle();
         #[cfg(feature = "bundle_license")]
         license.extend(license_collector());
+        match license.iter_mut().find(|v| v.name == "prehnite") {
+            None => license.push(Package::prehnite()),
+            Some(v) => v
+                .dependencies
+                .extend(get_names_from_default_license_bundle()),
+        }
 
         let license_list_json = serde_json::to_string(&license).unwrap();
 

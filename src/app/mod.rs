@@ -1,8 +1,9 @@
 pub mod resources;
 mod window;
 
+use crate::app::window::license_info_window::LicenseInfoWindow;
 use crate::app::window::main_window::{MainWindow, MainWindowMessage};
-use crate::app::window::setting_window::{SettingWindow};
+use crate::app::window::setting_window::SettingWindow;
 use crate::app::window::version_info_window::VersionInfoWindow;
 use crate::app::window::{Window, WindowMessage};
 use iced::border::Radius;
@@ -23,6 +24,7 @@ pub enum WindowType {
     MainWindow,
     VersionInfoWindow,
     SettingWindow,
+    LicenseInfoWindow,
 }
 
 macro_rules! window_opener {
@@ -41,7 +43,8 @@ impl WindowType {
             self,
             (WindowType::MainWindow, MainWindow),
             (WindowType::VersionInfoWindow, VersionInfoWindow),
-            (WindowType::SettingWindow, SettingWindow)
+            (WindowType::SettingWindow, SettingWindow),
+            (WindowType::LicenseInfoWindow, LicenseInfoWindow)
         ))
     }
 }
@@ -71,6 +74,7 @@ pub struct PrehniteApp {
     setting_window_id: Option<iced::window::Id>,
     window: BTreeMap<iced::window::Id, TypedWindow>,
     window_was_shown: HashSet<iced::window::Id>,
+    license_info_window_id: Option<iced::window::Id>,
 }
 
 #[derive(Clone, Debug)]
@@ -113,6 +117,7 @@ impl PrehniteApp {
                 setting_window_id: None,
                 window: Default::default(),
                 window_was_shown: Default::default(),
+                license_info_window_id: None,
             },
             Task::done(DaemonMessage::ReloadFont).chain(Task::done(DaemonMessage::OpenWindow(
                 WindowType::MainWindow,
@@ -127,6 +132,9 @@ impl PrehniteApp {
                 self.version_info_window_id.map(iced::window::gain_focus)
             }
             WindowType::SettingWindow => self.setting_window_id.map(iced::window::gain_focus),
+            WindowType::LicenseInfoWindow => {
+                self.license_info_window_id.map(iced::window::gain_focus)
+            }
         }
     }
 
@@ -136,6 +144,7 @@ impl PrehniteApp {
                 WindowType::MainWindow => return iced::exit(),
                 WindowType::VersionInfoWindow => self.version_info_window_id = None,
                 WindowType::SettingWindow => self.setting_window_id = None,
+                WindowType::LicenseInfoWindow => self.license_info_window_id = None,
             }
         }
         Task::none()
@@ -155,7 +164,8 @@ impl PrehniteApp {
                     w_type,
                     (WindowType::MainWindow, MainWindow),
                     (WindowType::VersionInfoWindow, VersionInfoWindow),
-                    (WindowType::SettingWindow, SettingWindow)
+                    (WindowType::SettingWindow, SettingWindow),
+                    (WindowType::LicenseInfoWindow, LicenseInfoWindow)
                 );
 
                 // 最大1つまでに限定されているウィンドウのIDを保持
@@ -168,6 +178,9 @@ impl PrehniteApp {
                     }
                     WindowType::SettingWindow => {
                         self.setting_window_id = Some(window_id);
+                    }
+                    WindowType::LicenseInfoWindow => {
+                        self.license_info_window_id = Some(window_id);
                     }
                 };
 
@@ -192,6 +205,9 @@ impl PrehniteApp {
                     }
                     WindowMessage::MainWindowMessage(MainWindowMessage::OpenSettingWindow) => {
                         return Task::done(DaemonMessage::OpenWindow(WindowType::SettingWindow));
+                    }
+                    WindowMessage::MainWindowMessage(MainWindowMessage::OpenLicenseInfoWindow) => {
+                        return Task::done(DaemonMessage::OpenWindow(WindowType::LicenseInfoWindow));
                     }
                     WindowMessage::ReloadFont => {
                         return Task::done(DaemonMessage::ReloadFont);

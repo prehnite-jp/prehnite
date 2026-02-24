@@ -1,6 +1,7 @@
 pub mod main_window;
 pub mod setting_window;
 pub mod version_info_window;
+pub mod license_info_window;
 
 use crate::app::resources::APP_ICON_PNG;
 use crate::app::window::main_window::MainWindowMessage;
@@ -10,6 +11,7 @@ use iced::window::icon::from_file_data;
 use iced::{window, Element, Task};
 use std::fmt::Debug;
 use tracing::error;
+use crate::app::window::license_info_window::LicenseInfoWindowMessage;
 
 pub fn app_default_window_settings() -> window::Settings {
     window::Settings {
@@ -28,6 +30,7 @@ pub enum WindowMessage {
     MainWindowMessage(MainWindowMessage),
     AboutWindowMessage(VersionInfoWindowMessage),
     SettingWindowMessage(SettingWindowMessage),
+    LicenseInfoWindowMessage(LicenseInfoWindowMessage),
     ReloadFont,
     ReloadLanguage,
 }

@@ -70,3 +70,5 @@ unknown=不明
 apply=適用
 cancel=キャンセル
 search=検索
+license-info=ライセンス情報
+home=ホーム
