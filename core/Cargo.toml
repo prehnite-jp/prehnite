@@ -29,6 +29,9 @@ fluent-syntax.workspace = true
 tracing.workspace = true
 tracing-appender.workspace = true
 iced.workspace = true
+zip.workspace = true
+prehnite-license-bundle.workspace = true
+serde_json.workspace = true
 
 [dev-dependencies]
 rand = "0.10"

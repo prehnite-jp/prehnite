@@ -1,19 +1,26 @@
-use crate::util::{license_zip_path, set_env};
+use crate::util::set_env;
 use crate::{build_process, BuildProcess};
 use prehnite_license_bundle::get_default_license_bundle;
 use std::fs::File;
 use std::io::Write;
+use std::path::{Path, PathBuf};
 use zip::write::SimpleFileOptions;
 use zip::ZipWriter;
 
+const FILE_NAME: &str = "content";
+
+fn license_zip_path() -> PathBuf {
+    Path::new(&std::env::var("OUT_DIR").unwrap()).join("license-bundle.zip")
+}
+
 #[cfg(feature = "bundle_license")]
-fn license_collector() -> LicenseBundle {
+fn license_collector() -> prehnite_license_bundle::LicenseBundle {
     let license_config = cargo_about::licenses::config::Config::default();
     let crates = cargo_about::get_all_crates(
         "Cargo.toml".as_ref(),
         true,
         false,
-        get_features(),
+        crate::util::get_features(),
         false,
         krates::LockOptions {
             frozen: false,
@@ -21,20 +28,22 @@ fn license_collector() -> LicenseBundle {
             offline: false,
         },
         &license_config,
-        &[target()],
+        &[crate::util::target()],
     )
     .unwrap();
 
-    let license = Gatherer::with_store(cargo_about::licenses::store_from_cache().unwrap().into())
-        .gather(
-            &crates,
-            &license_config,
-            Some(reqwest::blocking::ClientBuilder::new().build().unwrap()),
-        );
+    let license = cargo_about::licenses::Gatherer::with_store(
+        cargo_about::licenses::store_from_cache().unwrap().into(),
+    )
+    .gather(
+        &crates,
+        &license_config,
+        Some(reqwest::blocking::ClientBuilder::new().build().unwrap()),
+    );
 
     license
         .iter()
-        .map(|v| Package {
+        .map(|v| prehnite_license_bundle::Package {
             name: v.krate.name.clone(),
             authors: v.krate.authors.clone(),
             homepage: v.krate.homepage.clone(),
@@ -43,8 +52,8 @@ fn license_collector() -> LicenseBundle {
             licenses: v
                 .license_files
                 .iter()
-                .map(|v| License {
-                    full_text: read_string_from_file(v.path.canonicalize().unwrap()),
+                .map(|v| prehnite_license_bundle::License {
+                    full_text: crate::util::read_string_from_file(v.path.canonicalize().unwrap()),
                 })
                 .collect(),
         })
@@ -65,7 +74,7 @@ impl BuildProcess for BundleLicense {
         let output_path = license_zip_path();
         let mut zip = ZipWriter::new(File::create(&output_path).unwrap());
         zip.start_file(
-            "",
+            FILE_NAME,
             SimpleFileOptions::default()
                 .compression_method(zip::CompressionMethod::Zstd)
                 .compression_level(Some(3)),

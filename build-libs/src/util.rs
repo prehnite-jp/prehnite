@@ -1,7 +1,7 @@
 #![allow(unused)]
 use std::fs::File;
 use std::io::Read;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 pub(crate) fn get_features() -> Vec<String> {
     let features = std::env::var("CARGO_CFG_FEATURE").unwrap();
@@ -21,10 +21,6 @@ pub(crate) fn read_string_from_file(path: PathBuf) -> String {
     result
 }
 
-pub(crate) fn license_zip_path() -> PathBuf {
-    Path::new(&std::env::var("OUT_DIR").unwrap()).join("license-bundle.zip")
-}
-
-pub(crate) fn set_env(key: &str, value: &str) {
+pub fn set_env(key: &str, value: &str) {
     println!("cargo::rustc-env={key}={value}");
 }

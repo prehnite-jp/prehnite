@@ -1,6 +1,7 @@
 mod app;
 mod db;
 mod util;
+pub mod license;
 
 use crate::app::PrehniteApp;
 use prehnite_core::db::{initialize_db, DBType, DatabaseError};

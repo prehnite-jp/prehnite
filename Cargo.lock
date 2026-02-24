@@ -4418,7 +4418,6 @@ dependencies = [
  "iced",
  "iced_aw",
  "image",
- "native-dialog",
  "prehnite-build-libs",
  "prehnite-core",
  "prehnite-font-manager",
@@ -4438,7 +4437,6 @@ dependencies = [
  "krates",
  "prehnite-license-bundle",
  "reqwest 0.12.24",
- "serde",
  "serde_json",
  "zip",
 ]
@@ -4455,10 +4453,12 @@ dependencies = [
  "log",
  "native-dialog",
  "paste",
+ "prehnite-license-bundle",
  "rand 0.10.0",
  "reqwest 0.13.2",
  "rhai",
  "serde",
+ "serde_json",
  "sqlx",
  "sys-locale",
  "tokio",
@@ -4466,6 +4466,7 @@ dependencies = [
  "tracing-appender",
  "tracing-subscriber",
  "unic-langid",
+ "zip",
 ]
 
 [[package]]

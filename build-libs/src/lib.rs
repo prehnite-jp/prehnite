@@ -3,7 +3,7 @@ use crate::set_icon::SetIcon;
 
 mod bundle_license;
 mod set_icon;
-mod util;
+pub mod util;
 
 #[macro_export]
 macro_rules! build_process {
