@@ -1,3 +1,4 @@
+use crate::app::resources::{app_icon_handle};
 use crate::app::window::{Window, WindowMessage};
 use crate::license::license_bundle;
 use iced::border::Radius;
@@ -94,15 +95,22 @@ impl LicenseInfoWindow {
                 )
                 .font(get_font())
                 .on_input(LicenseInfoWindowMessage::SearchTextOnChanged),
-                button(ftext(i18n("home"))) // TODO: なぜかホームアイコンが表示されないので、その問題を解決し、ホームアイコンに置き換える。(要検証)
-                    .style(button::text)
-                    .on_press(LicenseInfoWindowMessage::PkgHome)
+                button(
+                    widget::image(app_icon_handle())
+                        .width(20)
+                        .height(20)
+                )
+                .style(button::text)
+                .on_press(LicenseInfoWindowMessage::PkgHome)
             ],
             widget::column(
                 self.dep_package_list
                     .iter()
-                    .filter(|v| v
-                        .contains(&self.search_text_history.last().cloned().unwrap_or_default()))
+                    .filter(|v| self
+                        .search_text_history
+                        .last()
+                        .map(|x| v.contains(x))
+                        .unwrap_or_default())
                     .map(|v| self.software_list_row(v.clone()))
             )
         ]
@@ -124,10 +132,9 @@ impl LicenseInfoWindow {
             widget::text(package.repository.unwrap_or("-".to_string())),
             widget::text(package.license_info),
             widget::rule::horizontal(1),
-            widget::column(package.licenses.into_iter().map(|v| widget::column![
-                widget::text(v.full_text),
-                widget::rule::horizontal(1),
-            ].into()),),
+            widget::column(package.licenses.into_iter().map(|v| {
+                widget::column![widget::text(v.full_text), widget::rule::horizontal(1),].into()
+            }),),
         ]
         .into()
     }

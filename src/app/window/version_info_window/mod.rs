@@ -1,8 +1,7 @@
-use crate::app::resources::APP_ICON_PNG;
+use crate::app::resources::app_icon_handle;
 use crate::app::window::{app_default_window_settings, Window, WindowMessage};
 use crate::util::{app_build_features, app_build_target, app_version_info};
 use iced::alignment::Horizontal;
-use iced::widget::image::Handle;
 use iced::widget::text::Wrapping;
 use iced::widget::{button, Container};
 use iced::window::Settings;
@@ -30,7 +29,7 @@ impl VersionInfoWindow {
     fn view_impl(&'_ self) -> Element<'_, VersionInfoWindowMessage> {
         Container::new(
             iced::widget::column![
-                iced::widget::image(Handle::from_bytes(APP_ICON_PNG)),
+                iced::widget::image(app_icon_handle()),
                 iced::widget::scrollable(
                     Container::new(
                         ftext(format!(
