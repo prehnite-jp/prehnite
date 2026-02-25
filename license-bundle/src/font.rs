@@ -3,7 +3,7 @@ use crate::{LicenseBundle, Package};
 pub fn font() -> LicenseBundle {
     let mut license = LicenseBundle::new();
     license.push(
-        Package::new("Material_Symbols_Outlined", "Apache-2.0")
+        Package::new("Material Symbols Outlined", "Apache-2.0")
             .homepage("https://fonts.google.com/icons")
             .repository("https://github.com/google/material-design-icons")
             .license_text(
@@ -14,7 +14,7 @@ pub fn font() -> LicenseBundle {
             ),
     );
     license.push(
-        Package::new("Noto_Sans", "OFL-1.1")
+        Package::new("Noto Sans", "OFL-1.1")
             .homepage("https://fonts.google.com/noto/specimen/Noto+Sans")
             .repository("https://github.com/notofonts/latin-greek-cyrillic")
             .license_text(

@@ -3,6 +3,7 @@ use crate::{build_process, BuildProcess};
 use prehnite_license_bundle::{
     get_default_license_bundle, get_names_from_default_license_bundle, Package,
 };
+use std::collections::HashSet;
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -17,7 +18,11 @@ fn license_zip_path() -> PathBuf {
 
 #[cfg(feature = "bundle_license")]
 fn license_collector() -> prehnite_license_bundle::LicenseBundle {
-    let license_config = cargo_about::licenses::config::Config::default();
+    let license_config = cargo_about::licenses::config::Config {
+        ignore_build_dependencies: true,
+        ignore_dev_dependencies: !cfg!(debug_assertions),
+        ..cargo_about::licenses::config::Config::default()
+    };
     let crates = cargo_about::get_all_crates(
         "Cargo.toml".as_ref(),
         true,
@@ -43,9 +48,11 @@ fn license_collector() -> prehnite_license_bundle::LicenseBundle {
         Some(reqwest::blocking::ClientBuilder::new().build().unwrap()),
     );
 
+    let crate_names: HashSet<String> = license.iter().map(|v| v.krate.name.clone()).collect();
+
     license
         .iter()
-        .map(|v| prehnite_license_bundle::Package {
+        .map(|v| Package {
             name: v.krate.name.clone(),
             authors: v.krate.authors.clone(),
             homepage: v.krate.homepage.clone(),
@@ -63,6 +70,7 @@ fn license_collector() -> prehnite_license_bundle::LicenseBundle {
                 .dependencies
                 .iter()
                 .map(|v| v.name.clone())
+                .filter(|v| crate_names.contains(v))
                 .collect(),
         })
         .collect()

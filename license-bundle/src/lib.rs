@@ -1,5 +1,6 @@
 mod font;
 
+use std::collections::BTreeSet;
 use crate::font::font;
 use serde::{Deserialize, Serialize};
 
@@ -24,7 +25,7 @@ pub struct Package {
     pub repository: Option<String>,
     pub license_info: String,
     pub licenses: Vec<License>,
-    pub dependencies: Vec<String>,
+    pub dependencies: BTreeSet<String>,
 }
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]

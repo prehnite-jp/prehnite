@@ -1,18 +1,15 @@
-use crate::app::window::setting_window::SettingWindowMessage;
 use crate::app::window::{Window, WindowMessage};
 use crate::license::license_bundle;
 use iced::border::Radius;
-use iced::futures::StreamExt;
 use iced::widget::pane_grid::{Axis, ResizeEvent};
 use iced::widget::{button, container, pane_grid, scrollable, text_input, Container, MouseArea};
 use iced::window::Id;
-use iced::{widget, Element, Font, Length, Task};
+use iced::{widget, Element, Length, Task};
 use prehnite_core::i18n::{i18n, i18n_w};
-use prehnite_core::license_bundle::{LicenseBundle, Package};
-use prehnite_core::settings::SettingCategory;
+use prehnite_core::license_bundle::Package;
 use prehnite_core::widget::font::{ftext, get_font};
 use prehnite_font_manager::widget::material_symbol;
-use std::collections::{HashMap, VecDeque};
+use std::collections::{BTreeSet, HashMap};
 use tracing::error;
 
 const ROOT_PACKAGE_NAME: &str = "prehnite";
@@ -46,7 +43,7 @@ enum WindowPane {
 pub struct LicenseInfoWindow {
     packages: Option<HashMap<String, Package>>,
     window_id: Option<Id>,
-    dep_package_list: Vec<String>,
+    dep_package_list: BTreeSet<String>,
     selected_package: String,
     search_text_history: Vec<String>,
     target_package_history: Vec<String>,
@@ -127,12 +124,10 @@ impl LicenseInfoWindow {
             widget::text(package.repository.unwrap_or("-".to_string())),
             widget::text(package.license_info),
             widget::rule::horizontal(1),
-            widget::column(
-                package
-                    .licenses
-                    .into_iter()
-                    .map(|v| widget::text(v.full_text).into())
-            )
+            widget::column(package.licenses.into_iter().map(|v| widget::column![
+                widget::text(v.full_text),
+                widget::rule::horizontal(1),
+            ].into()),),
         ]
         .into()
     }
@@ -224,7 +219,7 @@ impl Window for LicenseInfoWindow {
         Self {
             packages: None,
             window_id: None,
-            dep_package_list: vec![],
+            dep_package_list: BTreeSet::new(),
             selected_package: ROOT_PACKAGE_NAME.to_string(),
             search_text_history: vec!["".to_string()],
             target_package_history: vec![ROOT_PACKAGE_NAME.to_string()],
