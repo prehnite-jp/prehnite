@@ -10,6 +10,8 @@ use std::path::{Path, PathBuf};
 use zip::write::SimpleFileOptions;
 use zip::ZipWriter;
 
+const MY_APP_HOMEPAGE: &str = "https://prehnite.jp/";
+
 const FILE_NAME: &str = "content";
 
 fn license_zip_path() -> PathBuf {
@@ -72,6 +74,13 @@ fn license_collector() -> prehnite_license_bundle::LicenseBundle {
                 .map(|v| v.name.clone())
                 .filter(|v| crate_names.contains(v))
                 .collect(),
+        })
+        .map(|mut v| {
+            if v.homepage.clone().map(|v| v.as_str()) == Some("https://prehnite.jp") {
+                v.prehnite_member_license()
+            } else {
+                v
+            }
         })
         .collect()
 }

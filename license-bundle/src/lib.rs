@@ -1,8 +1,8 @@
 mod font;
 
-use std::collections::BTreeSet;
 use crate::font::font;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeSet;
 
 pub type LicenseBundle = Vec<Package>;
 
@@ -62,17 +62,26 @@ impl Package {
         self
     }
 
+    pub fn override_license_text(mut self, license: String) -> Self {
+        self.licenses.clear();
+        self.licenses.push(License { full_text: license });
+        self
+    }
+
     pub fn dependencies(mut self, dependencies: Vec<String>) -> Self {
         self.dependencies.extend(dependencies);
         self
+    }
+
+    pub fn prehnite_member_license(self) -> Self {
+        self.override_license_text(include_str!("../../LICENSE").to_string())
     }
 
     pub fn prehnite() -> Self {
         Package::new("prehnite", "Zlib")
             .author("saku shirakura<saku@sakushira.com>")
             .homepage("https://prehnite.jp")
-            .repository("https://github.com/saku-shirakura/prehnite")
-            .license_text(include_str!("../../LICENSE").to_string())
             .dependencies(get_names_from_default_license_bundle())
+            .prehnite_member_license()
     }
 }
