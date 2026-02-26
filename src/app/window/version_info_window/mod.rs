@@ -1,6 +1,6 @@
 use crate::app::resources::app_icon_handle;
 use crate::app::window::{app_default_window_settings, Window, WindowMessage};
-use crate::util::{app_build_features, app_build_target, app_version_info};
+use crate::util::{app_build_features, app_build_profile, app_build_target, app_version_info};
 use iced::alignment::Horizontal;
 use iced::widget::text::Wrapping;
 use iced::widget::{button, Container};
@@ -33,8 +33,9 @@ impl VersionInfoWindow {
                 iced::widget::scrollable(
                     Container::new(
                         ftext(format!(
-                            "{}.build.{}{}",
+                            "{}.{}.{}{}",
                             app_version_info(),
+                            app_build_profile(),
                             app_build_target(),
                             if app_build_features().is_empty() {
                                 "".to_string()

@@ -15,3 +15,7 @@ pub fn app_build_target() -> &'static str {
 pub fn app_build_features() -> &'static str {
     env!("BUILD_INFO_FEATURE")
 }
+
+pub fn app_build_profile() -> &'static str {
+    env!("BUILD_PROFILE")
+}
