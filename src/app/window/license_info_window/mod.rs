@@ -1,19 +1,27 @@
 use crate::app::resources::app_icon_handle;
 use crate::app::window::{Window, WindowMessage};
 use crate::license::license_bundle;
+use iced::alignment::{Horizontal, Vertical};
 use iced::border::Radius;
 use iced::widget::pane_grid::{Axis, ResizeEvent};
-use iced::widget::{button, container, pane_grid, scrollable, text_input, Container, MouseArea};
+use iced::widget::text::Wrapping;
+use iced::widget::{
+    button, container, pane_grid, scrollable, span, text, text_input, Container, MouseArea,
+};
 use iced::window::Id;
-use iced::{widget, Element, Length, Task};
+use iced::{padding, widget, Color, Element, Length, Task};
+use opener::open_browser;
 use prehnite_core::i18n::{i18n, i18n_w};
 use prehnite_core::license_bundle::Package;
 use prehnite_core::util::alert::alert_i18n;
 use prehnite_core::widget::font::{ftext, get_font};
+use prehnite_core::widget::text::TextBuilder;
 use prehnite_core::MessageLevel;
+use prehnite_font_manager::material_symbol::ARROW_UPWARD;
 use prehnite_font_manager::widget::material_symbol;
 use std::collections::{BTreeSet, HashMap};
 use tracing::error;
+use tracing::log::warn;
 
 const ROOT_PACKAGE_NAME: &str = "prehnite";
 
@@ -29,6 +37,8 @@ pub enum LicenseInfoWindowMessage {
     PageChanged,
     PaneResized(ResizeEvent),
     OpenWelcomeMessage,
+    SetClipboard(String),
+    LinkOnClick(String),
 }
 
 impl From<LicenseInfoWindowMessage> for WindowMessage {
@@ -82,7 +92,7 @@ impl LicenseInfoWindow {
     fn software_list_pane(&self) -> Element<'_, LicenseInfoWindowMessage> {
         widget::column![
             widget::row![
-                button(material_symbol("\u{E5D8}"))
+                button(material_symbol(ARROW_UPWARD))
                     .style(button::text)
                     .on_press_maybe(
                         Some(LicenseInfoWindowMessage::PkgBack)
@@ -124,12 +134,82 @@ impl LicenseInfoWindow {
                 Some(v) => v.clone(),
             },
         };
+        let txt_header = TextBuilder::with_font().wrapping(Wrapping::None);
+        let txt_value = TextBuilder::with_font().wrapping(Wrapping::None);
         widget::column![
-            widget::text(package.name),
-            widget::text(package.authors.join(", ")),
-            widget::text(package.homepage.unwrap_or("-".to_string())),
-            widget::text(package.repository.unwrap_or("-".to_string())),
-            widget::text(package.license_info),
+            scrollable(
+                widget::row![
+                    widget::column![
+                        txt_header.text(i18n("package-name")),
+                        txt_header.text(i18n("package-authors")),
+                        txt_header.text(i18n("package-homepage")),
+                        txt_header.text(i18n("package-repository")),
+                        txt_header.text(i18n("package-license")),
+                    ]
+                    .align_x(Horizontal::Center)
+                    .width(Length::Shrink),
+                    widget::space().width(20),
+                    widget::column![
+                        widget::row![
+                            txt_value.text(package.name.clone()),
+                            // TODO: COPYをアイコンに置き換える
+                            button(ftext("COPY").size(10).align_y(Vertical::Center))
+                                .style(button::text)
+                                .on_press_maybe(
+                                    Some(LicenseInfoWindowMessage::SetClipboard(
+                                        package.name.clone()
+                                    ))
+                                    .filter(|_| !package.name.is_empty())
+                                )
+                        ],
+                        widget::row![
+                            txt_value.text({
+                                let v = package.authors.join(", ");
+                                if v.is_empty() { "-".to_string() } else { v }
+                            }),
+                            button(ftext("COPY").size(10).align_y(Vertical::Center))
+                                .style(button::text)
+                                .on_press_maybe(
+                                    Some(LicenseInfoWindowMessage::SetClipboard(
+                                        package.authors.join(", ")
+                                    ))
+                                    .filter(|_| !package.authors.is_empty())
+                                )
+                        ],
+                        txt_value
+                            .rich([package
+                                .homepage
+                                .clone()
+                                .map(|v| span(v).color(Color::from_rgb8(0, 0, 255)).link(0))
+                                .unwrap_or(span::<i32, _>("-"))])
+                            .on_link_click(move |_| LicenseInfoWindowMessage::LinkOnClick(
+                                package.homepage.clone().unwrap_or_default()
+                            )),
+                        txt_value
+                            .rich([package
+                                .repository
+                                .clone()
+                                .map(|v| span(v).color(Color::from_rgb8(0, 0, 255)).link(0))
+                                .unwrap_or(span::<i32, _>("-"))])
+                            .on_link_click(move |_| LicenseInfoWindowMessage::LinkOnClick(
+                                package.repository.clone().unwrap_or_default()
+                            )),
+                        widget::row![
+                            txt_value.text(package.license_info.clone()),
+                            button(ftext("COPY").size(10).align_y(Vertical::Center))
+                                .style(button::text)
+                                .on_press_maybe(
+                                    Some(LicenseInfoWindowMessage::SetClipboard(
+                                        package.license_info.clone()
+                                    ))
+                                    .filter(|_| !package.license_info.is_empty())
+                                )
+                        ]
+                    ],
+                ]
+                .padding(padding::bottom(10))
+            )
+            .horizontal(),
             widget::rule::horizontal(1),
             widget::column(package.licenses.into_iter().map(|v| {
                 widget::column![widget::text(v.full_text), widget::rule::horizontal(1),].into()
@@ -138,6 +218,7 @@ impl LicenseInfoWindow {
         .into()
     }
 
+    #[tracing::instrument]
     fn update_impl(&mut self, msg: LicenseInfoWindowMessage) -> Task<LicenseInfoWindowMessage> {
         match msg {
             LicenseInfoWindowMessage::LoadLicenseBundle => {
@@ -208,7 +289,19 @@ impl LicenseInfoWindow {
                 }
             }
             LicenseInfoWindowMessage::OpenWelcomeMessage => {
-                return alert_i18n(self.window_id, ("info", "license-info_message"), MessageLevel::Info);
+                return alert_i18n(
+                    self.window_id,
+                    ("info", "license-info_message"),
+                    MessageLevel::Info,
+                );
+            }
+            LicenseInfoWindowMessage::SetClipboard(v) => {
+                return iced::clipboard::write(v);
+            }
+            LicenseInfoWindowMessage::LinkOnClick(url) => {
+                open_browser(url)
+                    .inspect_err(|e| warn!("Failed to open browser. E: {e:?}"))
+                    .ok();
             }
         }
         Task::none()
@@ -240,8 +333,9 @@ impl Window for LicenseInfoWindow {
     where
         Self: Sized,
     {
-        Task::done(LicenseInfoWindowMessage::LoadLicenseBundle.into())
-            .chain(Task::done(LicenseInfoWindowMessage::OpenWelcomeMessage.into()))
+        Task::done(LicenseInfoWindowMessage::LoadLicenseBundle.into()).chain(Task::done(
+            LicenseInfoWindowMessage::OpenWelcomeMessage.into(),
+        ))
     }
 
     fn update(&mut self, message: WindowMessage) -> Task<WindowMessage> {

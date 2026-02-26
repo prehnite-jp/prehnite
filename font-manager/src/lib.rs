@@ -6,6 +6,7 @@ use tracing::error;
 
 pub mod fonts;
 pub mod widget;
+pub mod material_symbol;
 
 #[tracing::instrument]
 fn font_list() -> Vec<String> {

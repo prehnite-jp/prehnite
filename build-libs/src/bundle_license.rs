@@ -75,8 +75,12 @@ fn license_collector() -> prehnite_license_bundle::LicenseBundle {
                 .filter(|v| crate_names.contains(v))
                 .collect(),
         })
-        .map(|mut v| {
-            if v.homepage.clone().map(|v| v.as_str()) == Some(MY_APP_HOMEPAGE) {
+        .map(|v| {
+            if v.homepage
+                .clone()
+                .map(|v| v.eq(MY_APP_HOMEPAGE))
+                .unwrap_or_default()
+            {
                 v.prehnite_member_license()
             } else {
                 v

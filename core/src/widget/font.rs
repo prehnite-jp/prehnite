@@ -1,3 +1,4 @@
+use crate::widget::text::TextBuilder;
 use iced::{widget, Font};
 use std::sync::{LazyLock, OnceLock, RwLock};
 use tracing::error;
@@ -49,5 +50,14 @@ pub fn get_font() -> Font {
 }
 
 pub fn ftext<'a>(text: impl widget::text::IntoFragment<'a>) -> widget::Text<'a> {
-    widget::text(text).font_maybe(get_font_opt())
+    TextBuilder::with_font().text(text)
+}
+
+pub fn frich_text<'a, Link, Message>(
+    spans: impl AsRef<[widget::text::Span<'a, Link, Font>]> + 'a,
+) -> widget::text::Rich<'a, Link, Message>
+where
+    Link: Clone + 'static,
+{
+    TextBuilder::with_font().rich(spans)
 }

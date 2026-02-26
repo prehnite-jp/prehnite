@@ -76,3 +76,8 @@ license-info_message=ライセンス情報表示へようこそ！
     ここでは本ソフトウェアのライセンスと依存関係の第三者ソフトウェアのライセンスを確認できます。
     ライセンス情報は自動収集です。不正確な場合があります。そのような場合はGitHub Issuesよりご報告ください。
 info=情報
+package-name=パッケージ名
+package-authors=作者
+package-homepage=ホームページ
+package-repository=リポジトリ
+package-license=ライセンス
