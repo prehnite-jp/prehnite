@@ -72,3 +72,7 @@ cancel=Cancel
 search=Search
 license-info=License Information
 home=Home
+license-info_message=Welcome to the License Information Viewer!
+    Here you can check the license of this software and the licenses of dependent third-party software.
+    License information is collected automatically and may be inaccurate. If this happens, please report it via GitHub Issues.
+info=Information

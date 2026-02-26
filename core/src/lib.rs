@@ -14,3 +14,5 @@ pub mod license_bundle {
     pub use prehnite_license_bundle::LicenseBundle;
     pub use prehnite_license_bundle::Package;
 }
+
+pub use native_dialog::MessageLevel;

@@ -76,7 +76,7 @@ fn license_collector() -> prehnite_license_bundle::LicenseBundle {
                 .collect(),
         })
         .map(|mut v| {
-            if v.homepage.clone().map(|v| v.as_str()) == Some("https://prehnite.jp") {
+            if v.homepage.clone().map(|v| v.as_str()) == Some(MY_APP_HOMEPAGE) {
                 v.prehnite_member_license()
             } else {
                 v

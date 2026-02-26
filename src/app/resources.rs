@@ -1,5 +1,5 @@
 use iced::widget::image::Handle;
-use std::sync::{Arc, OnceLock};
+use std::sync::OnceLock;
 
 pub const APP_ICON_PNG: &[u8] = include_bytes!("../../assets/icon/icon.png");
 

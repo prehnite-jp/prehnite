@@ -1,4 +1,4 @@
-use crate::app::resources::{app_icon_handle};
+use crate::app::resources::app_icon_handle;
 use crate::app::window::{Window, WindowMessage};
 use crate::license::license_bundle;
 use iced::border::Radius;
@@ -8,7 +8,9 @@ use iced::window::Id;
 use iced::{widget, Element, Length, Task};
 use prehnite_core::i18n::{i18n, i18n_w};
 use prehnite_core::license_bundle::Package;
+use prehnite_core::util::alert::alert_i18n;
 use prehnite_core::widget::font::{ftext, get_font};
+use prehnite_core::MessageLevel;
 use prehnite_font_manager::widget::material_symbol;
 use std::collections::{BTreeSet, HashMap};
 use tracing::error;
@@ -26,6 +28,7 @@ pub enum LicenseInfoWindowMessage {
     ChangeSelectedTarget(String),
     PageChanged,
     PaneResized(ResizeEvent),
+    OpenWelcomeMessage,
 }
 
 impl From<LicenseInfoWindowMessage> for WindowMessage {
@@ -95,13 +98,9 @@ impl LicenseInfoWindow {
                 )
                 .font(get_font())
                 .on_input(LicenseInfoWindowMessage::SearchTextOnChanged),
-                button(
-                    widget::image(app_icon_handle())
-                        .width(20)
-                        .height(20)
-                )
-                .style(button::text)
-                .on_press(LicenseInfoWindowMessage::PkgHome)
+                button(widget::image(app_icon_handle()).width(20).height(20))
+                    .style(button::text)
+                    .on_press(LicenseInfoWindowMessage::PkgHome)
             ],
             widget::column(
                 self.dep_package_list
@@ -208,6 +207,9 @@ impl LicenseInfoWindow {
                     self.pane_state.resize(split, ratio);
                 }
             }
+            LicenseInfoWindowMessage::OpenWelcomeMessage => {
+                return alert_i18n(self.window_id, ("info", "license-info_message"), MessageLevel::Info);
+            }
         }
         Task::none()
     }
@@ -239,6 +241,7 @@ impl Window for LicenseInfoWindow {
         Self: Sized,
     {
         Task::done(LicenseInfoWindowMessage::LoadLicenseBundle.into())
+            .chain(Task::done(LicenseInfoWindowMessage::OpenWelcomeMessage.into()))
     }
 
     fn update(&mut self, message: WindowMessage) -> Task<WindowMessage> {
