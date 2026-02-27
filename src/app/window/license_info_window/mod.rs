@@ -17,7 +17,7 @@ use prehnite_core::util::alert::alert_i18n;
 use prehnite_core::widget::font::{ftext, get_font};
 use prehnite_core::widget::text::TextBuilder;
 use prehnite_core::MessageLevel;
-use prehnite_font_manager::material_symbol::ARROW_UPWARD;
+use prehnite_font_manager::material_symbol::{ARROW_UPWARD, CONTENT_COPY};
 use prehnite_font_manager::widget::material_symbol;
 use std::collections::{BTreeSet, HashMap};
 use tracing::error;
@@ -152,8 +152,8 @@ impl LicenseInfoWindow {
                     widget::column![
                         widget::row![
                             txt_value.text(package.name.clone()),
-                            // TODO: COPYをアイコンに置き換える
-                            button(ftext("COPY").size(10).align_y(Vertical::Center))
+                            button(material_symbol(CONTENT_COPY))
+                                .padding(padding::left(1))
                                 .style(button::text)
                                 .on_press_maybe(
                                     Some(LicenseInfoWindowMessage::SetClipboard(
@@ -167,7 +167,8 @@ impl LicenseInfoWindow {
                                 let v = package.authors.join(", ");
                                 if v.is_empty() { "-".to_string() } else { v }
                             }),
-                            button(ftext("COPY").size(10).align_y(Vertical::Center))
+                            button(material_symbol(CONTENT_COPY))
+                                .padding(padding::left(1))
                                 .style(button::text)
                                 .on_press_maybe(
                                     Some(LicenseInfoWindowMessage::SetClipboard(
@@ -196,7 +197,8 @@ impl LicenseInfoWindow {
                             )),
                         widget::row![
                             txt_value.text(package.license_info.clone()),
-                            button(ftext("COPY").size(10).align_y(Vertical::Center))
+                            button(material_symbol(CONTENT_COPY))
+                                .padding(padding::left(1))
                                 .style(button::text)
                                 .on_press_maybe(
                                     Some(LicenseInfoWindowMessage::SetClipboard(
