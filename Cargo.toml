@@ -56,7 +56,7 @@ tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "sync"] 
 native-dialog = { version = "0.9", features = ["async"] }
 serde = { version = "1", features = ["derive"] }
 rhai = { version = "1", features = ["serde"] }
-reqwest = { version = "0.13", features = ["json"] }
+reqwest = { version = "0.12", features = ["json"] }
 log = "0.4"
 tracing-subscriber = { version = "0.3", features = ["chrono", "env-filter"] }
 fluent-bundle = "0.16"
