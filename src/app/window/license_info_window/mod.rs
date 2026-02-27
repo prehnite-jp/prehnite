@@ -152,30 +152,34 @@ impl LicenseInfoWindow {
                     widget::column![
                         widget::row![
                             txt_value.text(package.name.clone()),
-                            button(material_symbol(CONTENT_COPY))
-                                .padding(padding::left(1))
-                                .style(button::text)
-                                .on_press_maybe(
-                                    Some(LicenseInfoWindowMessage::SetClipboard(
-                                        package.name.clone()
+                            if !package.name.is_empty() {
+                                button(material_symbol(CONTENT_COPY))
+                                    .padding(padding::left(1))
+                                    .style(button::text)
+                                    .on_press(LicenseInfoWindowMessage::SetClipboard(
+                                        package.name.clone(),
                                     ))
-                                    .filter(|_| !package.name.is_empty())
-                                )
+                                    .into()
+                            } else {
+                                Element::from(widget::space())
+                            }
                         ],
                         widget::row![
                             txt_value.text({
                                 let v = package.authors.join(", ");
                                 if v.is_empty() { "-".to_string() } else { v }
                             }),
-                            button(material_symbol(CONTENT_COPY))
-                                .padding(padding::left(1))
-                                .style(button::text)
-                                .on_press_maybe(
-                                    Some(LicenseInfoWindowMessage::SetClipboard(
-                                        package.authors.join(", ")
+                            if !package.authors.is_empty() {
+                                button(material_symbol(CONTENT_COPY))
+                                    .padding(padding::left(1))
+                                    .style(button::text)
+                                    .on_press(LicenseInfoWindowMessage::SetClipboard(
+                                        package.authors.join(", "),
                                     ))
-                                    .filter(|_| !package.authors.is_empty())
-                                )
+                                    .into()
+                            } else {
+                                Element::from(widget::space())
+                            }
                         ],
                         txt_value
                             .rich([package
@@ -197,15 +201,17 @@ impl LicenseInfoWindow {
                             )),
                         widget::row![
                             txt_value.text(package.license_info.clone()),
-                            button(material_symbol(CONTENT_COPY))
-                                .padding(padding::left(1))
-                                .style(button::text)
-                                .on_press_maybe(
-                                    Some(LicenseInfoWindowMessage::SetClipboard(
-                                        package.license_info.clone()
+                            if !package.license_info.is_empty() {
+                                button(material_symbol(CONTENT_COPY))
+                                    .padding(padding::left(1))
+                                    .style(button::text)
+                                    .on_press(LicenseInfoWindowMessage::SetClipboard(
+                                        package.license_info.clone(),
                                     ))
-                                    .filter(|_| !package.license_info.is_empty())
-                                )
+                                    .into()
+                            } else {
+                                Element::from(widget::space())
+                            }
                         ]
                     ],
                 ]
