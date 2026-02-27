@@ -21,6 +21,6 @@ font_mod!(
 
 font_mod!(
     material_symbols_outlined,
-    "Material Symbols Rounded",
+    "Material Symbols Outlined",
     "../assets/fonts/Material_Symbols_Outlined/MaterialSymbolsOutlined-VariableFont_FILL,GRAD,opsz,wght.ttf"
 );
