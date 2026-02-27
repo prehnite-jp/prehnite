@@ -1,15 +1,16 @@
 use crate::app::resources::app_icon_handle;
 use crate::app::window::{Window, WindowMessage};
 use crate::license::license_bundle;
-use iced::alignment::{Horizontal, Vertical};
+use crate::widget::{copy_button, hideable};
+use iced::alignment::Horizontal;
 use iced::border::Radius;
-use iced::widget::pane_grid::{Axis, ResizeEvent};
+use iced::widget::pane_grid::Axis;
 use iced::widget::text::Wrapping;
 use iced::widget::{
-    button, container, pane_grid, scrollable, span, text, text_input, Container, MouseArea,
+    button, container, pane_grid, scrollable, span, text_input, Container, MouseArea,
 };
 use iced::window::Id;
-use iced::{padding, widget, Color, Element, Length, Task};
+use iced::{padding, widget, Alignment, Background, Color, Element, Length, Task};
 use opener::open_browser;
 use prehnite_core::i18n::{i18n, i18n_w};
 use prehnite_core::license_bundle::Package;
@@ -17,7 +18,7 @@ use prehnite_core::util::alert::alert_i18n;
 use prehnite_core::widget::font::{ftext, get_font};
 use prehnite_core::widget::text::TextBuilder;
 use prehnite_core::MessageLevel;
-use prehnite_font_manager::material_symbol::{ARROW_UPWARD, CONTENT_COPY};
+use prehnite_font_manager::material_symbol::ARROW_UPWARD;
 use prehnite_font_manager::widget::material_symbol;
 use std::collections::{BTreeSet, HashMap};
 use tracing::error;
@@ -35,7 +36,6 @@ pub enum LicenseInfoWindowMessage {
     ChangeTarget(String),
     ChangeSelectedTarget(String),
     PageChanged,
-    PaneResized(ResizeEvent),
     OpenWelcomeMessage,
     SetClipboard(String),
     LinkOnClick(String),
@@ -77,10 +77,38 @@ impl LicenseInfoWindow {
     fn software_list_row(&self, pkg_name: String) -> Element<'_, LicenseInfoWindowMessage> {
         let pkg_name2 = pkg_name.clone();
         MouseArea::new(
-            Container::new(ftext(pkg_name.clone()))
-                .padding(5)
-                .width(Length::Fill)
-                .style(move |t| Self::row_style(t, pkg_name.clone() == self.selected_package)),
+            Container::new(widget::row![
+                ftext(pkg_name.clone()),
+                widget::space().width(Length::Fill),
+                iced_aw::badge(ftext(format!(
+                    "{}",
+                    match &self.packages {
+                        None => {
+                            0
+                        }
+                        Some(v) => {
+                            v.get(&pkg_name)
+                                .map(|v| v.dependencies.len())
+                                .unwrap_or_default()
+                        }
+                    }
+                )))
+                .style(|t, _| {
+                    iced_aw::badge::Style {
+                        background: Background::Color(t.palette().primary),
+                        border_radius: None,
+                        border_width: 0.0,
+                        border_color: None,
+                        text_color: t.palette().text,
+                    }
+                })
+                .width(32)
+                .align_x(Alignment::Center)
+                .align_y(Alignment::Center)
+            ])
+            .padding(5)
+            .width(Length::Fill)
+            .style(move |t| Self::row_style(t, pkg_name.clone() == self.selected_package)),
         )
         .on_press(LicenseInfoWindowMessage::ChangeSelectedTarget(
             pkg_name2.clone(),
@@ -112,7 +140,7 @@ impl LicenseInfoWindow {
                     .style(button::text)
                     .on_press(LicenseInfoWindowMessage::PkgHome)
             ],
-            widget::column(
+            scrollable(widget::column(
                 self.dep_package_list
                     .iter()
                     .filter(|v| self
@@ -121,7 +149,8 @@ impl LicenseInfoWindow {
                         .map(|x| v.contains(x))
                         .unwrap_or_default())
                     .map(|v| self.software_list_row(v.clone()))
-            )
+            ))
+            .spacing(1)
         ]
         .into()
     }
@@ -152,40 +181,30 @@ impl LicenseInfoWindow {
                     widget::column![
                         widget::row![
                             txt_value.text(package.name.clone()),
-                            if !package.name.is_empty() {
-                                button(material_symbol(CONTENT_COPY))
-                                    .padding(padding::left(1))
-                                    .style(button::text)
-                                    .on_press(LicenseInfoWindowMessage::SetClipboard(
-                                        package.name.clone(),
-                                    ))
-                                    .into()
-                            } else {
-                                Element::from(widget::space())
-                            }
+                            hideable(
+                                copy_button().on_press(LicenseInfoWindowMessage::SetClipboard(
+                                    package.name.clone(),
+                                )),
+                                !package.name.is_empty()
+                            )
                         ],
                         widget::row![
                             txt_value.text({
                                 let v = package.authors.join(", ");
                                 if v.is_empty() { "-".to_string() } else { v }
                             }),
-                            if !package.authors.is_empty() {
-                                button(material_symbol(CONTENT_COPY))
-                                    .padding(padding::left(1))
-                                    .style(button::text)
-                                    .on_press(LicenseInfoWindowMessage::SetClipboard(
-                                        package.authors.join(", "),
-                                    ))
-                                    .into()
-                            } else {
-                                Element::from(widget::space())
-                            }
+                            hideable(
+                                copy_button().on_press(LicenseInfoWindowMessage::SetClipboard(
+                                    package.authors.join(", "),
+                                )),
+                                !package.authors.is_empty()
+                            )
                         ],
                         txt_value
                             .rich([package
                                 .homepage
                                 .clone()
-                                .map(|v| span(v).color(Color::from_rgb8(0, 0, 255)).link(0))
+                                .map(|v| span(v).color(Color::from_rgb8(0, 0, 0xEE)).link(0))
                                 .unwrap_or(span::<i32, _>("-"))])
                             .on_link_click(move |_| LicenseInfoWindowMessage::LinkOnClick(
                                 package.homepage.clone().unwrap_or_default()
@@ -194,24 +213,19 @@ impl LicenseInfoWindow {
                             .rich([package
                                 .repository
                                 .clone()
-                                .map(|v| span(v).color(Color::from_rgb8(0, 0, 255)).link(0))
+                                .map(|v| span(v).color(Color::from_rgb8(0, 0, 0xEE)).link(0))
                                 .unwrap_or(span::<i32, _>("-"))])
                             .on_link_click(move |_| LicenseInfoWindowMessage::LinkOnClick(
                                 package.repository.clone().unwrap_or_default()
                             )),
                         widget::row![
                             txt_value.text(package.license_info.clone()),
-                            if !package.license_info.is_empty() {
-                                button(material_symbol(CONTENT_COPY))
-                                    .padding(padding::left(1))
-                                    .style(button::text)
-                                    .on_press(LicenseInfoWindowMessage::SetClipboard(
-                                        package.license_info.clone(),
-                                    ))
-                                    .into()
-                            } else {
-                                Element::from(widget::space())
-                            }
+                            hideable(
+                                copy_button().on_press(LicenseInfoWindowMessage::SetClipboard(
+                                    package.license_info.clone(),
+                                )),
+                                !package.license_info.is_empty()
+                            )
                         ]
                     ],
                 ]
@@ -259,6 +273,18 @@ impl LicenseInfoWindow {
                 };
             }
             LicenseInfoWindowMessage::ChangeTarget(v) => {
+                match &self.packages {
+                    None => {}
+                    Some(packages) => {
+                        if packages
+                            .get(&v)
+                            .map(|pkg| pkg.dependencies.is_empty())
+                            .unwrap_or_default()
+                        {
+                            return Task::none();
+                        }
+                    }
+                };
                 self.target_package_history.push(v);
                 self.search_text_history.push("".to_string());
                 return Task::done(LicenseInfoWindowMessage::PageChanged);
@@ -290,11 +316,6 @@ impl LicenseInfoWindow {
             }
             LicenseInfoWindowMessage::ChangeSelectedTarget(v) => {
                 self.selected_package = v;
-            }
-            LicenseInfoWindowMessage::PaneResized(ResizeEvent { split, ratio }) => {
-                if ratio > 0.33 && ratio < 0.66 {
-                    self.pane_state.resize(split, ratio);
-                }
             }
             LicenseInfoWindowMessage::OpenWelcomeMessage => {
                 return alert_i18n(
@@ -357,20 +378,20 @@ impl Window for LicenseInfoWindow {
 
     fn view(&'_ self) -> Element<'_, WindowMessage> {
         widget::pane_grid(&self.pane_state, |_, state, _| {
-            pane_grid::Content::new(
-                scrollable(match state {
-                    WindowPane::List => Container::new(self.software_list_pane().map(|v| v.into()))
+            pane_grid::Content::new(match state {
+                WindowPane::List => Element::from(
+                    Container::new(self.software_list_pane().map(|v| v.into()))
                         .style(|t| Self::row_style(t, false)),
-                    WindowPane::Detail => {
-                        Container::new(self.software_details_pane().map(|v| v.into()))
-                            .style(|t| Self::row_style(t, false))
-                            .padding(5)
-                    }
-                })
-                .spacing(1),
-            )
+                ),
+                WindowPane::Detail => scrollable(
+                    Container::new(self.software_details_pane().map(|v| v.into()))
+                        .style(|t| Self::row_style(t, false))
+                        .padding(5),
+                )
+                .spacing(1)
+                .into(),
+            })
         })
-        .on_resize(10, |v| LicenseInfoWindowMessage::PaneResized(v).into())
         .into()
     }
 
