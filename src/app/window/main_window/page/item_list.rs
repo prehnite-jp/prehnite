@@ -1,15 +1,14 @@
 use crate::db;
 use crate::db::query;
 use iced::widget::pane_grid::{Axis, ResizeEvent};
-use iced::widget::{pane_grid, scrollable, Container};
-use iced::{widget, Element, Length};
+use iced::widget::{container, pane_grid, scrollable, space, Container, MouseArea};
+use iced::{padding, widget, Background, Element, Length};
 use prehnite_core::db::schema::{Item, ItemType};
 use prehnite_core::i18n::i18n_w;
 use prehnite_core::util::container_style;
-use prehnite_core::widget::item::{ItemRow, ItemRowMessage};
+use prehnite_core::widget::font::ftext;
 use std::collections::HashMap;
 use tracing::error;
-use prehnite_core::widget::font::ftext;
 
 #[derive(Clone, Debug)]
 pub enum ItemListMessage {
@@ -17,7 +16,7 @@ pub enum ItemListMessage {
     ItemListPaneResized(ResizeEvent),
     SetHeadlines(HashMap<i64, Item>),
     SetParagraph(HashMap<i64, HashMap<i64, Item>>),
-    ItemMessage(i64, ItemRowMessage),
+    ItemSelected(i64),
 }
 
 pub enum ItemListActions {
@@ -32,8 +31,8 @@ enum ItemListPane {
 
 #[derive(Debug, Clone)]
 pub struct ItemList {
-    item_row_with_headline: HashMap<i64 /* item_id */, (Item, ItemRow)>,
-    paragraph: HashMap<i64 /* item_id */, HashMap<i64 /* item_id */, Item /* item_id */>>,
+    headlines: HashMap<i64 /* item_id */, Item>,
+    paragraph: HashMap<i64 /* headline_id */, HashMap<i64 /* item_id */, Item>>,
     focused_item_id: Option<i64>,
     per_page: u8,
     page: u32,
@@ -45,7 +44,7 @@ impl Default for ItemList {
         let (mut item_list_pane, pane) = pane_grid::State::new(ItemListPane::PaneList);
         item_list_pane.split(Axis::Vertical, pane, ItemListPane::PaneDetails);
         Self {
-            item_row_with_headline: Default::default(),
+            headlines: Default::default(),
             paragraph: Default::default(),
             focused_item_id: None,
             per_page: 10,
@@ -103,36 +102,67 @@ impl ItemList {
                 );
             }
             ItemListMessage::SetHeadlines(v) => {
-                self.item_row_with_headline = v
-                    .into_iter()
-                    .map(|(id, v)| (id, (v, ItemRow::new())))
-                    .collect();
+                self.headlines = v;
                 self.focused_item_id = None;
             }
-            ItemListMessage::ItemMessage(id, msg) => match msg {
-                ItemRowMessage::Selected(focused_id) => {
-                    self.focused_item_id = Some(focused_id);
-                }
-                ItemRowMessage::ToggleFoldParagraph => {
-                    self.item_row_with_headline
-                        .get_mut(&id)
-                        .map(|(_, row)| row.toggle_folded());
-                }
-            },
-            ItemListMessage::SetParagraph(v) => {
-                self.paragraph = v;
-            }
+            ItemListMessage::SetParagraph(v) => self.paragraph = v,
+            ItemListMessage::ItemSelected(id) => self.focused_item_id = Some(id),
         }
         ItemListActions::Run(iced::Task::none())
     }
 
+    pub fn item(item: &'_ Item, focused: bool) -> Element<'_, ItemListMessage> {
+        MouseArea::new(
+            Container::new(ftext(item.title.clone()).size(match item.item_type {
+                ItemType::Headline(_) => 24,
+                ItemType::Paragraph(_) => 18,
+            }))
+            .padding(padding::left(match item.item_type {
+                ItemType::Headline(_) => 0,
+                ItemType::Paragraph(_) => 20,
+            }))
+            .style(move |t| {
+                let p = t.extended_palette();
+                container::Style {
+                    text_color: Some(if focused {
+                        p.background.weaker.text
+                    } else {
+                        p.background.weakest.text
+                    }),
+                    background: Some(Background::Color(if focused {
+                        p.background.weaker.color
+                    } else {
+                        p.background.weakest.color
+                    })),
+                    ..Default::default()
+                }
+            })
+            .width(Length::Fill),
+        )
+        .on_press(ItemListMessage::ItemSelected(item.id))
+        .into()
+    }
+
     pub fn item_list_panel(&'_ self) -> Container<'_, ItemListMessage> {
-        Container::new(widget::column(self.item_row_with_headline.iter().map(
-            |(i, (itm, row))| {
-                row.view(itm, self.paragraph.get(i), self.focused_item_id)
-                    .map(move |msg| ItemListMessage::ItemMessage(*i, msg))
-            },
-        )))
+        Container::new(widget::column(self.headlines.iter().map(|(id, itm)| {
+            widget::column![
+                Self::item(itm, Some(*id) == self.focused_item_id),
+                match self.paragraph.get(id) {
+                    None => {
+                        Element::from(space())
+                    }
+                    Some(v) => {
+                        widget::column(
+                            v.iter().map(|(_, itm)| {
+                                Self::item(itm, Some(itm.id) == self.focused_item_id)
+                            }),
+                        )
+                        .into()
+                    }
+                }
+            ]
+            .into()
+        })))
         .width(Length::Fill)
         .height(Length::Fill)
         .style(container_style::rect_bordered)
@@ -141,14 +171,11 @@ impl ItemList {
     fn get_item_paragraph_or_headline(&'_ self) -> Option<&'_ Item> {
         let focused_item_id = self.focused_item_id?;
 
-        self.item_row_with_headline
-            .get(&focused_item_id)
-            .map(|v| &v.0)
-            .or_else(|| {
-                self.paragraph
-                    .values()
-                    .find_map(|v| v.get(&focused_item_id))
-            })
+        self.headlines.get(&focused_item_id).or_else(|| {
+            self.paragraph
+                .values()
+                .find_map(|v| v.get(&focused_item_id))
+        })
     }
 
     fn item_detail(item: &Item) -> Element<'_, ItemListMessage> {
@@ -160,10 +187,7 @@ impl ItemList {
                     None
                 }
                 ItemType::Paragraph(p) => {
-                    p.and_then(|p| {
-                        p.accepted_draft
-                            .map(|d| Element::from(ftext(d.body)))
-                    })
+                    p.and_then(|p| p.accepted_draft.map(|d| Element::from(ftext(d.body))))
                 }
             }
             .unwrap_or(Element::new(widget::space()))
