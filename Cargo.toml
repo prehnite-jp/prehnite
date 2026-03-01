@@ -25,7 +25,7 @@ publish = false
 
 [features]
 release = ["icon", "bundle_license"]
-debug = ["iced/debug"]
+debug = ["iced/debug", "prehnite-core/debug"]
 icon = ["prehnite-build-libs/icon"]
 bundle_license = ["prehnite-build-libs/bundle_license"]
 

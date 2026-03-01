@@ -202,8 +202,12 @@ impl SettingEntry {
         i18n(self.display_key)
     }
 
+    //noinspection RsUnnecessaryReturn
     pub fn get_is_visible(&self) -> bool {
-        self.is_visible
+        #[cfg(feature = "debug")]
+        return true;
+        #[cfg(not(feature = "debug"))]
+        return self.is_visible;
     }
 
     pub fn get_selectable_values(&self) -> Option<Vec<String>> {
