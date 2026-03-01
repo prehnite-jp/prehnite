@@ -1,10 +1,9 @@
 use crate::app::window::{Window, WindowMessage};
-use crate::widget::styles::container::{focusable, not_focused_rect_box, rect_box};
+use crate::widget::styles::container::{focusable, not_focused_rect_box};
 use iced::alignment::{Horizontal, Vertical};
-use iced::border::Radius;
 use iced::widget::pane_grid::Axis;
 use iced::widget::{
-    button, container, pane_grid, pick_list, scrollable, space, text_input, Container, MouseArea,
+    button, pane_grid, pick_list, scrollable, space, text_input, Container, MouseArea,
 };
 use iced::window::{Id, Settings};
 use iced::{widget, Element, Length, Task};

@@ -1,9 +1,10 @@
 use crate::db;
 use crate::db::query;
 use crate::widget::hideable;
+use crate::widget::styles::container::{focusable, not_focused_rect_box, unborder};
 use iced::widget::pane_grid::{Axis, ResizeEvent};
-use iced::widget::{container, pane_grid, scrollable, space, Container, MouseArea};
-use iced::{padding, widget, Background, Element, Length};
+use iced::widget::{pane_grid, scrollable, space, Container, MouseArea};
+use iced::{padding, widget, Element, Length};
 use prehnite_core::db::schema::{Item, ItemType, ParagraphSummary};
 use prehnite_core::i18n::i18n_w;
 use prehnite_core::widget::font::ftext;
@@ -11,7 +12,6 @@ use prehnite_font_manager::material_symbol::CIRCLE;
 use prehnite_font_manager::widget::material_symbol;
 use std::collections::HashMap;
 use tracing::error;
-use crate::widget::styles::container::rect_box;
 
 #[derive(Clone, Debug)]
 pub enum ItemListMessage {
@@ -154,22 +154,7 @@ impl ItemList {
                         is_summary_visible
                     )
                 ])
-                .style(move |t| {
-                    let p = t.extended_palette();
-                    container::Style {
-                        text_color: Some(if focused {
-                            p.background.weaker.text
-                        } else {
-                            p.background.weakest.text
-                        }),
-                        background: Some(Background::Color(if focused {
-                            p.background.weaker.color
-                        } else {
-                            p.background.weakest.color
-                        })),
-                        ..Default::default()
-                    }
-                })
+                .style(unborder(focusable(focused)))
                 .width(Length::Fill),
                 widget::rule::horizontal(1)
             ])
@@ -205,7 +190,8 @@ impl ItemList {
         })))
         .width(Length::Fill)
         .height(Length::Fill)
-        .style(rect_box)
+        .padding(5)
+        .style(unborder(not_focused_rect_box))
     }
 
     fn get_item_paragraph_or_headline(&'_ self) -> Option<&'_ Item> {
@@ -242,7 +228,8 @@ impl ItemList {
         })
         .width(Length::Fill)
         .height(Length::Fill)
-        .style(rect_box)
+        .padding(5)
+        .style(unborder(not_focused_rect_box))
     }
 
     pub fn view(&'_ self) -> Element<'_, ItemListMessage> {

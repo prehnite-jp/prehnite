@@ -1,7 +1,7 @@
 use crate::app::resources::app_icon_handle;
 use crate::app::window::{Window, WindowMessage};
 use crate::license::license_bundle;
-use crate::widget::styles::container::{focusable, not_focused_rect_box, rect_box};
+use crate::widget::styles::container::{focusable, not_focused_rect_box};
 use crate::widget::{copy_button, hideable};
 use iced::alignment::Horizontal;
 use iced::widget::pane_grid::Axis;
