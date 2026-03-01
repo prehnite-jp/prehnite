@@ -3,14 +3,11 @@ use crate::{build_process, BuildProcess};
 use prehnite_license_bundle::{
     get_default_license_bundle, get_names_from_default_license_bundle, Package,
 };
-use std::collections::HashSet;
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use zip::write::SimpleFileOptions;
 use zip::ZipWriter;
-
-const MY_APP_HOMEPAGE: &str = "https://prehnite.jp/";
 
 const FILE_NAME: &str = "content";
 
@@ -20,6 +17,10 @@ fn license_zip_path() -> PathBuf {
 
 #[cfg(feature = "bundle_license")]
 fn license_collector() -> prehnite_license_bundle::LicenseBundle {
+    use std::collections::HashSet;
+
+    const MY_APP_HOMEPAGE: &str = "https://prehnite.jp/";
+
     let license_config = cargo_about::licenses::config::Config {
         ignore_build_dependencies: true,
         ignore_dev_dependencies: !cfg!(debug_assertions),
