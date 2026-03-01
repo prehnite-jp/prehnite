@@ -1,12 +1,15 @@
 use crate::db;
 use crate::db::query;
+use crate::widget::hideable;
 use iced::widget::pane_grid::{Axis, ResizeEvent};
 use iced::widget::{container, pane_grid, scrollable, space, Container, MouseArea};
 use iced::{padding, widget, Background, Element, Length};
-use prehnite_core::db::schema::{Item, ItemType};
+use prehnite_core::db::schema::{Item, ItemType, ParagraphSummary};
 use prehnite_core::i18n::i18n_w;
 use prehnite_core::util::container_style;
 use prehnite_core::widget::font::ftext;
+use prehnite_font_manager::material_symbol::CIRCLE;
+use prehnite_font_manager::widget::material_symbol;
 use std::collections::HashMap;
 use tracing::error;
 
@@ -73,18 +76,30 @@ impl ItemList {
 
     #[tracing::instrument]
     async fn load_paragraph(page: u32, per_page: u8) -> ItemListMessage {
-        ItemListMessage::SetParagraph(
-            query::fetch_root_headline_related_paragraph(
-                db::acquire_with_alert().await.as_mut(),
-                per_page,
-                page,
-            )
+        let mut conn = db::acquire_with_alert().await;
+        let mut res = query::fetch_root_headline_related_paragraph(&mut conn, per_page, page)
             .await
             .unwrap_or_else(|e| {
                 error!("Failed to fetch paragraph of headline related. Error: {e:#?}");
                 Default::default()
-            }),
-        )
+            });
+        for i in res.values_mut() {
+            for x in i.values_mut() {
+                match &mut x.item_type {
+                    ItemType::Headline(_) => {}
+                    ItemType::Paragraph(v) => {
+                        if let Some(v) = v {
+                            v.load_summary(&mut conn).await.unwrap_or_else(|e| {
+                                error!(
+                                    "Failed to fetch references of paragraph related. Error: {e:#?}"
+                                );
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        ItemListMessage::SetParagraph(res)
     }
 
     pub fn update(&mut self, msg: ItemListMessage) -> ItemListActions {
@@ -111,32 +126,57 @@ impl ItemList {
         ItemListActions::Run(iced::Task::none())
     }
 
+    pub fn summary<'a>(summary: ParagraphSummary) -> Element<'a, ItemListMessage> {
+        widget::row![material_symbol(CIRCLE), ftext(summary.title)].into()
+    }
+
     pub fn item(item: &'_ Item, focused: bool) -> Element<'_, ItemListMessage> {
+        let paragraph = item.item_type.clone().paragraph_unwrap_or_default();
+        let is_summary_visible = paragraph.is_some();
         MouseArea::new(
-            Container::new(ftext(item.title.clone()).size(match item.item_type {
-                ItemType::Headline(_) => 24,
-                ItemType::Paragraph(_) => 18,
-            }))
+            Container::new(widget::column![
+                Container::new(widget::column![
+                    ftext(item.title.clone()).size(match item.item_type {
+                        ItemType::Headline(_) => 24,
+                        ItemType::Paragraph(_) => 18,
+                    }),
+                    hideable(
+                        widget::column(
+                            paragraph
+                                .and_then(|v| v.summary)
+                                .map(|v| v
+                                    .into_iter()
+                                    .map(Self::summary)
+                                    .collect::<Vec<Element<'_, ItemListMessage>>>())
+                                .unwrap_or_default()
+                        )
+                        .padding(padding::left(40)),
+                        is_summary_visible
+                    )
+                ])
+                .style(move |t| {
+                    let p = t.extended_palette();
+                    container::Style {
+                        text_color: Some(if focused {
+                            p.background.weaker.text
+                        } else {
+                            p.background.weakest.text
+                        }),
+                        background: Some(Background::Color(if focused {
+                            p.background.weaker.color
+                        } else {
+                            p.background.weakest.color
+                        })),
+                        ..Default::default()
+                    }
+                })
+                .width(Length::Fill),
+                widget::rule::horizontal(1)
+            ])
             .padding(padding::left(match item.item_type {
                 ItemType::Headline(_) => 0,
                 ItemType::Paragraph(_) => 20,
             }))
-            .style(move |t| {
-                let p = t.extended_palette();
-                container::Style {
-                    text_color: Some(if focused {
-                        p.background.weaker.text
-                    } else {
-                        p.background.weakest.text
-                    }),
-                    background: Some(Background::Color(if focused {
-                        p.background.weaker.color
-                    } else {
-                        p.background.weakest.color
-                    })),
-                    ..Default::default()
-                }
-            })
             .width(Length::Fill),
         )
         .on_press(ItemListMessage::ItemSelected(item.id))

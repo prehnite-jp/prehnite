@@ -81,6 +81,22 @@ pub enum ItemType {
     Paragraph(Option<Paragraph>),
 }
 
+impl ItemType {
+    pub fn headline_unwrap_or_default(self) -> Option<Headline> {
+        match self {
+            ItemType::Headline(v) => v,
+            ItemType::Paragraph(_) => None,
+        }
+    }
+
+    pub fn paragraph_unwrap_or_default(self) -> Option<Paragraph> {
+        match self {
+            ItemType::Headline(_) => None,
+            ItemType::Paragraph(v) => v,
+        }
+    }
+}
+
 impl Default for ItemType {
     fn default() -> Self {
         Self::Headline(None)
