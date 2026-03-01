@@ -17,7 +17,7 @@ macro_rules! build_process {
 macro_rules! build_process_empty_impl {
     ($t:ty) => {
         impl BuildProcess for $t {
-            fn execute(&self) {}
+            fn execute(&self) -> anyhow::Result<()> { Ok(()) }
         }
     };
 }
@@ -30,15 +30,16 @@ pub trait BuildProcess {
         Box::new(Self::default())
     }
 
-    fn execute(&self);
+    fn execute(&self) -> anyhow::Result<()>;
 }
 
 fn process() -> Vec<Box<dyn BuildProcess>> {
     vec![BundleLicense::new(), SetIcon::new()]
 }
 
-pub fn execute_all_build_process() {
+pub fn execute_all_build_process() -> anyhow::Result<()> {
     for i in process() {
-        i.execute();
+        i.execute()?;
     }
+    Ok(())
 }

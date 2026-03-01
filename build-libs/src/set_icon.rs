@@ -8,14 +8,14 @@ build_process!(SetIcon);
 
 #[cfg(all(target_os = "windows", feature = "icon"))]
 impl BuildProcess for SetIcon {
-    fn execute(&self) {
+    fn execute(&self) -> anyhow::Result<()> {
         extern crate embed_resource;
         embed_resource::compile(
             "assets/platform/win/prehnite.exe.icon.rc",
             embed_resource::NONE,
         )
-        .manifest_optional()
-        .unwrap();
+        .manifest_optional()?;
+        Ok(())
     }
 }
 

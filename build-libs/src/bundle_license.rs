@@ -1,8 +1,10 @@
 use crate::util::set_env;
 use crate::{build_process, BuildProcess};
+use cargo_about::licenses::KrateLicense;
 use prehnite_license_bundle::{
-    get_default_license_bundle, get_names_from_default_license_bundle, Package,
+    get_default_license_bundle, get_names_from_default_license_bundle, LicenseBundle, Package,
 };
+use std::collections::BTreeSet;
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -11,12 +13,12 @@ use zip::ZipWriter;
 
 const FILE_NAME: &str = "content";
 
-fn license_zip_path() -> PathBuf {
-    Path::new(&std::env::var("OUT_DIR").unwrap()).join("license-bundle.zip")
+fn license_zip_path() -> anyhow::Result<PathBuf> {
+    Ok(Path::new(&std::env::var("OUT_DIR")?).join("license-bundle.zip"))
 }
 
 #[cfg(feature = "bundle_license")]
-fn license_collector() -> prehnite_license_bundle::LicenseBundle {
+fn license_collector() -> anyhow::Result<LicenseBundle> {
     use std::collections::HashSet;
 
     const MY_APP_HOMEPAGE: &str = "https://prehnite.jp/";
@@ -39,65 +41,76 @@ fn license_collector() -> prehnite_license_bundle::LicenseBundle {
         },
         &license_config,
         &[crate::util::target()],
-    )
-    .unwrap();
+    )?;
 
     let license = cargo_about::licenses::Gatherer::with_store(
-        cargo_about::licenses::store_from_cache().unwrap().into(),
+        cargo_about::licenses::store_from_cache()?.into(),
     )
     .gather(
         &crates,
         &license_config,
-        Some(reqwest::blocking::ClientBuilder::new().build().unwrap()),
+        Some(reqwest::blocking::ClientBuilder::new().build()?),
     );
 
     let crate_names: HashSet<String> = license.iter().map(|v| v.krate.name.clone()).collect();
 
+    fn load_full_text(v: &KrateLicense) -> anyhow::Result<Vec<prehnite_license_bundle::License>> {
+        v.license_files
+            .iter()
+            .map(|v| {
+                Ok(prehnite_license_bundle::License {
+                    full_text: crate::util::read_string_from_file(v.path.canonicalize()?)?,
+                })
+            })
+            .collect::<anyhow::Result<Vec<prehnite_license_bundle::License>>>()
+    }
+
+    fn dependencies(v: &KrateLicense, crate_names: &HashSet<String>) -> BTreeSet<String> {
+        v.krate
+            .dependencies
+            .iter()
+            .map(|v| v.name.clone())
+            .filter(|v| crate_names.contains(v))
+            .collect()
+    }
+
     license
         .iter()
-        .map(|v| Package {
-            name: v.krate.name.clone(),
-            authors: v.krate.authors.clone(),
-            homepage: v.krate.homepage.clone(),
-            repository: v.krate.repository.clone(),
-            license_info: v.lic_info.to_string(),
-            licenses: v
-                .license_files
-                .iter()
-                .map(|v| prehnite_license_bundle::License {
-                    full_text: crate::util::read_string_from_file(v.path.canonicalize().unwrap()),
-                })
-                .collect(),
-            dependencies: v
-                .krate
-                .dependencies
-                .iter()
-                .map(|v| v.name.clone())
-                .filter(|v| crate_names.contains(v))
-                .collect(),
+        .map(move |v| {
+            Ok(Package {
+                name: v.krate.name.clone(),
+                authors: v.krate.authors.clone(),
+                homepage: v.krate.homepage.clone(),
+                repository: v.krate.repository.clone(),
+                license_info: v.lic_info.to_string(),
+                licenses: load_full_text(v)?,
+                dependencies: dependencies(v, &crate_names),
+            })
         })
+        .collect::<anyhow::Result<Vec<Package>>>()?
+        .into_iter()
         .map(|v| {
             if v.homepage
                 .clone()
                 .map(|v| v.eq(MY_APP_HOMEPAGE))
                 .unwrap_or_default()
             {
-                v.prehnite_member_license()
+                Ok(v.prehnite_member_license())
             } else {
-                v
+                Ok(v)
             }
         })
-        .collect()
+        .collect::<anyhow::Result<LicenseBundle>>()
 }
 
 build_process!(BundleLicense);
 
 impl BuildProcess for BundleLicense {
-    fn execute(&self) {
+    fn execute(&self) -> anyhow::Result<()> {
         #[allow(unused_mut)]
         let mut license = get_default_license_bundle();
         #[cfg(feature = "bundle_license")]
-        license.extend(license_collector());
+        license.extend(license_collector()?);
         match license.iter_mut().find(|v| v.name == "prehnite") {
             None => license.push(Package::prehnite()),
             Some(v) => v
@@ -105,20 +118,25 @@ impl BuildProcess for BundleLicense {
                 .extend(get_names_from_default_license_bundle()),
         }
 
-        let license_list_json = serde_json::to_string(&license).unwrap();
+        let license_list_json = serde_json::to_string(&license)?;
 
-        let output_path = license_zip_path();
-        let mut zip = ZipWriter::new(File::create(&output_path).unwrap());
+        let output_path = license_zip_path()?;
+        let mut zip = ZipWriter::new(File::create(&output_path)?);
         zip.start_file(
             FILE_NAME,
             SimpleFileOptions::default()
                 .compression_method(zip::CompressionMethod::Zstd)
                 .compression_level(Some(3)),
-        )
-        .unwrap();
-        zip.write_all(license_list_json.as_bytes()).unwrap();
-        zip.flush().unwrap();
-        zip.finish().unwrap();
-        set_env("LICENSE_BUNDLE_ZIP_PATH", output_path.to_str().unwrap());
+        )?;
+        zip.write_all(license_list_json.as_bytes())?;
+        zip.flush()?;
+        zip.finish()?;
+        set_env(
+            "LICENSE_BUNDLE_ZIP_PATH",
+            output_path
+                .to_str()
+                .expect("Failed to convert output path."),
+        );
+        Ok(())
     }
 }

@@ -4435,6 +4435,7 @@ dependencies = [
 name = "prehnite"
 version = "0.0.1-alpha"
 dependencies = [
+ "anyhow",
  "fluent-bundle",
  "iced",
  "iced_aw",
@@ -4452,6 +4453,7 @@ dependencies = [
 name = "prehnite-build-libs"
 version = "0.0.1-alpha"
 dependencies = [
+ "anyhow",
  "cargo-about",
  "embed-resource",
  "krates",
@@ -4465,6 +4467,7 @@ dependencies = [
 name = "prehnite-core"
 version = "0.0.1-alpha"
 dependencies = [
+ "anyhow",
  "chrono",
  "derive_more",
  "fluent-bundle",

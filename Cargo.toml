@@ -40,6 +40,7 @@ fluent-bundle.workspace = true
 image.workspace = true
 prehnite-font-manager.workspace = true
 opener.workspace = true
+anyhow.workspace = true
 
 [workspace.dependencies]
 prehnite-core = { version = "0.0.1-alpha", path = "core" }
@@ -71,6 +72,8 @@ iced_graphics = "0.14"
 prehnite-license-bundle = { version = "0.0.1-alpha", path = "license-bundle" }
 zip = "8"
 opener = "0.8"
+anyhow = "1"
 
 [build-dependencies]
 prehnite-build-libs = { version = "0.0.1-alpha", path = "build-libs" }
+anyhow.workspace = true
