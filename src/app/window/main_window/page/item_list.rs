@@ -1,7 +1,7 @@
 use crate::db;
 use crate::db::query;
 use crate::widget::hideable;
-use crate::widget::styles::container::{focusable, not_focused_rect_box, unborder};
+use crate::widget::styles::container::{focusable, not_focused_rect_box, rect_box, unborder};
 use iced::widget::pane_grid::{Axis, ResizeEvent};
 use iced::widget::{pane_grid, scrollable, space, Container, MouseArea};
 use iced::{padding, widget, Element, Length};
@@ -229,7 +229,7 @@ impl ItemList {
         .width(Length::Fill)
         .height(Length::Fill)
         .padding(5)
-        .style(unborder(not_focused_rect_box))
+        .style(unborder(rect_box))
     }
 
     pub fn view(&'_ self) -> Element<'_, ItemListMessage> {
