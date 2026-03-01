@@ -6,12 +6,12 @@ use iced::widget::{container, pane_grid, scrollable, space, Container, MouseArea
 use iced::{padding, widget, Background, Element, Length};
 use prehnite_core::db::schema::{Item, ItemType, ParagraphSummary};
 use prehnite_core::i18n::i18n_w;
-use prehnite_core::util::container_style;
 use prehnite_core::widget::font::ftext;
 use prehnite_font_manager::material_symbol::CIRCLE;
 use prehnite_font_manager::widget::material_symbol;
 use std::collections::HashMap;
 use tracing::error;
+use crate::widget::styles::container::rect_box;
 
 #[derive(Clone, Debug)]
 pub enum ItemListMessage {
@@ -205,7 +205,7 @@ impl ItemList {
         })))
         .width(Length::Fill)
         .height(Length::Fill)
-        .style(container_style::rect_bordered)
+        .style(rect_box)
     }
 
     fn get_item_paragraph_or_headline(&'_ self) -> Option<&'_ Item> {
@@ -242,7 +242,7 @@ impl ItemList {
         })
         .width(Length::Fill)
         .height(Length::Fill)
-        .style(container_style::rect_bordered)
+        .style(rect_box)
     }
 
     pub fn view(&'_ self) -> Element<'_, ItemListMessage> {

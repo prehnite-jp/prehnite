@@ -1,14 +1,12 @@
 use crate::app::resources::app_icon_handle;
 use crate::app::window::{Window, WindowMessage};
 use crate::license::license_bundle;
+use crate::widget::styles::container::{focusable, not_focused_rect_box, rect_box};
 use crate::widget::{copy_button, hideable};
 use iced::alignment::Horizontal;
-use iced::border::Radius;
 use iced::widget::pane_grid::Axis;
 use iced::widget::text::Wrapping;
-use iced::widget::{
-    button, container, pane_grid, scrollable, span, text_input, Container, MouseArea,
-};
+use iced::widget::{button, pane_grid, scrollable, span, text_input, Container, MouseArea};
 use iced::window::Id;
 use iced::{padding, widget, Alignment, Background, Color, Element, Length, Task};
 use opener::open_browser;
@@ -65,15 +63,6 @@ pub struct LicenseInfoWindow {
 }
 
 impl LicenseInfoWindow {
-    fn row_style(theme: &iced::Theme, is_focused: bool) -> container::Style {
-        let mut style = container::bordered_box(theme);
-        style.border.radius = Radius::new(0);
-        if !is_focused {
-            style = style.background(theme.palette().background);
-        }
-        style
-    }
-
     fn software_list_row(&self, pkg_name: String) -> Element<'_, LicenseInfoWindowMessage> {
         let pkg_name2 = pkg_name.clone();
         MouseArea::new(
@@ -108,7 +97,7 @@ impl LicenseInfoWindow {
             ])
             .padding(5)
             .width(Length::Fill)
-            .style(move |t| Self::row_style(t, pkg_name.clone() == self.selected_package)),
+            .style(focusable(pkg_name.clone() == self.selected_package)),
         )
         .on_press(LicenseInfoWindowMessage::ChangeSelectedTarget(
             pkg_name2.clone(),
@@ -381,11 +370,11 @@ impl Window for LicenseInfoWindow {
             pane_grid::Content::new(match state {
                 WindowPane::List => Element::from(
                     Container::new(self.software_list_pane().map(|v| v.into()))
-                        .style(|t| Self::row_style(t, false)),
+                        .style(not_focused_rect_box),
                 ),
                 WindowPane::Detail => scrollable(
                     Container::new(self.software_details_pane().map(|v| v.into()))
-                        .style(|t| Self::row_style(t, false))
+                        .style(not_focused_rect_box)
                         .padding(5),
                 )
                 .spacing(1)

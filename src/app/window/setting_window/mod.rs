@@ -1,4 +1,5 @@
 use crate::app::window::{Window, WindowMessage};
+use crate::widget::styles::container::{focusable, not_focused_rect_box, rect_box};
 use iced::alignment::{Horizontal, Vertical};
 use iced::border::Radius;
 use iced::widget::pane_grid::Axis;
@@ -82,21 +83,12 @@ impl SettingWindow {
         }
     }
 
-    fn row_style(theme: &iced::Theme, is_focused: bool) -> container::Style {
-        let mut style = container::bordered_box(theme);
-        style.border.radius = Radius::new(0);
-        if !is_focused {
-            style = style.background(theme.palette().background);
-        }
-        style
-    }
-
     fn category_row(&self, id: usize, cate: &SettingCategory) -> Element<'_, WindowMessage> {
         MouseArea::new(
             Container::new(ftext(cate.category_name()))
                 .padding(5)
                 .width(Length::Fill)
-                .style(move |t| Self::row_style(t, id == self.current_category_idx)),
+                .style(focusable(id == self.current_category_idx)),
         )
         .on_press(SettingWindowMessage::CategorySelected(id).into())
         .into()
@@ -303,7 +295,7 @@ impl Window for SettingWindow {
                             .padding(5),
                             self.setting_list_pane()
                         ])
-                        .style(|t| Self::row_style(t, false)),
+                        .style(not_focused_rect_box),
                         SettingWindowPane::Editor => Container::new(widget::column![
                             Container::new(ftext(
                                 SettingRegistry::get_categories()
@@ -315,7 +307,7 @@ impl Window for SettingWindow {
                             .padding(5),
                             self.setting_edit_pane()
                         ])
-                        .style(|t| Self::row_style(t, false)),
+                        .style(not_focused_rect_box),
                     })
                     .spacing(1),
                 )
