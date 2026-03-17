@@ -1,5 +1,5 @@
 use crate::db::schema::app_global::book_search_api::BookSearchApi;
-use crate::db::schema::binder_helper::{placeholder_helper, placeholder_in_clause, Binder};
+use crate::db::schema::binder_helper::{Binder, placeholder_helper, placeholder_in_clause};
 use crate::db::schema::{
     BackgroundInfo, BackgroundReference, Bibliography, BibliographyAuthor, Draft, Headline, Item,
     ItemReference, Paragraph, ParagraphLink, ParagraphSummary, Publisher, RelBackgroundAndItem,
@@ -27,6 +27,13 @@ macro_rules! allow_r {
             pub async fn select_all(conn: &mut SqliteConnection) ->  Result<Vec<Self>, Error> {
                 sqlx::query_as(concat!("SELECT * FROM ", $view_name))
                     .fetch_all(conn).await
+            }
+
+            pub async fn from_id(conn: &mut SqliteConnection, id: i64) -> Result<Option<Self>, Error> {
+                sqlx::query_as(concat!("SELECT * FROM ", $view_name, " WHERE id = ?"))
+                .bind(id)
+                .fetch_optional(conn)
+                .await
             }
         })*
     };
