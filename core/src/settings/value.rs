@@ -1,7 +1,6 @@
 use crate::db::query;
 use crate::settings::SettingKey;
 use sqlx::SqliteConnection;
-use tracing::error;
 
 #[derive(Clone, Debug)]
 pub enum SettingValueType {
@@ -103,11 +102,12 @@ impl SettingValueType {
     }
 
     #[tracing::instrument]
-    pub async fn save(&self, conn: &mut SqliteConnection, setting_key: SettingKey) -> bool {
-        query::update_setting(conn, setting_key, self.clone().to_opt_string())
-            .await
-            .inspect_err(|e| error!("Failed to apply settings. E: {:?}", e))
-            .is_ok()
+    pub async fn save(
+        &self,
+        conn: &mut SqliteConnection,
+        setting_key: SettingKey,
+    ) -> sqlx::Result<()> {
+        query::update_setting(conn, setting_key, self.clone().to_opt_string()).await
     }
 
     pub fn get<T>(self) -> Option<T>

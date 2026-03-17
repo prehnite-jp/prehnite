@@ -2,44 +2,28 @@ use crate::db::schema::app_global::book_search_result::BookSearchResult;
 use reqwest::IntoUrl;
 use rhai::{Dynamic, Engine, EvalAltResult, Scope};
 use sqlx::{Acquire, FromRow};
+use std::fmt::{Display, Pointer};
+use thiserror::Error;
 
-#[derive(Debug)]
+#[derive(Error, Debug)]
 pub enum BookSearchApiError {
-    RequestError(reqwest::Error),
-    ScriptError(Box<EvalAltResult>),
-    ScriptParseError(rhai::ParseError),
-    CustomError(String),
-}
-
-impl From<reqwest::Error> for BookSearchApiError {
-    fn from(value: reqwest::Error) -> Self {
-        BookSearchApiError::RequestError(value)
-    }
+    #[error("Failed to fetch api request.")]
+    RequestError(#[from] reqwest::Error),
+    #[error("Failed to run mapping script.")]
+    MappingScriptRuntimeError(String),
+    #[error("Failed to compile script.")]
+    MappingScriptCompileError(#[from] rhai::ParseError),
+    #[error("Mapping script was returned invalid type.")]
+    MappingScriptInvalidTypeError(String)
 }
 
 impl From<Box<EvalAltResult>> for BookSearchApiError {
     fn from(value: Box<EvalAltResult>) -> Self {
-        BookSearchApiError::ScriptError(value)
+        BookSearchApiError::MappingScriptRuntimeError(value.to_string())
     }
 }
 
-impl From<rhai::ParseError> for BookSearchApiError {
-    fn from(value: rhai::ParseError) -> Self {
-        BookSearchApiError::ScriptParseError(value)
-    }
-}
-
-impl From<&str> for BookSearchApiError {
-    fn from(value: &str) -> Self {
-        value.to_string().into()
-    }
-}
-
-impl From<String> for BookSearchApiError {
-    fn from(value: String) -> Self {
-        BookSearchApiError::CustomError(value)
-    }
-}
+pub type BookSearchApiResult<T> = Result<T, BookSearchApiError>;
 
 #[derive(Default, Debug, Clone, FromRow, Eq, PartialEq)]
 pub struct BookSearchApi {
@@ -65,7 +49,7 @@ impl BookSearchApi {
         url: impl IntoUrl,
         isbn: Option<String>,
         search_text: Option<String>,
-    ) -> Result<Vec<BookSearchResult>, BookSearchApiError> {
+    ) -> BookSearchApiResult<Vec<BookSearchResult>> {
         if self.is_example {
             return Ok(vec![BookSearchResult::example()]);
         }
@@ -87,7 +71,7 @@ impl BookSearchApi {
         response: Dynamic,
         isbn: Dynamic,
         search_text: Dynamic,
-    ) -> Result<Vec<BookSearchResult>, BookSearchApiError> {
+    ) -> BookSearchApiResult<Vec<BookSearchResult>> {
         let mut engine = Engine::new();
         engine
             .register_type_with_name::<BookSearchResult>("BookSearchResult")
@@ -95,15 +79,18 @@ impl BookSearchApi {
         let engine = engine;
         let ast = engine.compile(self.mapping_script.clone())?;
         let mut scope = Scope::new();
-        Ok(engine
+        Ok(match engine
             .call_fn::<Dynamic>(&mut scope, &ast, "mapper", (isbn, search_text, response))?
-            .into_typed_array::<BookSearchResult>()?)
+            .into_typed_array::<BookSearchResult>() {
+            Ok(v) => {v}
+            Err(e) => {return Err(BookSearchApiError::MappingScriptRuntimeError(e.to_string()))}
+        })
     }
 
     pub async fn search_isbn(
         &self,
         isbn: impl AsRef<str>,
-    ) -> Result<Vec<BookSearchResult>, BookSearchApiError> {
+    ) -> BookSearchApiResult<Vec<BookSearchResult>> {
         self.api_request(
             self.isbn_url.replace("<isbn>", isbn.as_ref()),
             Some(isbn.as_ref().into()),
@@ -115,7 +102,7 @@ impl BookSearchApi {
     pub async fn search_text(
         &self,
         text: impl AsRef<str>,
-    ) -> Result<Vec<BookSearchResult>, BookSearchApiError> {
+    ) -> BookSearchApiResult<Vec<BookSearchResult>> {
         self.api_request(
             self.text_url.replace("<text>", text.as_ref()),
             None,

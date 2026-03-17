@@ -73,6 +73,8 @@ prehnite-license-bundle = { version = "0.0.1-alpha", path = "license-bundle" }
 zip = "8"
 opener = "0.8"
 anyhow = "1"
+thiserror = "2"
+tracing-unwrap = "1.0"
 
 [build-dependencies]
 prehnite-build-libs = { version = "0.0.1-alpha", path = "build-libs" }

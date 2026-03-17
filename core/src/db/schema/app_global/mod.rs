@@ -103,10 +103,8 @@ pub async fn register_all_default_data(conn: &mut SqliteConnection) -> Result<()
 #[cfg(test)]
 mod tests {
     use crate::db::schema::app_global::register_all_default_data;
-    use crate::db::{acquire_err_handled, DBType};
-    use crate::i18n::{initialize_i18n_from_db, initialize_i18n_from_db_with_conn};
+    use crate::i18n::initialize_i18n_from_db_with_conn;
     use sqlx::SqlitePool;
-    use crate::settings::registry::SettingRegistry;
 
     #[sqlx::test(migrator = "crate::db::migrate::app_global::MIGRATOR")]
     async fn valid_register_all_default_data(pool: SqlitePool) {

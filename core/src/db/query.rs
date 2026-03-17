@@ -3,10 +3,9 @@ use crate::db::schema::{
     ItemReference, Paragraph, ParagraphSummary, Setting, Tag, Task,
 };
 use crate::settings::SettingKey;
-use crate::{on_error_logging, opt_unwrap_or_continue, opt_unwrap_or_return, to_hash_map_key_id};
+use crate::{opt_unwrap_or_continue, opt_unwrap_or_return, to_hash_map_key_id};
 use sqlx::SqliteConnection;
 use std::collections::HashMap;
-use tracing::error;
 
 const UPDATE_SETTING_SQL: &str = include_str!("../../assets/query/update_settings.sql");
 #[tracing::instrument]
@@ -19,8 +18,7 @@ pub async fn update_setting(
         .bind(setting_key.to_string())
         .bind(setting_value)
         .execute(conn)
-        .await;
-    on_error_logging!(v);
+        .await?;
     Ok(())
 }
 
@@ -30,12 +28,10 @@ pub async fn fetch_setting(
     conn: &mut SqliteConnection,
     setting_key: SettingKey,
 ) -> Result<Option<Setting>, sqlx::Error> {
-    let v = sqlx::query_as::<_, Setting>(FETCH_SETTING_SQL)
+    sqlx::query_as::<_, Setting>(FETCH_SETTING_SQL)
         .bind(setting_key.to_string())
         .fetch_optional(conn)
-        .await;
-    on_error_logging!(v);
-    v
+        .await
 }
 
 const FETCH_BACKGROUND_INFO_FROM_ITEM_ID_SQL: &str =
@@ -45,12 +41,10 @@ pub async fn fetch_background_info_from_item_id(
     conn: &mut SqliteConnection,
     item_id: i64,
 ) -> Result<Vec<BackgroundInfo>, sqlx::Error> {
-    let v = sqlx::query_as::<_, BackgroundInfo>(FETCH_BACKGROUND_INFO_FROM_ITEM_ID_SQL)
+    sqlx::query_as::<_, BackgroundInfo>(FETCH_BACKGROUND_INFO_FROM_ITEM_ID_SQL)
         .bind(item_id)
         .fetch_all(conn)
-        .await;
-    on_error_logging!(v);
-    v
+        .await
 }
 
 const FETCH_HEADLINE_CHILDREN_RECURSE_SQL: &str =
@@ -63,9 +57,8 @@ pub async fn fetch_headline_children_recurse(
     let query_result = sqlx::query_as::<_, Headline>(FETCH_HEADLINE_CHILDREN_RECURSE_SQL)
         .bind(headline_id)
         .fetch_all(conn)
-        .await;
-    on_error_logging!(query_result);
-    let headlines: HashMap<i64, Headline> = to_hash_map_key_id!(query_result?);
+        .await?;
+    let headlines: HashMap<i64, Headline> = to_hash_map_key_id!(query_result);
     let parent = opt_unwrap_or_return!(headlines.get(&headline_id).cloned(), Ok(None));
     let mut children: HashMap<i64, Vec<Headline>> = HashMap::new();
     for i in headlines.keys() {
@@ -87,12 +80,10 @@ pub async fn fetch_background_references(
     conn: &mut SqliteConnection,
     background_info_id: i64,
 ) -> Result<Vec<BackgroundReference>, sqlx::Error> {
-    let v = sqlx::query_as::<_, BackgroundReference>(FETCH_BACKGROUND_REFERENCES_SQL)
+    sqlx::query_as::<_, BackgroundReference>(FETCH_BACKGROUND_REFERENCES_SQL)
         .bind(background_info_id)
         .fetch_all(conn)
-        .await;
-    on_error_logging!(v);
-    v
+        .await
 }
 
 const FETCH_BIBLIOGRAPHY_AUTHORS_SQL: &str =
@@ -102,12 +93,10 @@ pub async fn fetch_bibliography_authors(
     conn: &mut SqliteConnection,
     bibliography_id: i64,
 ) -> Result<Vec<BibliographyAuthor>, sqlx::Error> {
-    let v = sqlx::query_as::<_, BibliographyAuthor>(FETCH_BIBLIOGRAPHY_AUTHORS_SQL)
+    sqlx::query_as::<_, BibliographyAuthor>(FETCH_BIBLIOGRAPHY_AUTHORS_SQL)
         .bind(bibliography_id)
         .fetch_all(conn)
-        .await;
-    on_error_logging!(v);
-    v
+        .await
 }
 
 const FETCH_ITEM_REFERENCES_SQL: &str =
@@ -117,12 +106,10 @@ pub async fn fetch_item_references(
     conn: &mut SqliteConnection,
     item_id: i64,
 ) -> Result<Vec<ItemReference>, sqlx::Error> {
-    let v = sqlx::query_as::<_, ItemReference>(FETCH_ITEM_REFERENCES_SQL)
+    sqlx::query_as::<_, ItemReference>(FETCH_ITEM_REFERENCES_SQL)
         .bind(item_id)
         .fetch_all(conn)
-        .await;
-    on_error_logging!(v);
-    v
+        .await
 }
 
 const FETCH_ITEM_RELATED_TAGS_SQL: &str =
@@ -132,12 +119,10 @@ pub async fn fetch_item_related_tags(
     conn: &mut SqliteConnection,
     item_id: i64,
 ) -> Result<Vec<Tag>, sqlx::Error> {
-    let v = sqlx::query_as::<_, Tag>(FETCH_ITEM_RELATED_TAGS_SQL)
+    sqlx::query_as::<_, Tag>(FETCH_ITEM_RELATED_TAGS_SQL)
         .bind(item_id)
         .fetch_all(conn)
-        .await;
-    on_error_logging!(v);
-    v
+        .await
 }
 
 const FETCH_ITEM_RELATED_TASKS_SQL: &str =
@@ -147,12 +132,10 @@ pub async fn fetch_item_related_tasks(
     conn: &mut SqliteConnection,
     item_id: i64,
 ) -> Result<Vec<Task>, sqlx::Error> {
-    let v = sqlx::query_as::<_, Task>(FETCH_ITEM_RELATED_TASKS_SQL)
+    sqlx::query_as::<_, Task>(FETCH_ITEM_RELATED_TASKS_SQL)
         .bind(item_id)
         .fetch_all(conn)
-        .await;
-    on_error_logging!(v);
-    v
+        .await
 }
 
 const FETCH_HEADLINE_RELATED_PARAGRAPH_SQL: &str =
@@ -162,12 +145,10 @@ pub async fn fetch_headline_related_paragraph(
     conn: &mut SqliteConnection,
     headline_id: i64,
 ) -> Result<Vec<Paragraph>, sqlx::Error> {
-    let v = sqlx::query_as::<_, Paragraph>(FETCH_HEADLINE_RELATED_PARAGRAPH_SQL)
+    sqlx::query_as::<_, Paragraph>(FETCH_HEADLINE_RELATED_PARAGRAPH_SQL)
         .bind(headline_id)
         .fetch_all(conn)
-        .await;
-    on_error_logging!(v);
-    v
+        .await
 }
 
 const FETCH_PARAGRAPH_RELATED_SUMMARIES_SQL: &str =
@@ -177,12 +158,10 @@ pub async fn fetch_paragraph_related_summaries(
     conn: &mut SqliteConnection,
     paragraph_id: i64,
 ) -> Result<Vec<ParagraphSummary>, sqlx::Error> {
-    let v = sqlx::query_as::<_, ParagraphSummary>(FETCH_PARAGRAPH_RELATED_SUMMARIES_SQL)
+    sqlx::query_as::<_, ParagraphSummary>(FETCH_PARAGRAPH_RELATED_SUMMARIES_SQL)
         .bind(paragraph_id)
         .fetch_all(conn)
-        .await;
-    on_error_logging!(v);
-    v
+        .await
 }
 
 const FETCH_PARAGRAPH_RELATED_DRAFT_SQL: &str =
@@ -192,10 +171,8 @@ pub async fn fetch_paragraph_related_draft(
     conn: &mut SqliteConnection,
     paragraph_id: i64,
 ) -> Result<Vec<Draft>, sqlx::Error> {
-    let v = sqlx::query_as::<_, Draft>(FETCH_PARAGRAPH_RELATED_DRAFT_SQL)
+    sqlx::query_as::<_, Draft>(FETCH_PARAGRAPH_RELATED_DRAFT_SQL)
         .bind(paragraph_id)
         .fetch_all(conn)
-        .await;
-    on_error_logging!(v);
-    v
+        .await
 }

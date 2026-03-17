@@ -10,6 +10,7 @@ use iced::{window, Task};
 use native_dialog::{FileDialogBuilder, MessageLevel};
 use std::path::PathBuf;
 use tracing::{debug, error, trace};
+use tracing_unwrap::ResultExt;
 
 fn prehnite_file_dialog_builder(
     title_i18n_id: &str,
@@ -25,18 +26,14 @@ fn prehnite_file_dialog_builder(
 }
 
 fn unwrap_dialog_result(value: native_dialog::Result<Option<PathBuf>>) -> Option<PathBuf> {
-    match value {
-        Ok(v) => match v {
-            None => {
+    match value.ok_or_log() {
+        Some(v) => {
+            if v.is_none() {
                 trace!("File select canceled.");
-                None
             }
-            Some(v) => Some(v),
-        },
-        Err(e) => {
-            error!("Failed to get file path. {}", e);
-            None
+            v
         }
+        None => None,
     }
 }
 
@@ -99,7 +96,8 @@ async fn prehnite_book_file_process(book_path: PathBuf, ope: FileOpe) -> OpenPre
                     GlobalSettingKey::LastOpened.into(),
                     SettingValueType::String(None),
                 )
-                .await;
+                .await
+                .ok_or_log();
                 return OpenPrehniteBookStatus::Failed;
             }
         }

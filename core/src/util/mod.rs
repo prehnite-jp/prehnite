@@ -23,15 +23,3 @@ macro_rules! opt_unwrap_or_continue {
         }
     };
 }
-
-#[allow(unused)]
-#[macro_export]
-macro_rules! on_error_logging {
-    ($result:ident) => {
-        if $result.is_err() {
-            let e = $result.err().unwrap();
-            error!("Error: {e:#?}");
-            return Err(From::from(e));
-        }
-    };
-}

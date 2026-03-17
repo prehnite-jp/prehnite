@@ -5,7 +5,6 @@ pub mod schema;
 mod util;
 
 use crate::db::migrate::migrate;
-use crate::on_error_logging;
 use crate::settings::registry::SettingRegistry;
 use crate::settings::{GlobalSettingKey, SettingKey};
 use crate::util::alert::{alert_i18n_show, alert_i18n_spawn, UnwrapOrErrorAlert};
@@ -20,8 +19,10 @@ use sqlx::{ConnectOptions, Sqlite, SqlitePool};
 use std::fmt::{Debug, Display, Formatter};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock, LockResult, OnceLock};
+use thiserror::Error;
 use tokio::sync::RwLock;
 use tracing::error;
+use tracing_unwrap::ResultExt;
 
 impl UnwrapOrErrorAlert<PoolConnection<Sqlite>> for Option<PoolConnection<Sqlite>> {
     fn unwrap_or_alert(self) -> PoolConnection<Sqlite> {
@@ -151,7 +152,8 @@ pub async fn open_book_err_handled(book_path: PathBuf) -> bool {
             SettingRegistry::immediate_apply(
                 GlobalSettingKey::LastOpened.into(),
                 book_path.to_str().into(),
-            ).await;
+            )
+            .await;
             true
         }
         Err(e) => {
@@ -173,7 +175,8 @@ pub async fn close_book_err_handled() {
     SettingRegistry::immediate_apply(
         GlobalSettingKey::LastOpened.into(),
         Option::<String>::from(None).into(),
-    ).await;
+    )
+    .await;
 }
 
 static IS_PREHNITE_BOOK_OPENED: LazyLock<Arc<std::sync::RwLock<DbOpenedStatus>>> =
@@ -199,30 +202,12 @@ pub struct Database {
     prehnite_book_db_pool: Arc<RwLock<Pool>>,
 }
 
-#[derive(Debug)]
+#[derive(Error, Debug)]
 pub enum DatabaseError {
-    DBError(sqlx::Error),
-    MigrateError(sqlx::migrate::MigrateError),
-}
-
-impl std::error::Error for DatabaseError {}
-
-impl Display for DatabaseError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        Debug::fmt(self, f)
-    }
-}
-
-impl From<sqlx::Error> for DatabaseError {
-    fn from(value: sqlx::Error) -> Self {
-        DatabaseError::DBError(value)
-    }
-}
-
-impl From<sqlx::migrate::MigrateError> for DatabaseError {
-    fn from(value: sqlx::migrate::MigrateError) -> Self {
-        DatabaseError::MigrateError(value)
-    }
+    #[error("Failed to execute statement.")]
+    DBError(#[from] sqlx::Error),
+    #[error("Failed to execute database migrations.")]
+    MigrateError(#[from] sqlx::migrate::MigrateError),
 }
 
 impl Database {
@@ -264,7 +249,6 @@ impl Database {
             .connect_with(Self::connect_option(path))
             .await;
 
-        on_error_logging!(pool_result);
         let mut pool = pool_result?;
 
         migrate(&mut pool, DBType::PrehniteBook).await?;
@@ -273,7 +257,7 @@ impl Database {
             .write()
             .await
             .set_pool(Some(pool));
-        IS_PREHNITE_BOOK_OPENED.write().expect("Failed to lock is_book_opened").set(true);
+        IS_PREHNITE_BOOK_OPENED.write().unwrap_or_log().set(true);
         Ok(())
     }
 

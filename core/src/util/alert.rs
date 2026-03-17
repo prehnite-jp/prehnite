@@ -1,9 +1,9 @@
-use crate::db::DatabaseError;
 use crate::i18n::get_locale_language;
 use iced::{window, Task};
 use native_dialog::{MessageAlert, MessageLevel};
 use std::fmt::Debug;
 use tracing::error;
+use tracing_unwrap::ResultExt;
 
 pub trait UnwrapOrErrorAlert<T> {
     fn unwrap_or_alert(self) -> T;
@@ -147,11 +147,7 @@ pub fn alert_show(
     level: MessageLevel,
 ) {
     let content = (title.to_string(), msg.to_string());
-    builder::alert_(&None, content, level)
-        .show()
-        .unwrap_or_else(|e| {
-            error!("Show alert error: Error: {e:#?}");
-        });
+    builder::alert_(&None, content, level).show().ok_or_log();
 }
 
 #[tracing::instrument]
@@ -163,18 +159,14 @@ pub async fn alert_spawn(
     builder::alert_(&None, content, level)
         .spawn()
         .await
-        .unwrap_or_else(|e| {
-            error!("Spawn alert error: Error: {e:#?}");
-        });
+        .ok_or_log();
 }
 
 #[tracing::instrument]
 pub fn alert_i18n_show(content: (&'static str, &'static str), level: MessageLevel) {
     builder::alert_i18n_(&None, content, level)
         .show()
-        .unwrap_or_else(|e| {
-            error!("Show alert error: Error: {e:#?}");
-        });
+        .ok_or_log();
 }
 
 #[tracing::instrument]
@@ -182,9 +174,7 @@ pub async fn alert_i18n_spawn(content: (&'static str, &'static str), level: Mess
     builder::alert_i18n_(&None, content, level)
         .spawn()
         .await
-        .unwrap_or_else(|e| {
-            error!("Spawn alert error: Error: {e:#?}");
-        });
+        .ok_or_log();
 }
 
 #[tracing::instrument]
@@ -212,12 +202,7 @@ pub fn confirm_show(
     level: MessageLevel,
 ) {
     let content = (title.to_string(), msg.to_string());
-    builder::confirm_(&None, content, level)
-        .show()
-        .unwrap_or_else(|e| {
-            error!("Show alert error: Error: {e:#?}");
-            false
-        });
+    builder::confirm_(&None, content, level).show().ok_or_log();
 }
 
 #[tracing::instrument]
@@ -229,20 +214,14 @@ pub async fn confirm_spawn(
     builder::confirm_(&None, content, level)
         .spawn()
         .await
-        .unwrap_or_else(|e| {
-            error!("Spawn alert error: Error: {e:#?}");
-            false
-        });
+        .ok_or_log();
 }
 
 #[tracing::instrument]
 pub fn confirm_i18n_show(content: (&'static str, &'static str), level: MessageLevel) {
     builder::confirm_i18n_(&None, content, level)
         .show()
-        .unwrap_or_else(|e| {
-            error!("Show alert error: Error: {e:#?}");
-            false
-        });
+        .ok_or_log();
 }
 
 #[tracing::instrument]
@@ -250,10 +229,7 @@ pub async fn confirm_i18n_spawn(content: (&'static str, &'static str), level: Me
     builder::confirm_i18n_(&None, content, level)
         .spawn()
         .await
-        .unwrap_or_else(|e| {
-            error!("Spawn alert error: Error: {e:#?}");
-            false
-        });
+        .ok_or_log();
 }
 
 const FATAL_JA: &str = "致命的なエラー";
@@ -280,24 +256,14 @@ pub fn fatal_init_db_error() -> MessageAlert {
 
 const FATAL_INIT_APP_ERROR_MESSAGE_JA: &str = "アプリケーションの初期化に失敗しました。";
 const FATAL_INIT_APP_ERROR_MESSAGE_EN: &str = "Application initialization failed.";
-pub fn fatal_initialize_app_error_db(e: DatabaseError) -> MessageAlert {
+pub fn fatal_initialize_app_error_db(e: impl Debug) -> MessageAlert {
     let (title, err_msg) = match get_locale_language().as_str() {
         "ja" => (FATAL_JA, FATAL_INIT_APP_ERROR_MESSAGE_JA),
         &_ => (FATAL_EN, FATAL_INIT_APP_ERROR_MESSAGE_EN),
     };
     builder::alert_(
         &None,
-        (
-            title,
-            format!(
-                "{err_msg}\ndetails:\n{}",
-                match e {
-                    DatabaseError::DBError(v) => format!("Database Error: {:#?}", v),
-                    DatabaseError::MigrateError(v) => format!("Migration Error: {:#?}", v),
-                }
-            )
-            .as_str(),
-        ),
+        (title, format!("{err_msg}\nError:\n{:#?}", e).as_str()),
         MessageLevel::Error,
     )
 }

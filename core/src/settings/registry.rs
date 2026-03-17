@@ -9,7 +9,7 @@ use crate::settings::{
 use sqlx::{Acquire, SqliteConnection};
 use std::collections::HashMap;
 use std::sync::{Arc, LazyLock, RwLock};
-use tracing::error;
+use tracing_unwrap::{OptionExt, ResultExt};
 
 fn fallback_locale() -> String {
     sys_locale::get_locale()
@@ -64,7 +64,7 @@ impl SettingRegistry {
         category.entries.iter().for_each(|e| {
             self.values
                 .write()
-                .unwrap()
+                .unwrap_or_log()
                 .insert(e.setting_key.clone(), e.default_value.clone());
         });
         self.categories.push(category);
@@ -78,7 +78,7 @@ impl SettingRegistry {
 
     #[tracing::instrument]
     pub fn get(key: &SettingKey) -> Option<SettingValueType> {
-        Some(REGISTRY.values.read().unwrap().get(key)?.clone())
+        Some(REGISTRY.values.read().unwrap_or_log().get(key)?.clone())
     }
 
     #[tracing::instrument]
@@ -92,8 +92,8 @@ impl SettingRegistry {
                     }
                     Some(conn) => conn,
                 };
-                match Setting::select_all(&mut *conn).await {
-                    Ok(v) => {
+                match Setting::select_all(&mut *conn).await.ok_or_log() {
+                    Some(v) => {
                         for x in v.into_iter() {
                             let raw_key = x.setting_key;
                             if let Ok(key) = match target {
@@ -115,41 +115,30 @@ impl SettingRegistry {
                         }
                         Some(values)
                     }
-                    Err(e) => {
-                        error!("Failed to fetch settings. E: {e:?}");
-                        None
-                    }
+                    None => None,
                 }
             }
             .await,
             false
         );
-        match REGISTRY.values.write() {
-            Ok(mut v) => {
+        match REGISTRY.values.write().ok_or_log() {
+            Some(mut v) => {
                 v.extend(values);
                 true
             }
-            Err(e) => {
-                error!("Failed to lock setting registry. E: {:?}", e);
-                false
-            }
+            None => false,
         }
     }
 
     #[tracing::instrument]
     pub async fn save(target: DBType) -> bool {
         let mut conn = match acquire_err_handled(target).await {
-            None => {
-                return false;
-            }
+            None => return false,
             Some(conn) => conn,
         };
-        let mut tx = match conn.begin().await {
-            Ok(v) => v,
-            Err(e) => {
-                error!("Failed to begin transaction. E: {e:?}");
-                return false;
-            }
+        let mut tx = match conn.begin().await.ok_or_log() {
+            Some(v) => v,
+            None => return false,
         };
         for entry in REGISTRY
             .entries
@@ -161,25 +150,23 @@ impl SettingRegistry {
             .into_iter()
         {
             // 保存
-            if !Self::save_by_key_with_conn(&mut *tx, entry.setting_key).await {
-                if let Err(e) = tx.rollback().await {
-                    error!("Rollback failed!! E: {e:?}")
-                }
+            if Self::save_by_key_with_conn(&mut *tx, entry.setting_key)
+                .await
+                .is_err()
+            {
+                tx.rollback().await.ok_or_log();
                 return false;
             }
         }
-        if let Err(e) = tx.commit().await {
-            error!("Commit failed!! E: {e:?}");
-            return false;
-        }
-        true
+        tx.commit().await.ok_or_log() != None
     }
 
+    // TODO: 独自のエラーを実装
     #[tracing::instrument]
-    pub async fn save_by_key(key: SettingKey) -> bool {
+    pub async fn save_by_key(key: SettingKey) -> sqlx::Result<()> {
         Self::save_by_key_with_conn(
             &mut *match key.get_conn().await {
-                None => return false,
+                None => return Ok(()),
                 Some(v) => v,
             },
             key,
@@ -187,13 +174,16 @@ impl SettingRegistry {
         .await
     }
 
-    pub async fn save_by_key_with_conn(conn: &mut SqliteConnection, key: SettingKey) -> bool {
+    pub async fn save_by_key_with_conn(
+        conn: &mut SqliteConnection,
+        key: SettingKey,
+    ) -> sqlx::Result<()> {
         let v = REGISTRY
             .values
             .read()
-            .unwrap()
+            .unwrap_or_log()
             .get(&key)
-            .expect("Failed to get value")
+            .expect_or_log(&format!("setting value missing!! Key: `{}`", key))
             .clone();
         v.save(&mut *conn, key).await
     }
@@ -203,18 +193,10 @@ impl SettingRegistry {
         REGISTRY.entries.get(&key).map(|v| v.default_value.clone())
     }
 
-    pub async fn immediate_apply(key: SettingKey, value: SettingValueType) -> bool {
-        match REGISTRY.values.write() {
-            Ok(mut values) => {
-                match values.get_mut(&key) {
-                    None => {}
-                    Some(v) => *v = value,
-                };
-            }
-            Err(e) => {
-                error!("Failed to lock setting registry. E: {:?}", e);
-                return false;
-            }
+    pub async fn immediate_apply(key: SettingKey, value: SettingValueType) -> sqlx::Result<()> {
+        match REGISTRY.values.write().unwrap_or_log().get_mut(&key) {
+            None => {}
+            Some(v) => *v = value,
         };
         Self::save_by_key(key).await
     }
@@ -223,18 +205,10 @@ impl SettingRegistry {
         conn: &mut SqliteConnection,
         key: SettingKey,
         value: SettingValueType,
-    ) -> bool {
-        match REGISTRY.values.write() {
-            Ok(mut values) => {
-                match values.get_mut(&key) {
-                    None => {}
-                    Some(v) => *v = value,
-                };
-            }
-            Err(e) => {
-                error!("Failed to lock setting registry. E: {:?}", e);
-                return false;
-            }
+    ) -> sqlx::Result<()> {
+        match REGISTRY.values.write().unwrap_or_log().get_mut(&key) {
+            None => {}
+            Some(v) => *v = value,
         };
         Self::save_by_key_with_conn(conn, key).await
     }

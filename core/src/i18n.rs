@@ -1,15 +1,17 @@
 use crate::settings::registry::SettingRegistry;
 use crate::settings::GlobalSettingKey;
+use crate::widget::font::ftext;
 use fluent_bundle::concurrent::FluentBundle;
 use fluent_bundle::{FluentArgs, FluentError, FluentResource};
 use sqlx::SqliteConnection;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
-use std::sync::{Arc, LazyLock, PoisonError, RwLock, RwLockReadGuard};
+use std::sync::{Arc, LazyLock, RwLock};
 use sys_locale::get_locale;
+use thiserror::Error;
 use tracing::{debug, error};
+use tracing_unwrap::ResultExt;
 use unic_langid::{LanguageIdentifier, LanguageIdentifierError};
-use crate::widget::font::ftext;
 
 pub const SUPPORTED_LANG_ID: &[&str] = &["en-US", "ja-JP"];
 
@@ -48,32 +50,18 @@ impl CurrentI18nBundle {
     }
 }
 
-#[derive(Debug)]
+#[derive(Error, Debug)]
 pub enum I18nError {
-    FailedToParseLangId(LanguageIdentifierError),
+    #[error("Invalid lang id received")]
+    FailedToParseLangId(#[from] LanguageIdentifierError),
+    #[error("Invalid ftl syntax")]
     FailedToParseFTL((FluentResource, Vec<fluent_syntax::parser::ParserError>)),
+    #[error("Failed to add resource")]
     FailedToAddResource(Vec<FluentError>),
-    DbError(sqlx::Error),
-    FailedToLockLangBundle,
+    #[error("Failed to execute statements")]
+    DbError(#[from] sqlx::Error),
+    #[error("Failed to apply settings")]
     FailedToApplySetting,
-}
-
-impl Display for I18nError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "i18n: Failed to load language. \n\tI18nError = {:#?}",
-            self
-        )
-    }
-}
-
-impl Error for I18nError {}
-
-impl From<LanguageIdentifierError> for I18nError {
-    fn from(value: LanguageIdentifierError) -> Self {
-        I18nError::FailedToParseLangId(value)
-    }
 }
 
 impl From<(FluentResource, Vec<fluent_syntax::parser::ParserError>)> for I18nError {
@@ -85,12 +73,6 @@ impl From<(FluentResource, Vec<fluent_syntax::parser::ParserError>)> for I18nErr
 impl From<Vec<FluentError>> for I18nError {
     fn from(value: Vec<FluentError>) -> Self {
         I18nError::FailedToAddResource(value)
-    }
-}
-
-impl From<sqlx::Error> for I18nError {
-    fn from(value: sqlx::Error) -> Self {
-        I18nError::DbError(value)
     }
 }
 
@@ -121,8 +103,9 @@ fn try_get_ftl_str(lang_id: &str) -> Result<String, TryGetFtlPathError> {
 }
 
 fn get_ftl_str(lang_id: &str) -> String {
-    try_get_ftl_str(lang_id)
-        .unwrap_or_else(|_| try_get_ftl_str("en").expect("Default locale not found."))
+    try_get_ftl_str(lang_id).unwrap_or_else(|_| {
+        try_get_ftl_str(DEFAULT_LANG_ID).expect_or_log("Default locale not found.")
+    })
 }
 
 fn parse_lang_bundle(lang_id: &str) -> Result<FluentBundle<FluentResource>, I18nError> {
@@ -135,18 +118,6 @@ fn parse_lang_bundle(lang_id: &str) -> Result<FluentBundle<FluentResource>, I18n
     Ok(bundle)
 }
 
-macro_rules! error_failed_to_lock_lang_bundle {
-    ($e:expr) => {
-        match $e {
-            Ok(v) => v,
-            Err(e) => {
-                error!("Failed to read lock lang bundle. {:#?}", e);
-                return Err(I18nError::FailedToLockLangBundle);
-            }
-        }
-    };
-}
-
 #[tracing::instrument]
 pub async fn change_lang_bundle(arg_lang_id_str: &str) -> Result<(), I18nError> {
     let (lang_id, lang_id_str): (LanguageIdentifier, &str) = match arg_lang_id_str.parse() {
@@ -157,17 +128,23 @@ pub async fn change_lang_bundle(arg_lang_id_str: &str) -> Result<(), I18nError> 
             (DEFAULT_LANG_ID.parse()?, DEFAULT_LANG_ID)
         }
     };
-    if error_failed_to_lock_lang_bundle!(CURRENT_RESOURCE_BUNDLE.read())
+    if CURRENT_RESOURCE_BUNDLE
+        .read()
+        .unwrap_or_log()
         .get_bundle()
         .is_none_or(|v| !v.locales.contains(&lang_id))
     {
-        error_failed_to_lock_lang_bundle!(CURRENT_RESOURCE_BUNDLE.write())
+        CURRENT_RESOURCE_BUNDLE
+            .write()
+            .unwrap_or_log()
             .set_bundle(Some(parse_lang_bundle(lang_id_str)?));
-        if !SettingRegistry::immediate_apply(
+        if SettingRegistry::immediate_apply(
             GlobalSettingKey::Locale.into(),
             lang_id.to_string().into(),
         )
         .await
+        .ok_or_log()
+        .is_none()
         {
             return Err(I18nError::FailedToApplySetting);
         };
@@ -187,18 +164,24 @@ pub async fn change_lang_bundle_with_conn(
             (DEFAULT_LANG_ID.parse()?, DEFAULT_LANG_ID)
         }
     };
-    if error_failed_to_lock_lang_bundle!(CURRENT_RESOURCE_BUNDLE.read())
+    if CURRENT_RESOURCE_BUNDLE
+        .read()
+        .unwrap_or_log()
         .get_bundle()
         .is_none_or(|v| !v.locales.contains(&lang_id))
     {
-        error_failed_to_lock_lang_bundle!(CURRENT_RESOURCE_BUNDLE.write())
+        CURRENT_RESOURCE_BUNDLE
+            .write()
+            .unwrap_or_log()
             .set_bundle(Some(parse_lang_bundle(lang_id_str)?));
-        if !SettingRegistry::immediate_apply_with_conn(
+        if SettingRegistry::immediate_apply_with_conn(
             conn,
             GlobalSettingKey::Locale.into(),
             lang_id.to_string().into(),
         )
         .await
+        .ok_or_log()
+        .is_none()
         {
             return Err(I18nError::FailedToApplySetting);
         };
@@ -226,25 +209,21 @@ pub fn i18n_fmt_w<'a>(id: &str, args: Option<&FluentArgs<'_>>) -> iced::widget::
 pub fn i18n_fmt(id: &str, args: Option<&FluentArgs<'_>>) -> String {
     #[derive(Debug)]
     enum Error {
-        ReadLockLangBundleError(String),
         DoesNotBeInitialized,
         MessageDoesNotExists,
         FailedToFetchMessage,
     }
-    impl From<PoisonError<RwLockReadGuard<'_, CurrentI18nBundle>>> for Error {
-        fn from(value: PoisonError<RwLockReadGuard<'_, CurrentI18nBundle>>) -> Self {
-            Error::ReadLockLangBundleError(format!("{:#?}", value))
-        }
-    }
     fn func<'a>(id: &str, args: Option<&FluentArgs<'_>>) -> Result<String, Error> {
         let mut errors = vec![];
         Ok(get_lang_bundle()
-            .read()?
+            .read()
+            .unwrap_or_log()
             .get_bundle()
             .ok_or(Error::DoesNotBeInitialized)?
             .format_pattern(
                 get_lang_bundle()
-                    .read()?
+                    .read()
+                    .unwrap_or_log()
                     .get_bundle()
                     .ok_or(Error::DoesNotBeInitialized)?
                     .get_message(id)
@@ -258,7 +237,6 @@ pub fn i18n_fmt(id: &str, args: Option<&FluentArgs<'_>>) -> String {
     }
     func(id, args).unwrap_or_else(|e| {
         match e {
-            Error::ReadLockLangBundleError(e) => error!("Failed to read lock lang bundle. {e}"),
             Error::DoesNotBeInitialized => error!("i18n does not be initialized."),
             Error::MessageDoesNotExists => error!("Message {id} does not exist."),
             Error::FailedToFetchMessage => error!("Unable to get value for message {id}."),
@@ -268,30 +246,30 @@ pub fn i18n_fmt(id: &str, args: Option<&FluentArgs<'_>>) -> String {
 }
 
 pub async fn initialize_i18n_from_db() -> Result<(), sqlx::Error> {
-    let lang_id = SettingRegistry::get(&GlobalSettingKey::Locale.into())
-        .and_then(|v| v.to_opt_string());
+    let lang_id =
+        SettingRegistry::get(&GlobalSettingKey::Locale.into()).and_then(|v| v.to_opt_string());
     change_lang_bundle(lang_id.unwrap_or(get_locale_lang_id()).as_str())
         .await
-        .expect("lang_id not found.");
+        .expect_or_log("lang_id not found.");
     Ok(())
 }
 
 pub async fn initialize_i18n_from_db_with_conn(
     conn: &mut SqliteConnection,
 ) -> Result<(), sqlx::Error> {
-    let lang_id = SettingRegistry::get(&GlobalSettingKey::Locale.into())
-        .and_then(|v| v.to_opt_string());
+    let lang_id =
+        SettingRegistry::get(&GlobalSettingKey::Locale.into()).and_then(|v| v.to_opt_string());
     change_lang_bundle_with_conn(conn, lang_id.unwrap_or(get_locale_lang_id()).as_str())
         .await
-        .expect("lang_id not found.");
+        .expect_or_log("lang_id not found.");
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use crate::i18n::{
-        change_lang_bundle_with_conn, get_lang_bundle, parse_lang_bundle,
-        try_get_ftl_str, SUPPORTED_LANG_ID,
+        change_lang_bundle_with_conn, get_lang_bundle, parse_lang_bundle, try_get_ftl_str,
+        SUPPORTED_LANG_ID,
     };
     use sqlx::SqlitePool;
 

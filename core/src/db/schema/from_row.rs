@@ -4,7 +4,7 @@ use crate::db::schema::{
     Task, TaskTemplate,
 };
 use sqlx::sqlite::SqliteRow;
-use sqlx::{Error, FromRow};
+use sqlx::FromRow;
 
 const PREFIX_PARGRAPH: &'static str = "p_";
 const PREFIX_HEADLINE: &'static str = "h_";
@@ -24,55 +24,55 @@ const PREFIX_TO_HEADLINE: &'static str = "to_h_";
 const PREFIX_TO_DRAFT: &'static str = "to_d_";
 
 impl FromRow<'_, SqliteRow> for Publisher {
-    fn from_row(row: &'_ SqliteRow) -> Result<Self, Error> {
+    fn from_row(row: &'_ SqliteRow) -> Result<Self, sqlx::Error> {
         PrefixedDeserializer::publisher(row, "")
     }
 }
 
 impl FromRow<'_, SqliteRow> for Bibliography {
-    fn from_row(row: &'_ SqliteRow) -> Result<Self, Error> {
+    fn from_row(row: &'_ SqliteRow) -> Result<Self, sqlx::Error> {
         PrefixedDeserializer::bibliography(row, "", PREFIX_PUBLISHER)
     }
 }
 
 impl FromRow<'_, SqliteRow> for Item {
-    fn from_row(row: &'_ SqliteRow) -> Result<Self, Error> {
+    fn from_row(row: &'_ SqliteRow) -> Result<Self, sqlx::Error> {
         PrefixedDeserializer::item(row, "", PREFIX_PARGRAPH, PREFIX_HEADLINE, PREFIX_DRAFT)
     }
 }
 
 impl FromRow<'_, SqliteRow> for Paragraph {
-    fn from_row(row: &'_ SqliteRow) -> Result<Self, Error> {
+    fn from_row(row: &'_ SqliteRow) -> Result<Self, sqlx::Error> {
         PrefixedDeserializer::paragraph(row, "", PREFIX_HEADLINE, PREFIX_DRAFT)
     }
 }
 
 impl FromRow<'_, SqliteRow> for BackgroundReference {
-    fn from_row(row: &'_ SqliteRow) -> Result<Self, Error> {
+    fn from_row(row: &'_ SqliteRow) -> Result<Self, sqlx::Error> {
         PrefixedDeserializer::background_reference(row, "", PREFIX_BIBLIOGRAPHY, PREFIX_PUBLISHER)
     }
 }
 
 impl FromRow<'_, SqliteRow> for ItemReference {
-    fn from_row(row: &'_ SqliteRow) -> Result<Self, Error> {
+    fn from_row(row: &'_ SqliteRow) -> Result<Self, sqlx::Error> {
         PrefixedDeserializer::item_reference(row, "", PREFIX_BIBLIOGRAPHY, PREFIX_PUBLISHER)
     }
 }
 
 impl FromRow<'_, SqliteRow> for TaskTemplate {
-    fn from_row(row: &'_ SqliteRow) -> Result<Self, Error> {
+    fn from_row(row: &'_ SqliteRow) -> Result<Self, sqlx::Error> {
         PrefixedDeserializer::task_template(row, "", PREFIX_TASK_CATEGORY)
     }
 }
 
 impl FromRow<'_, SqliteRow> for Task {
-    fn from_row(row: &'_ SqliteRow) -> Result<Self, Error> {
+    fn from_row(row: &'_ SqliteRow) -> Result<Self, sqlx::Error> {
         PrefixedDeserializer::task(row, "", PREFIX_TASK_CATEGORY)
     }
 }
 
 impl FromRow<'_, SqliteRow> for ParagraphLink {
-    fn from_row(row: &'_ SqliteRow) -> Result<Self, Error> {
+    fn from_row(row: &'_ SqliteRow) -> Result<Self, sqlx::Error> {
         PrefixedDeserializer::paragraph_link(
             row,
             "",

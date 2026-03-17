@@ -10,7 +10,11 @@ use tracing_subscriber::EnvFilter;
 const DEFAULT_LOG_LEVEL: &str = "info";
 
 #[cfg(debug_assertions)]
-const DEFAULT_LOG_FILTER: &[&str] = &["sqlx::query=trace", "iced_wgpu::window::compositor=warn", "iced_winit=warn"];
+const DEFAULT_LOG_FILTER: &[&str] = &[
+    "sqlx::query=trace",
+    "iced_wgpu::window::compositor=warn",
+    "iced_winit=warn",
+];
 #[cfg(not(debug_assertions))]
 const DEFAULT_LOG_FILTER: &[&str] = &["iced_wgpu::window::compositor=warn", "iced_winit=warn"];
 
@@ -47,13 +51,12 @@ fn appender(
     rotation: rolling::Rotation,
     directory: impl AsRef<Path>,
     filename_prefix: impl Into<String>,
-) -> rolling::RollingFileAppender {
-    rolling::Builder::new()
+) -> Result<rolling::RollingFileAppender, rolling::InitError> {
+    Ok(rolling::Builder::new()
         .rotation(rotation)
         .filename_prefix(filename_prefix)
         .max_log_files(MAX_LOG_FILES)
-        .build(directory)
-        .expect("Failed to initialize logger.")
+        .build(directory)?)
 }
 
 fn default_env_filter() -> EnvFilter {
@@ -64,7 +67,7 @@ fn add_directive(env_filter: EnvFilter, directive: Directive) -> EnvFilter {
     env_filter.add_directive(directive)
 }
 
-pub fn initialize_logger() {
+pub fn initialize_logger() -> Result<(), rolling::InitError> {
     let default_log_filter: EnvFilter = DEFAULT_LOG_FILTER
         .iter()
         .map(|v| v.parse().unwrap())
@@ -72,10 +75,10 @@ pub fn initialize_logger() {
 
     let stdout_logger = std::io::stdout.with_max_level(STDOUT_LOG_LEVEL);
     let stderr_logger = std::io::stderr.with_max_level(STDERR_LOG_LEVEL);
-    let error_appender = appender(ROTATION_CYCLE, log_dir(), ERROR_LOG_FILENAME)
+    let error_appender = appender(ROTATION_CYCLE, log_dir(), ERROR_LOG_FILENAME)?
         .with_max_level(ERROR_LOG_FILE_LEVEL);
     let info_appender =
-        appender(ROTATION_CYCLE, log_dir(), INFO_LOG_FILENAME).with_max_level(INFO_LOG_FILE_LEVEL);
+        appender(ROTATION_CYCLE, log_dir(), INFO_LOG_FILENAME)?.with_max_level(INFO_LOG_FILE_LEVEL);
 
     let info_debug_appender = info_appender;
     #[cfg(debug_assertions)]
@@ -87,11 +90,11 @@ pub fn initialize_logger() {
         .or_else(stdout_logger)
         .and(error_appender.or_else(info_debug_appender));
 
-    tracing_subscriber::fmt::fmt()
+    Ok(tracing_subscriber::fmt::fmt()
         .with_env_filter(default_log_filter)
         .with_ansi(false)
         .with_file(cfg!(debug_assertions))
         .with_line_number(cfg!(debug_assertions))
         .with_writer(writer)
-        .init();
+        .init())
 }

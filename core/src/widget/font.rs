@@ -2,23 +2,22 @@ use crate::widget::text::TextBuilder;
 use iced::{widget, Font};
 use std::sync::{LazyLock, OnceLock, RwLock};
 use tracing::error;
+use tracing_unwrap::{OptionExt, ResultExt};
 
 static DEFAULT_FONT: OnceLock<Font> = OnceLock::new();
 
 #[tracing::instrument]
 pub fn set_default_font(font: Font) {
-    match DEFAULT_FONT.set(font) {
-        Ok(_) => {}
-        Err(_) => {
-            error!("set_default_font was called twice.")
-        }
-    };
+    DEFAULT_FONT
+        .set(font)
+        .inspect_err(|_| error!("set_default_font was called twice."))
+        .ok_or_log();
 }
 
 pub fn get_default_font() -> Font {
     DEFAULT_FONT
         .get()
-        .expect("DEFAULT_FONT not initialized.")
+        .expect_or_log("DEFAULT_FONT not initialized.")
         .clone()
 }
 
@@ -26,25 +25,17 @@ static CURRENT_FONT_FAMILY: LazyLock<RwLock<Option<Font>>> = LazyLock::new(|| Rw
 
 #[tracing::instrument]
 pub fn set_font(font_family: Option<&'static String>) {
-    match CURRENT_FONT_FAMILY.write() {
-        Ok(mut v) => {
-            *v = font_family.map(|v| Font::with_name(v.as_str()));
-        }
-        Err(e) => {
-            error!("Failed to set font. E: {e:?}")
-        }
-    }
+    *CURRENT_FONT_FAMILY.write().unwrap_or_log() = font_family.map(|v| Font::with_name(v.as_str()));
 }
 
 pub fn get_font_opt() -> Option<Font> {
-    CURRENT_FONT_FAMILY.read().ok().and_then(|v| *v).clone()
+    CURRENT_FONT_FAMILY.read().unwrap_or_log().clone()
 }
 
 pub fn get_font() -> Font {
     CURRENT_FONT_FAMILY
         .read()
-        .ok()
-        .and_then(|v| *v)
+        .unwrap_or_log()
         .clone()
         .unwrap_or(get_default_font())
 }
