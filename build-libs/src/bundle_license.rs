@@ -1,17 +1,19 @@
 use crate::util::set_env;
 use crate::{build_process, BuildProcess};
+#[cfg(feature = "bundle_license")]
+use cargo_about::licenses::KrateLicense;
+#[cfg(feature = "bundle_license")]
+use prehnite_license_bundle::LicenseBundle;
 use prehnite_license_bundle::{
-    get_default_license_bundle, get_names_from_default_license_bundle, LicenseBundle, Package,
+    get_default_license_bundle, get_names_from_default_license_bundle, Package,
 };
+#[cfg(feature = "bundle_license")]
+use std::collections::BTreeSet;
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use zip::write::SimpleFileOptions;
 use zip::ZipWriter;
-#[cfg(feature = "bundle_license")]
-use std::collections::BTreeSet;
-#[cfg(feature = "bundle_license")]
-use cargo_about::licenses::KrateLicense;
 
 const FILE_NAME: &str = "content";
 
