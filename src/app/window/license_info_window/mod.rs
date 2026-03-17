@@ -1,6 +1,6 @@
 use crate::app::resources::app_icon_handle;
 use crate::app::window::{Window, WindowMessage};
-use crate::license::license_bundle;
+use license::license_bundle;
 use crate::widget::styles::container::{focusable, not_focused_rect_box};
 use crate::widget::{copy_button, hideable};
 use iced::alignment::Horizontal;
@@ -21,6 +21,8 @@ use prehnite_font_manager::widget::material_symbol;
 use std::collections::{BTreeSet, HashMap};
 use tracing::error;
 use tracing::log::warn;
+
+pub mod license;
 
 const ROOT_PACKAGE_NAME: &str = "prehnite";
 

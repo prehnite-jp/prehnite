@@ -8,7 +8,6 @@ use crate::app::window::main_window::page::book_not_opened::BookNotOpened;
 use crate::app::window::main_window::page::item_list::{ItemListActions, ItemListMessage};
 use crate::app::window::main_window::page::{MainWindowPage, MainWindowPageId};
 use crate::app::window::{Window, WindowMessage};
-use crate::util::app_version_info;
 use iced::futures::FutureExt;
 use iced::{window, Element, Task};
 use prehnite_core::db::{open_book_err_handled, DBType};
@@ -166,7 +165,7 @@ impl Window for MainWindow {
     }
 
     fn title(&'_ self) -> String {
-        app_version_info()
+        "Prehnite".into()
     }
 
     fn set_window_id(&mut self, window_id: window::Id) {

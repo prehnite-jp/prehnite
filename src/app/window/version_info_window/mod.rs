@@ -1,13 +1,33 @@
+use fluent_bundle::FluentArgs;
 use crate::app::resources::app_icon_handle;
 use crate::app::window::{app_default_window_settings, Window, WindowMessage};
-use crate::util::{app_build_features, app_build_profile, app_build_target, app_version_info};
 use iced::alignment::Horizontal;
 use iced::widget::text::Wrapping;
 use iced::widget::{button, Container};
 use iced::window::Settings;
 use iced::{window, Element, Length, Size, Task};
-use prehnite_core::i18n::{i18n, i18n_w};
+use prehnite_core::i18n::{i18n, i18n_fmt, i18n_w};
 use prehnite_core::widget::font::ftext;
+
+fn app_version_info() -> String {
+    let mut args = FluentArgs::new();
+    args.set("app-name", env!("CARGO_PKG_NAME"));
+    args.set("version", env!("CARGO_PKG_VERSION"));
+    i18n_fmt("version-info-detail", Some(&args))
+}
+
+fn app_build_target() -> &'static str {
+    env!("BUILD_INFO_TARGET")
+}
+
+fn app_build_features() -> &'static str {
+    env!("BUILD_INFO_FEATURE")
+}
+
+fn app_build_profile() -> &'static str {
+    env!("BUILD_PROFILE")
+}
+
 
 #[derive(Clone, Debug)]
 pub enum VersionInfoWindowMessage {

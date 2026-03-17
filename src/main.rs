@@ -1,7 +1,6 @@
 mod app;
 mod db;
 mod util;
-pub mod license;
 pub mod widget;
 
 use crate::app::PrehniteApp;
