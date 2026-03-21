@@ -115,7 +115,6 @@ exceptions = [
     # Each entry is the crate and version constraint, and its specific allow
     # list
     #{ allow = ["Zlib"], crate = "adler32" },
-    { allow = ["OpenSSL"], crate = "aws-lc-sys" },
     { allow = ["NCSA"], crate = "libfuzzer-sys" }
 ]
 
