@@ -129,16 +129,18 @@ pub fn menubar_handler(
             });
         }
         MenuBarMessage::OpenSettings => return Task::done(MainWindowMessage::OpenSettingWindow),
-        MenuBarMessage::OpenBackgroundInfoEditor => {}
-        MenuBarMessage::OpenBibliographyEditor => {}
+        MenuBarMessage::OpenBackgroundInfoEditor => {
+            return Task::done(MainWindowMessage::OpenBackgroundInfoEditorWindow);
+        }
+        MenuBarMessage::OpenBibliographyEditor => {
+            return Task::done(MainWindowMessage::OpenBibliographyEditorWindow);
+        }
         MenuBarMessage::OpenVersionInfoWindow => {
             return Task::done(MainWindowMessage::OpenVersionInfoWindow);
         }
-        MenuBarMessage::Exit => {
-            return iced::exit();
-        }
+        MenuBarMessage::Exit => return iced::exit(),
         MenuBarMessage::OpenLicenseInfoWindow => {
-            return Task::done(MainWindowMessage::OpenLicenseInfoWindow)
+            return Task::done(MainWindowMessage::OpenLicenseInfoWindow);
         }
     }
     Task::none()

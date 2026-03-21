@@ -88,15 +88,15 @@ impl Window for VersionInfoWindow {
     }
 
     fn update(&mut self, message: WindowMessage) -> Task<WindowMessage> {
-        if let WindowMessage::AboutWindowMessage(msg) = message {
-            self.update_impl(msg).map(WindowMessage::AboutWindowMessage)
+        if let WindowMessage::VersionInfoWindowMessage(msg) = message {
+            self.update_impl(msg).map(WindowMessage::VersionInfoWindowMessage)
         } else {
             Task::none()
         }
     }
 
     fn view(&'_ self) -> Element<'_, WindowMessage> {
-        self.view_impl().map(WindowMessage::AboutWindowMessage)
+        self.view_impl().map(WindowMessage::VersionInfoWindowMessage)
     }
 
     fn title(&'_ self) -> String {

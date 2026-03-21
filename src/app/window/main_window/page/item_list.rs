@@ -3,11 +3,12 @@ use crate::db::query;
 use crate::widget::hideable;
 use crate::widget::styles::container::{focusable, not_focused_rect_box, rect_box, unborder};
 use iced::widget::pane_grid::{Axis, ResizeEvent};
-use iced::widget::{pane_grid, scrollable, space, Container, MouseArea};
+use iced::widget::{button, pane_grid, scrollable, space, Container, MouseArea};
 use iced::{padding, widget, Element, Length};
 use prehnite_core::db::schema::{Item, ItemType, ParagraphSummary};
 use prehnite_core::i18n::i18n_w;
 use prehnite_core::widget::font::ftext;
+use prehnite_font_manager::material_symbol;
 use prehnite_font_manager::material_symbol::CIRCLE;
 use prehnite_font_manager::widget::material_symbol;
 use std::collections::HashMap;
@@ -20,6 +21,7 @@ pub enum ItemListMessage {
     SetHeadlines(HashMap<i64, Item>),
     SetParagraph(HashMap<i64, HashMap<i64, Item>>),
     ItemSelected(i64),
+    NewItem,
 }
 
 pub enum ItemListActions {
@@ -62,7 +64,7 @@ impl ItemList {
     async fn load_headlines(page: u32, per_page: u8) -> ItemListMessage {
         ItemListMessage::SetHeadlines(
             query::fetch_root_headline_items(
-                db::acquire_with_alert().await.as_mut(),
+                db::acquire_book_with_alert().await.as_mut(),
                 per_page,
                 page,
             )
@@ -76,7 +78,7 @@ impl ItemList {
 
     #[tracing::instrument]
     async fn load_paragraph(page: u32, per_page: u8) -> ItemListMessage {
-        let mut conn = db::acquire_with_alert().await;
+        let mut conn = db::acquire_book_with_alert().await;
         let mut res = query::fetch_root_headline_related_paragraph(&mut conn, per_page, page)
             .await
             .unwrap_or_else(|e| {
@@ -122,6 +124,8 @@ impl ItemList {
             }
             ItemListMessage::SetParagraph(v) => self.paragraph = v,
             ItemListMessage::ItemSelected(id) => self.focused_item_id = Some(id),
+            ItemListMessage::NewItem => {
+            }
         }
         ItemListActions::Run(iced::Task::none())
     }
@@ -168,30 +172,42 @@ impl ItemList {
         .into()
     }
 
-    pub fn item_list_panel(&'_ self) -> Container<'_, ItemListMessage> {
-        Container::new(widget::column(self.headlines.iter().map(|(id, itm)| {
+    pub fn item_list_panel(&'_ self) -> Element<'_, ItemListMessage> {
+        widget::column![
             widget::column![
-                Self::item(itm, Some(*id) == self.focused_item_id),
-                match self.paragraph.get(id) {
-                    None => {
-                        Element::from(space())
-                    }
-                    Some(v) => {
-                        widget::column(
-                            v.iter().map(|(_, itm)| {
-                                Self::item(itm, Some(itm.id) == self.focused_item_id)
-                            }),
-                        )
-                        .into()
-                    }
-                }
-            ]
-            .into()
-        })))
-        .width(Length::Fill)
-        .height(Length::Fill)
-        .padding(5)
-        .style(unborder(not_focused_rect_box))
+                widget::row![
+                    space().width(Length::Fill),
+                    button(material_symbol(material_symbol::ADD).size(20)).style(button::text)
+                ]
+                .width(Length::Fill),
+                widget::rule::horizontal(1)
+            ],
+            scrollable(
+                Container::new(widget::column(self.headlines.iter().map(|(id, itm)| {
+                    widget::column![
+                        Self::item(itm, Some(*id) == self.focused_item_id),
+                        match self.paragraph.get(id) {
+                            None => {
+                                Element::from(space())
+                            }
+                            Some(v) => {
+                                widget::column(v.iter().map(|(_, itm)| {
+                                    Self::item(itm, Some(itm.id) == self.focused_item_id)
+                                }))
+                                .into()
+                            }
+                        }
+                    ]
+                    .into()
+                })))
+                .width(Length::Fill)
+                .height(Length::Fill)
+                .padding(5)
+                .style(unborder(not_focused_rect_box))
+            )
+            .spacing(1)
+        ]
+        .into()
     }
 
     fn get_item_paragraph_or_headline(&'_ self) -> Option<&'_ Item> {
@@ -221,26 +237,27 @@ impl ItemList {
         .into()
     }
 
-    pub fn item_detail_panel(&'_ self) -> Container<'_, ItemListMessage> {
-        Container::new(match self.get_item_paragraph_or_headline() {
-            None => i18n_w("item-no-select").into(),
-            Some(item) => Self::item_detail(item),
-        })
-        .width(Length::Fill)
-        .height(Length::Fill)
-        .padding(5)
-        .style(unborder(rect_box))
+    pub fn item_detail_panel(&'_ self) -> Element<'_, ItemListMessage> {
+        scrollable(
+            Container::new(match self.get_item_paragraph_or_headline() {
+                None => i18n_w("item-no-select").into(),
+                Some(item) => Self::item_detail(item),
+            })
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .padding(5)
+            .style(unborder(rect_box)),
+        )
+        .spacing(1)
+        .into()
     }
 
     pub fn view(&'_ self) -> Element<'_, ItemListMessage> {
         widget::pane_grid(&self.item_list_pane, |_, state, _| {
-            pane_grid::Content::new(
-                scrollable(match state {
-                    ItemListPane::PaneList => self.item_list_panel(),
-                    ItemListPane::PaneDetails => self.item_detail_panel(),
-                })
-                .spacing(1),
-            )
+            pane_grid::Content::new(match state {
+                ItemListPane::PaneList => self.item_list_panel(),
+                ItemListPane::PaneDetails => self.item_detail_panel(),
+            })
         })
         .spacing(2)
         .on_resize(10, ItemListMessage::ItemListPaneResized)

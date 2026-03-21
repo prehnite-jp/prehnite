@@ -44,6 +44,10 @@ pub enum MainWindowMessage {
     OpenVersionInfoWindow,
     OpenSettingWindow,
     OpenLicenseInfoWindow,
+    OpenBackgroundInfoEditorWindow,
+    OpenBibliographyEditorWindow,
+    OpenEditorWindow(i64),
+    OpenNewItemPromptWindow
 }
 
 impl From<MainWindowMessage> for WindowMessage {
@@ -112,6 +116,10 @@ impl MainWindow {
             MainWindowMessage::OpenVersionInfoWindow => { /* handled by daemon*/ }
             MainWindowMessage::OpenSettingWindow => { /* handled by daemon*/ }
             MainWindowMessage::OpenLicenseInfoWindow => { /* handled by daemon*/ }
+            MainWindowMessage::OpenBackgroundInfoEditorWindow => { /* handled by daemon*/ }
+            MainWindowMessage::OpenBibliographyEditorWindow => { /* handled by daemon*/ }
+            MainWindowMessage::OpenEditorWindow(_) => { /* handled by daemon*/ }
+            MainWindowMessage::OpenNewItemPromptWindow => {/* handled by daemon*/}
         }
         Task::none()
     }
