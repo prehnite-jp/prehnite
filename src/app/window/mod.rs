@@ -1,7 +1,6 @@
 pub mod editor_window;
 pub mod license_info_window;
 pub mod main_window;
-pub mod new_item_prompt_window;
 pub mod setting_window;
 pub mod version_info_window;
 
@@ -9,7 +8,6 @@ use crate::app::resources::APP_ICON_PNG;
 use crate::app::window::editor_window::EditorWindowMessage;
 use crate::app::window::license_info_window::LicenseInfoWindowMessage;
 use crate::app::window::main_window::MainWindowMessage;
-use crate::app::window::new_item_prompt_window::NewItemPromptWindowMessage;
 use crate::app::window::setting_window::SettingWindowMessage;
 use crate::app::window::version_info_window::VersionInfoWindowMessage;
 use iced::window::icon::from_file_data;
@@ -36,7 +34,6 @@ pub enum WindowMessage {
     SettingWindowMessage(SettingWindowMessage),
     LicenseInfoWindowMessage(LicenseInfoWindowMessage),
     EditorWindowMessage(EditorWindowMessage),
-    NewItemPromptWindowMessage(NewItemPromptWindowMessage),
     ReloadFont,
     ReloadLanguage,
 }

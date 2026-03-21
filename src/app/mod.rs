@@ -4,7 +4,6 @@ mod window;
 use crate::app::window::editor_window::{EditorWindow, EditorWindowMessage};
 use crate::app::window::license_info_window::LicenseInfoWindow;
 use crate::app::window::main_window::{MainWindow, MainWindowMessage};
-use crate::app::window::new_item_prompt_window::{NewItemPromptWindow, NewItemPromptWindowMessage};
 use crate::app::window::setting_window::SettingWindow;
 use crate::app::window::version_info_window::VersionInfoWindow;
 use crate::app::window::{Window, WindowMessage};
@@ -30,7 +29,6 @@ pub enum WindowType {
     BiblioGraphyEditorWindow,
     BackgroundInfoEditorWindow,
     EditorWindow(i64),
-    NewItemPromptWindow(iced::window::Id),
 }
 
 macro_rules! window_opener {
@@ -53,8 +51,7 @@ impl WindowType {
             (WindowType::LicenseInfoWindow, LicenseInfoWindow),
             (WindowType::BiblioGraphyEditorWindow, LicenseInfoWindow), // TODO
             (WindowType::BackgroundInfoEditorWindow, LicenseInfoWindow), // TODO
-            (WindowType::EditorWindow(_), EditorWindow),               // TODO
-            (WindowType::NewItemPromptWindow(_), NewItemPromptWindow)
+            (WindowType::EditorWindow(_), EditorWindow)
         ))
     }
 }
@@ -160,9 +157,6 @@ impl PrehniteApp {
                 .background_info_editor_window_id
                 .map(iced::window::gain_focus),
             WindowType::EditorWindow(_) => self.editor_window_id.map(iced::window::gain_focus),
-            WindowType::NewItemPromptWindow(_) => {
-                self.new_item_prompt_window_id.map(iced::window::gain_focus)
-            }
         }
     }
 
@@ -177,8 +171,7 @@ impl PrehniteApp {
                 WindowType::BackgroundInfoEditorWindow => {
                     self.background_info_editor_window_id = None
                 }
-                WindowType::EditorWindow(_) => self.editor_window_id = None,
-                WindowType::NewItemPromptWindow(_) => self.new_item_prompt_window_id = None,
+                WindowType::EditorWindow(_) => self.editor_window_id = None
             }
         }
         Task::none()
@@ -202,8 +195,7 @@ impl PrehniteApp {
                     (WindowType::LicenseInfoWindow, LicenseInfoWindow),
                     (WindowType::BiblioGraphyEditorWindow, LicenseInfoWindow), // TODO
                     (WindowType::BackgroundInfoEditorWindow, LicenseInfoWindow), // TODO
-                    (WindowType::EditorWindow(_), EditorWindow),
-                    (WindowType::NewItemPromptWindow(_), NewItemPromptWindow)
+                    (WindowType::EditorWindow(_), EditorWindow)
                 );
 
                 // 最大1つまでに限定されているウィンドウのIDを保持
@@ -218,22 +210,14 @@ impl PrehniteApp {
                     WindowType::BackgroundInfoEditorWindow => {
                         self.background_info_editor_window_id = Some(window_id);
                     }
-                    WindowType::EditorWindow(_) => self.editor_window_id = Some(window_id),
-                    WindowType::NewItemPromptWindow(_) => {
-                        self.new_item_prompt_window_id = Some(window_id)
-                    }
+                    WindowType::EditorWindow(_) => self.editor_window_id = Some(window_id)
                 };
 
                 // その他特殊処理
                 match w_type {
                     WindowType::EditorWindow(id) => {
                         init_window_task = Task::done(WindowMessage::EditorWindowMessage(
-                            EditorWindowMessage::UpdateItemFromId(id),
-                        ));
-                    }
-                    WindowType::NewItemPromptWindow(caller_window_id) => {
-                        init_window_task = Task::done(WindowMessage::NewItemPromptWindowMessage(
-                            NewItemPromptWindowMessage::Initialize(caller_window_id),
+                            EditorWindowMessage::ChangeItemFromId(id),
                         ));
                     }
                     _ => {}

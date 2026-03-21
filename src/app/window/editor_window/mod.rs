@@ -10,7 +10,7 @@ use prehnite_core::i18n::{i18n, i18n_w};
 pub enum EditorWindowMessage {
     Close,
     ChangeItem(Option<Item>),
-    UpdateItemFromId(i64),
+    ChangeItemFromId(i64),
 }
 
 #[derive(Debug)]
@@ -31,7 +31,7 @@ impl EditorWindow {
                     Task::done(EditorWindowMessage::Close)
                 }
             }
-            EditorWindowMessage::UpdateItemFromId(id) => Task::future(async move {
+            EditorWindowMessage::ChangeItemFromId(id) => Task::future(async move {
                 let mut conn = acquire_book_with_alert().await;
                 EditorWindowMessage::ChangeItem(
                     Item::from_id(&mut *conn, id).await.unwrap_or_default(),
