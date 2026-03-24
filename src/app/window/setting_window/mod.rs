@@ -8,14 +8,15 @@ use iced::widget::{
 use iced::window::{Id, Settings};
 use iced::{widget, Element, Length, Task};
 use prehnite_core::db::Database;
+use prehnite_core::font::get_global_font_list;
 use prehnite_core::i18n::{i18n, i18n_w};
 use prehnite_core::settings::registry::SettingRegistry;
 use prehnite_core::settings::value::SettingValueType;
 use prehnite_core::settings::{GlobalSettingKey, SettingCategory, SettingEntry, SettingKey};
 use prehnite_core::widget::font::{ftext, get_font};
-use prehnite_font_manager::get_global_font_list;
 use std::collections::{HashMap, HashSet};
 use tracing::error;
+use tracing_unwrap::ResultExt;
 
 impl From<SettingWindowMessage> for WindowMessage {
     fn from(value: SettingWindowMessage) -> Self {
@@ -246,7 +247,7 @@ impl Window for SettingWindow {
                         .collect();
                     return Task::future(async move {
                         for (k, v) in values {
-                            SettingRegistry::immediate_apply(k, v).await;
+                            SettingRegistry::immediate_apply(k, v).await.ok_or_log();
                         }
                     })
                     .discard()

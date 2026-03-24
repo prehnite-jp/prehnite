@@ -7,6 +7,8 @@ use tracing_subscriber::filter::Directive;
 use tracing_subscriber::fmt::writer::MakeWriterExt;
 use tracing_subscriber::EnvFilter;
 
+pub use rolling::InitError;
+
 const DEFAULT_LOG_LEVEL: &str = "info";
 
 #[cfg(debug_assertions)]
@@ -51,7 +53,7 @@ fn appender(
     rotation: rolling::Rotation,
     directory: impl AsRef<Path>,
     filename_prefix: impl Into<String>,
-) -> Result<rolling::RollingFileAppender, rolling::InitError> {
+) -> Result<rolling::RollingFileAppender, InitError> {
     Ok(rolling::Builder::new()
         .rotation(rotation)
         .filename_prefix(filename_prefix)
@@ -67,7 +69,7 @@ fn add_directive(env_filter: EnvFilter, directive: Directive) -> EnvFilter {
     env_filter.add_directive(directive)
 }
 
-pub fn initialize_logger() -> Result<(), rolling::InitError> {
+pub fn initialize_logger() -> Result<(), InitError> {
     let default_log_filter: EnvFilter = DEFAULT_LOG_FILTER
         .iter()
         .map(|v| v.parse().unwrap())

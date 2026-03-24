@@ -1,6 +1,6 @@
 mod font;
 
-use crate::font::font;
+use crate::license_bundle::font::font;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 
@@ -74,7 +74,7 @@ impl Package {
     }
 
     pub fn prehnite_member_license(self) -> Self {
-        self.override_license_text(include_str!("../../LICENSE").to_string())
+        self.override_license_text(include_str!("../../../LICENSE").to_string())
     }
 
     pub fn prehnite() -> Self {

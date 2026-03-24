@@ -7,7 +7,9 @@ pub enum IconFamily {
 impl From<IconFamily> for Font {
     fn from(value: IconFamily) -> Self {
         Font::with_name(match value {
-            IconFamily::MaterialSymbolsOutlined => crate::fonts::material_symbols_outlined::NAME,
+            IconFamily::MaterialSymbolsOutlined => {
+                crate::font::fonts::material_symbols_outlined::NAME
+            }
         })
     }
 }

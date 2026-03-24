@@ -11,7 +11,7 @@ homepage.workspace = true
 rust-version.workspace = true
 
 [workspace]
-members = ["build-libs", "core", "font-manager", "license-bundle"]
+members = ["build-libs", "core"]
 
 [workspace.package]
 version = "0.0.1-alpha"
@@ -38,16 +38,13 @@ sqlx.workspace = true
 iced_aw.workspace = true
 fluent-bundle.workspace = true
 image.workspace = true
-prehnite-font-manager.workspace = true
 opener.workspace = true
 anyhow.workspace = true
 tracing-unwrap.workspace = true
+thiserror.workspace = true
 
 [workspace.dependencies]
 prehnite-core = { version = "0.0.1-alpha", path = "core" }
-prehnite-font-manager = { version = "0.0.1-alpha", path = "font-manager" }
-#prehnite-settings = { version = "0.0.1", git = "https://github.com/saku-shirakura/prehnite-settings.git" }
-#prehnite-local-data-manager = { version = "0.0.1", git = "https://github.com/saku-shirakura/prehnite-local-data-manager.git" }
 chrono = "0.4"
 iced = { version = "0.14", features = ["tokio", "image"] }
 iced_aw = { version = "0.13", features = ["menu"] }
@@ -70,7 +67,6 @@ tracing-appender = "0.2"
 image = "0.25"
 serde_json = "1"
 iced_graphics = "0.14"
-prehnite-license-bundle = { version = "0.0.1-alpha", path = "license-bundle" }
 zip = "8"
 opener = "0.8"
 anyhow = "1"

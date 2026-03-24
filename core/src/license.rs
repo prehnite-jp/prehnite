@@ -1,4 +1,4 @@
-use prehnite_license_bundle::LicenseBundle;
+use crate::license_bundle::LicenseBundle;
 use std::io::Cursor;
 use zip::ZipArchive;
 

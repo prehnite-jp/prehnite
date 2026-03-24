@@ -5,6 +5,7 @@ pub mod widget;
 
 use crate::app::PrehniteApp;
 use prehnite_core::db::{initialize_db, DBType, DatabaseError};
+use prehnite_core::font::get_default_font_family;
 use prehnite_core::i18n::initialize_i18n_from_db;
 use prehnite_core::log::initialize_logger;
 use prehnite_core::settings::registry::SettingRegistry;
@@ -12,29 +13,18 @@ use prehnite_core::settings::GlobalSettingKey;
 use prehnite_core::util::alert::{
     fatal_initialize_app_error_db, fatal_initialize_setting_registry_error,
 };
-use std::error::Error;
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::Debug;
+use thiserror::Error;
 use tracing::error;
-use prehnite_font_manager::get_default_font_family;
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 enum InitializeError {
-    DatabaseError(DatabaseError),
+    #[error("initialize error. because database")]
+    DatabaseError(#[from] DatabaseError),
+    #[error("initialize error. because can not load setting registry")]
     LoadSettingRegistry,
-}
-
-impl Display for InitializeError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        Debug::fmt(self, f)
-    }
-}
-
-impl Error for InitializeError {}
-
-impl From<DatabaseError> for InitializeError {
-    fn from(value: DatabaseError) -> Self {
-        InitializeError::DatabaseError(value)
-    }
+    #[error("failed to initialize log rotate.")]
+    InitializeLogRotateConfig(#[from] prehnite_core::log::InitError),
 }
 
 impl From<sqlx::Error> for InitializeError {
@@ -47,7 +37,7 @@ impl From<sqlx::Error> for InitializeError {
 #[tracing::instrument]
 async fn initializer() {
     async fn func() -> Result<(), InitializeError> {
-        initialize_logger();
+        initialize_logger()?;
         initialize_db().await?;
         if !SettingRegistry::load(DBType::AppGlobal).await {
             return Err(InitializeError::LoadSettingRegistry);
@@ -56,7 +46,11 @@ async fn initializer() {
         if let None =
             SettingRegistry::get(&GlobalSettingKey::Font.into()).and_then(|v| v.get::<String>())
         {
-            SettingRegistry::immediate_apply(GlobalSettingKey::Font.into(), get_default_font_family().into()).await;
+            SettingRegistry::immediate_apply(
+                GlobalSettingKey::Font.into(),
+                get_default_font_family().into(),
+            )
+            .await?;
         }
         Ok(())
     }
@@ -65,7 +59,7 @@ async fn initializer() {
         let err_msg = format!("{:#?}", e);
         error!("{}", err_msg);
         match e {
-            InitializeError::DatabaseError(e) => {
+            InitializeError::DatabaseError(_) | InitializeError::InitializeLogRotateConfig(_) => {
                 fatal_initialize_app_error_db(e).show().unwrap();
             }
             InitializeError::LoadSettingRegistry => {

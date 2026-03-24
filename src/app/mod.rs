@@ -16,7 +16,7 @@ use prehnite_core::opt_unwrap_or_return;
 use prehnite_core::settings::registry::SettingRegistry;
 use prehnite_core::settings::GlobalSettingKey;
 use prehnite_core::widget::font::{get_default_font, set_default_font, set_font};
-use prehnite_font_manager::{get_default_font_family, get_global_font_list, FontLoader};
+use prehnite_core::font::{get_default_font_family, get_global_font_list, FontLoader};
 use std::collections::{BTreeMap, HashSet};
 use std::fmt::Debug;
 use tracing::error;
@@ -86,7 +86,6 @@ pub struct PrehniteApp {
     background_info_editor_window_id: Option<iced::window::Id>,
     bibliography_editor_window_id: Option<iced::window::Id>,
     editor_window_id: Option<iced::window::Id>,
-    new_item_prompt_window_id: Option<iced::window::Id>,
 }
 
 #[derive(Clone, Debug)]
@@ -133,7 +132,6 @@ impl PrehniteApp {
                 background_info_editor_window_id: None,
                 bibliography_editor_window_id: None,
                 editor_window_id: None,
-                new_item_prompt_window_id: None,
             },
             Task::done(DaemonMessage::ReloadFont).chain(Task::done(DaemonMessage::OpenWindow(
                 WindowType::MainWindow,

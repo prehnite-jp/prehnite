@@ -7,7 +7,7 @@ use crate::{opt_unwrap_or_continue, opt_unwrap_or_return, to_hash_map_key_id};
 use sqlx::SqliteConnection;
 use std::collections::HashMap;
 
-const UPDATE_SETTING_SQL: &str = include_str!("../../assets/query/update_settings.sql");
+const UPDATE_SETTING_SQL: &str = include_str!("../../../assets/query/update_settings.sql");
 #[tracing::instrument]
 pub async fn update_setting(
     conn: &mut SqliteConnection,
@@ -22,7 +22,7 @@ pub async fn update_setting(
     Ok(())
 }
 
-const FETCH_SETTING_SQL: &str = include_str!("../../assets/query/fetch_settings.sql");
+const FETCH_SETTING_SQL: &str = include_str!("../../../assets/query/fetch_settings.sql");
 #[tracing::instrument]
 pub async fn fetch_setting(
     conn: &mut SqliteConnection,
@@ -35,7 +35,7 @@ pub async fn fetch_setting(
 }
 
 const FETCH_BACKGROUND_INFO_FROM_ITEM_ID_SQL: &str =
-    include_str!("../../assets/query/fetch_background_info_from_item_id.sql");
+    include_str!("../../../assets/query/fetch_background_info_from_item_id.sql");
 #[tracing::instrument]
 pub async fn fetch_background_info_from_item_id(
     conn: &mut SqliteConnection,
@@ -48,7 +48,7 @@ pub async fn fetch_background_info_from_item_id(
 }
 
 const FETCH_HEADLINE_CHILDREN_RECURSE_SQL: &str =
-    include_str!("../../assets/query/fetch_headline_children_recurse.sql");
+    include_str!("../../../assets/query/fetch_headline_children_recurse.sql");
 #[tracing::instrument]
 pub async fn fetch_headline_children_recurse(
     conn: &mut SqliteConnection,
@@ -74,7 +74,7 @@ pub async fn fetch_headline_children_recurse(
 }
 
 const FETCH_BACKGROUND_REFERENCES_SQL: &str =
-    include_str!("../../assets/query/fetch_background_references.sql");
+    include_str!("../../../assets/query/fetch_background_references.sql");
 #[tracing::instrument]
 pub async fn fetch_background_references(
     conn: &mut SqliteConnection,
@@ -87,7 +87,7 @@ pub async fn fetch_background_references(
 }
 
 const FETCH_BIBLIOGRAPHY_AUTHORS_SQL: &str =
-    include_str!("../../assets/query/fetch_bibliography_authors.sql");
+    include_str!("../../../assets/query/fetch_bibliography_authors.sql");
 #[tracing::instrument]
 pub async fn fetch_bibliography_authors(
     conn: &mut SqliteConnection,
@@ -100,7 +100,7 @@ pub async fn fetch_bibliography_authors(
 }
 
 const FETCH_ITEM_REFERENCES_SQL: &str =
-    include_str!("../../assets/query/fetch_item_references.sql");
+    include_str!("../../../assets/query/fetch_item_references.sql");
 #[tracing::instrument]
 pub async fn fetch_item_references(
     conn: &mut SqliteConnection,
@@ -113,7 +113,7 @@ pub async fn fetch_item_references(
 }
 
 const FETCH_ITEM_RELATED_TAGS_SQL: &str =
-    include_str!("../../assets/query/fetch_item_related_tags.sql");
+    include_str!("../../../assets/query/fetch_item_related_tags.sql");
 #[tracing::instrument]
 pub async fn fetch_item_related_tags(
     conn: &mut SqliteConnection,
@@ -126,7 +126,7 @@ pub async fn fetch_item_related_tags(
 }
 
 const FETCH_ITEM_RELATED_TASKS_SQL: &str =
-    include_str!("../../assets/query/fetch_item_related_tasks.sql");
+    include_str!("../../../assets/query/fetch_item_related_tasks.sql");
 #[tracing::instrument]
 pub async fn fetch_item_related_tasks(
     conn: &mut SqliteConnection,
@@ -139,7 +139,7 @@ pub async fn fetch_item_related_tasks(
 }
 
 const FETCH_HEADLINE_RELATED_PARAGRAPH_SQL: &str =
-    include_str!("../../assets/query/fetch_headline_related_paragraph.sql");
+    include_str!("../../../assets/query/fetch_headline_related_paragraph.sql");
 #[tracing::instrument]
 pub async fn fetch_headline_related_paragraph(
     conn: &mut SqliteConnection,
@@ -152,7 +152,7 @@ pub async fn fetch_headline_related_paragraph(
 }
 
 const FETCH_PARAGRAPH_RELATED_SUMMARIES_SQL: &str =
-    include_str!("../../assets/query/fetch_paragraph_related_summaries.sql");
+    include_str!("../../../assets/query/fetch_paragraph_related_summaries.sql");
 #[tracing::instrument]
 pub async fn fetch_paragraph_related_summaries(
     conn: &mut SqliteConnection,
@@ -165,7 +165,7 @@ pub async fn fetch_paragraph_related_summaries(
 }
 
 const FETCH_PARAGRAPH_RELATED_DRAFT_SQL: &str =
-    include_str!("../../assets/query/fetch_paragraph_related_draft.sql");
+    include_str!("../../../assets/query/fetch_paragraph_related_draft.sql");
 #[tracing::instrument]
 pub async fn fetch_paragraph_related_draft(
     conn: &mut SqliteConnection,

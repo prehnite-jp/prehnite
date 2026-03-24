@@ -2,11 +2,11 @@ use crate::util::set_env;
 use crate::{build_process, BuildProcess};
 #[cfg(feature = "bundle_license")]
 use cargo_about::licenses::KrateLicense;
-#[cfg(feature = "bundle_license")]
-use prehnite_license_bundle::LicenseBundle;
-use prehnite_license_bundle::{
+use prehnite_core::license_bundle::{
     get_default_license_bundle, get_names_from_default_license_bundle, Package,
 };
+#[cfg(feature = "bundle_license")]
+use prehnite_core::license_bundle::LicenseBundle;
 #[cfg(feature = "bundle_license")]
 use std::collections::BTreeSet;
 use std::fs::File;
@@ -58,15 +58,15 @@ fn license_collector() -> anyhow::Result<LicenseBundle> {
 
     let crate_names: HashSet<String> = license.iter().map(|v| v.krate.name.clone()).collect();
 
-    fn load_full_text(v: &KrateLicense) -> anyhow::Result<Vec<prehnite_license_bundle::License>> {
+    fn load_full_text(v: &KrateLicense) -> anyhow::Result<Vec<prehnite_core::license_bundle::License>> {
         v.license_files
             .iter()
             .map(|v| {
-                Ok(prehnite_license_bundle::License {
+                Ok(prehnite_core::license_bundle::License {
                     full_text: crate::util::read_string_from_file(v.path.canonicalize()?)?,
                 })
             })
-            .collect::<anyhow::Result<Vec<prehnite_license_bundle::License>>>()
+            .collect::<anyhow::Result<Vec<prehnite_core::license_bundle::License>>>()
     }
 
     fn dependencies(v: &KrateLicense, crate_names: &HashSet<String>) -> BTreeSet<String> {

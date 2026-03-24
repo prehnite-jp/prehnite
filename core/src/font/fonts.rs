@@ -10,17 +10,17 @@ macro_rules! font_mod {
 font_mod!(
     noto_sans,
     "Noto Sans",
-    "../assets/fonts/Noto_Sans/NotoSans-VariableFont_wdth,wght.ttf"
+    "../../../assets/fonts/Noto_Sans/NotoSans-VariableFont_wdth,wght.ttf"
 );
 
 font_mod!(
     sawarabi_gothic,
     "Sawarabi Gothic",
-    "../assets/fonts/Sawarabi_Gothic/SawarabiGothic-Regular.ttf"
+    "../../../assets/fonts/Sawarabi_Gothic/SawarabiGothic-Regular.ttf"
 );
 
 font_mod!(
     material_symbols_outlined,
     "Material Symbols Outlined",
-    "../assets/fonts/Material_Symbols_Outlined/MaterialSymbolsOutlined-VariableFont_FILL,GRAD,opsz,wght.ttf"
+    "../../../assets/fonts/Material_Symbols_Outlined/MaterialSymbolsOutlined-VariableFont_FILL,GRAD,opsz,wght.ttf"
 );

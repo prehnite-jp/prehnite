@@ -1,6 +1,6 @@
 use iced::{Application, Daemon, Program};
 use iced_graphics::text::font_system;
-use prehnite_core::i18n::get_locale_language;
+use crate::i18n::get_locale_language;
 use std::sync::{OnceLock};
 use tracing::error;
 
