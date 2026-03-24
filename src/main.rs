@@ -1,5 +1,4 @@
 mod app;
-mod db;
 mod util;
 pub mod widget;
 

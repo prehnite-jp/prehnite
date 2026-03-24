@@ -140,6 +140,12 @@ pub async fn acquire_err_handled(mode: DBType) -> Option<PoolConnection<Sqlite>>
     }
 }
 
+pub async fn acquire_book_with_alert() -> PoolConnection<Sqlite> {
+    acquire_err_handled(DBType::PrehniteBook)
+        .await
+        .unwrap_or_alert()
+}
+
 #[tracing::instrument]
 pub async fn open_book_err_handled(book_path: PathBuf) -> bool {
     let r = get_database()

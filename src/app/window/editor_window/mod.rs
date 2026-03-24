@@ -1,5 +1,5 @@
 use crate::app::window::{app_default_window_settings, Window, WindowMessage};
-use crate::db::acquire_book_with_alert;
+use prehnite_core::db::acquire_book_with_alert;
 use iced::window::Settings;
 use iced::{window, Element, Size, Task};
 use prehnite_core::db::schema::Item;
