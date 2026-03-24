@@ -1,18 +1,20 @@
-use crate::db;
-use crate::db::query;
+use crate::db::{acquire_book_with_alert, query};
 use crate::widget::hideable;
 use crate::widget::styles::container::{focusable, not_focused_rect_box, rect_box, unborder};
 use iced::widget::pane_grid::{Axis, ResizeEvent};
 use iced::widget::{button, pane_grid, scrollable, space, Container, MouseArea};
 use iced::{padding, widget, Element, Length};
-use prehnite_core::db::schema::{Item, ItemType, ParagraphSummary};
-use prehnite_core::i18n::i18n_w;
+use iced_aw::menu_items;
+use iced_aw::{menu_bar, Menu};
+use prehnite_core::db::schema::{Headline, Item, ItemType, Paragraph, ParagraphSummary};
+use prehnite_core::i18n::{i18n, i18n_w};
 use prehnite_core::widget::font::ftext;
 use prehnite_font_manager::material_symbol;
 use prehnite_font_manager::material_symbol::CIRCLE;
 use prehnite_font_manager::widget::material_symbol;
 use std::collections::HashMap;
 use tracing::error;
+use tracing_unwrap::ResultExt;
 
 #[derive(Clone, Debug)]
 pub enum ItemListMessage {
@@ -21,7 +23,10 @@ pub enum ItemListMessage {
     SetHeadlines(HashMap<i64, Item>),
     SetParagraph(HashMap<i64, HashMap<i64, Item>>),
     ItemSelected(i64),
-    NewItem,
+    OpenEditor(Option<i64>),
+    NewParagraph(i64 /* headline-id */),
+    NewHeadline(Option<i64> /* parent-id */),
+    None,
 }
 
 pub enum ItemListActions {
@@ -42,6 +47,7 @@ pub struct ItemList {
     per_page: u8,
     page: u32,
     item_list_pane: pane_grid::State<ItemListPane>,
+    not_opened: bool,
 }
 
 impl Default for ItemList {
@@ -55,16 +61,24 @@ impl Default for ItemList {
             per_page: 10,
             page: 0,
             item_list_pane,
+            not_opened: false,
         }
     }
 }
 
 impl ItemList {
+    pub fn not_opened() -> Self {
+        Self {
+            not_opened: true,
+            ..Default::default()
+        }
+    }
+
     #[tracing::instrument]
     async fn load_headlines(page: u32, per_page: u8) -> ItemListMessage {
         ItemListMessage::SetHeadlines(
             query::fetch_root_headline_items(
-                db::acquire_book_with_alert().await.as_mut(),
+                acquire_book_with_alert().await.as_mut(),
                 per_page,
                 page,
             )
@@ -78,7 +92,7 @@ impl ItemList {
 
     #[tracing::instrument]
     async fn load_paragraph(page: u32, per_page: u8) -> ItemListMessage {
-        let mut conn = db::acquire_book_with_alert().await;
+        let mut conn = acquire_book_with_alert().await;
         let mut res = query::fetch_root_headline_related_paragraph(&mut conn, per_page, page)
             .await
             .unwrap_or_else(|e| {
@@ -124,8 +138,74 @@ impl ItemList {
             }
             ItemListMessage::SetParagraph(v) => self.paragraph = v,
             ItemListMessage::ItemSelected(id) => self.focused_item_id = Some(id),
-            ItemListMessage::NewItem => {
+            ItemListMessage::OpenEditor(_) => { /* handled by daemon */ }
+            ItemListMessage::NewParagraph(mut parent_item_id) => {
+                if let Some(Item {
+                    item_type: ItemType::Paragraph(Some(p)),
+                    ..
+                }) = self.get_item_paragraph_or_headline(Some(parent_item_id))
+                {
+                    parent_item_id = p.headline.id;
+                };
+                return ItemListActions::Run(
+                    iced::Task::future(async move {
+                        let item = Item {
+                            item_type: ItemType::Paragraph(None),
+                            title: i18n("no-title"),
+                            ..Default::default()
+                        };
+                        let mut conn = acquire_book_with_alert().await;
+                        if let Some(item) = item.register(&mut *conn, false).await.ok_or_log() {
+                            let paragraph = Paragraph {
+                                item_id: item.id,
+                                headline: Headline {
+                                    id: parent_item_id,
+                                    ..Default::default()
+                                },
+                                ..Paragraph::default()
+                            };
+                            if let Some(_) = paragraph.register(&mut *conn, true).await.ok_or_log()
+                            {
+                                return ItemListMessage::OpenEditor(Some(item.id));
+                            }
+                        }
+                        ItemListMessage::None
+                    })
+                    .chain(iced::Task::done(ItemListMessage::LoadItems)),
+                );
             }
+            ItemListMessage::NewHeadline(mut parent_item_id) => {
+                if let Some(Item {
+                    item_type: ItemType::Paragraph(Some(p)),
+                    ..
+                }) = self.get_item_paragraph_or_headline(parent_item_id)
+                {
+                    parent_item_id = Some(p.headline.id);
+                };
+                return ItemListActions::Run(
+                    iced::Task::future(async move {
+                        let item = Item {
+                            item_type: ItemType::Headline(None),
+                            title: i18n("no-title"),
+                            ..Default::default()
+                        };
+                        let mut conn = acquire_book_with_alert().await;
+                        if let Some(item) = item.register(&mut *conn, false).await.ok_or_log() {
+                            let headline = Headline {
+                                item_id: item.id,
+                                parent_id: parent_item_id,
+                                ..Headline::default()
+                            };
+                            if let Some(_) = headline.register(&mut *conn, true).await.ok_or_log() {
+                                return ItemListMessage::OpenEditor(Some(item.id));
+                            }
+                        }
+                        ItemListMessage::None
+                    })
+                    .chain(iced::Task::done(ItemListMessage::LoadItems)),
+                );
+            }
+            ItemListMessage::None => {}
         }
         ItemListActions::Run(iced::Task::none())
     }
@@ -173,51 +253,81 @@ impl ItemList {
     }
 
     pub fn item_list_panel(&'_ self) -> Element<'_, ItemListMessage> {
-        widget::column![
+        if self.not_opened {
+            widget::container(i18n_w("not-opened"))
+                .center(Length::Fill)
+                .into()
+        } else {
             widget::column![
-                widget::row![
-                    space().width(Length::Fill),
-                    button(material_symbol(material_symbol::ADD).size(20)).style(button::text)
-                ]
-                .width(Length::Fill),
-                widget::rule::horizontal(1)
-            ],
-            scrollable(
-                Container::new(widget::column(self.headlines.iter().map(|(id, itm)| {
-                    widget::column![
-                        Self::item(itm, Some(*id) == self.focused_item_id),
-                        match self.paragraph.get(id) {
-                            None => {
-                                Element::from(space())
+                widget::column![
+                    widget::row![
+                        space().width(Length::Fill),
+                        menu_bar!((
+                            button(material_symbol(material_symbol::ADD).size(20))
+                                .style(button::text),
+                            {
+                                Menu::new(menu_items!(
+                                    (button(i18n_w("new-parent-headline"))
+                                        .style(button::text)
+                                        .on_press(ItemListMessage::NewHeadline(None))),
+                                    (button(i18n_w("new-headline"))
+                                        .style(button::text)
+                                        .on_press_maybe(
+                                            self.focused_item_id
+                                                .map(|v| ItemListMessage::NewHeadline(Some(v)))
+                                        )),
+                                    (button(i18n_w("new-paragraph"))
+                                        .style(button::text)
+                                        .on_press_maybe(
+                                            self.focused_item_id
+                                                .map(|v| ItemListMessage::NewParagraph(v))
+                                        ))
+                                ))
+                                .width(Length::Shrink)
                             }
-                            Some(v) => {
-                                widget::column(v.iter().map(|(_, itm)| {
-                                    Self::item(itm, Some(itm.id) == self.focused_item_id)
-                                }))
-                                .into()
-                            }
-                        }
+                        ))
                     ]
-                    .into()
-                })))
-                .width(Length::Fill)
-                .height(Length::Fill)
-                .padding(5)
-                .style(unborder(not_focused_rect_box))
-            )
-            .spacing(1)
-        ]
-        .into()
+                    .width(Length::Fill),
+                    widget::rule::horizontal(1)
+                ],
+                scrollable(
+                    Container::new(widget::column(self.headlines.iter().map(|(id, itm)| {
+                        widget::column![
+                            Self::item(itm, Some(*id) == self.focused_item_id),
+                            match self.paragraph.get(id) {
+                                None => {
+                                    Element::from(space())
+                                }
+                                Some(v) => {
+                                    widget::column(v.iter().map(|(_, itm)| {
+                                        Self::item(itm, Some(itm.id) == self.focused_item_id)
+                                    }))
+                                    .into()
+                                }
+                            }
+                        ]
+                        .into()
+                    })))
+                    .width(Length::Fill)
+                    .height(Length::Fill)
+                    .padding(5)
+                    .style(unborder(not_focused_rect_box))
+                )
+                .spacing(1)
+            ]
+            .into()
+        }
     }
 
-    fn get_item_paragraph_or_headline(&'_ self) -> Option<&'_ Item> {
-        let focused_item_id = self.focused_item_id?;
+    fn get_focused_item(&'_ self) -> Option<&'_ Item> {
+        self.get_item_paragraph_or_headline(self.focused_item_id)
+    }
 
-        self.headlines.get(&focused_item_id).or_else(|| {
-            self.paragraph
-                .values()
-                .find_map(|v| v.get(&focused_item_id))
-        })
+    fn get_item_paragraph_or_headline(&'_ self, id: Option<i64>) -> Option<&'_ Item> {
+        let id = id?;
+        self.headlines
+            .get(&id)
+            .or_else(|| self.paragraph.values().find_map(|v| v.get(&id)))
     }
 
     fn item_detail(item: &Item) -> Element<'_, ItemListMessage> {
@@ -239,7 +349,7 @@ impl ItemList {
 
     pub fn item_detail_panel(&'_ self) -> Element<'_, ItemListMessage> {
         scrollable(
-            Container::new(match self.get_item_paragraph_or_headline() {
+            Container::new(match self.get_focused_item() {
                 None => i18n_w("item-no-select").into(),
                 Some(item) => Self::item_detail(item),
             })

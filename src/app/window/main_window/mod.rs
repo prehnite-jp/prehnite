@@ -4,7 +4,6 @@ pub mod page;
 
 use crate::app::window::main_window::book_opener::book_opener_handler;
 use crate::app::window::main_window::menubar::{menubar, menubar_handler, MenuBarMessage};
-use crate::app::window::main_window::page::book_not_opened::BookNotOpened;
 use crate::app::window::main_window::page::item_list::{ItemListActions, ItemListMessage};
 use crate::app::window::main_window::page::{MainWindowPage, MainWindowPageId};
 use crate::app::window::{Window, WindowMessage};
@@ -129,8 +128,6 @@ impl MainWindow {
             menubar(self.is_book_opened).map(MainWindowMessage::MenuBar),
             match &self.page {
                 MainWindowPage::NowLoading => i18n_w("now-loading").into(),
-                MainWindowPage::BookNotOpened =>
-                    BookNotOpened::view().map(MainWindowMessage::BookOpener),
                 MainWindowPage::ItemList(v) => v.view().map(MainWindowMessage::ItemList),
             }
         ])

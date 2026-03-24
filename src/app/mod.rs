@@ -3,6 +3,7 @@ mod window;
 
 use crate::app::window::editor_window::{EditorWindow, EditorWindowMessage};
 use crate::app::window::license_info_window::LicenseInfoWindow;
+use crate::app::window::main_window::page::item_list::ItemListMessage;
 use crate::app::window::main_window::{MainWindow, MainWindowMessage};
 use crate::app::window::setting_window::SettingWindow;
 use crate::app::window::version_info_window::VersionInfoWindow;
@@ -171,7 +172,7 @@ impl PrehniteApp {
                 WindowType::BackgroundInfoEditorWindow => {
                     self.background_info_editor_window_id = None
                 }
-                WindowType::EditorWindow(_) => self.editor_window_id = None
+                WindowType::EditorWindow(_) => self.editor_window_id = None,
             }
         }
         Task::none()
@@ -210,7 +211,7 @@ impl PrehniteApp {
                     WindowType::BackgroundInfoEditorWindow => {
                         self.background_info_editor_window_id = Some(window_id);
                     }
-                    WindowType::EditorWindow(_) => self.editor_window_id = Some(window_id)
+                    WindowType::EditorWindow(_) => self.editor_window_id = Some(window_id),
                 };
 
                 // その他特殊処理
@@ -280,6 +281,13 @@ impl PrehniteApp {
                             change_lang_bundle(lang_id.as_str()).await
                         })
                         .discard();
+                    }
+                    WindowMessage::MainWindowMessage(MainWindowMessage::ItemList(
+                        ItemListMessage::OpenEditor(Some(id)),
+                    )) => {
+                        return Task::done(DaemonMessage::OpenWindow(WindowType::EditorWindow(
+                            *id,
+                        )));
                     }
                     _ => {}
                 }
