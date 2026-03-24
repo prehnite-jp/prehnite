@@ -23,9 +23,10 @@ pub enum ItemListMessage {
     SetHeadlines(HashMap<i64, Item>),
     SetParagraph(HashMap<i64, HashMap<i64, Item>>),
     ItemSelected(i64),
-    OpenEditor(Option<i64>),
+    OpenEditor(i64),
     NewParagraph(i64 /* headline-id */),
     NewHeadline(Option<i64> /* parent-id */),
+    NewItemCreated(i64),
     None,
 }
 
@@ -134,78 +135,84 @@ impl ItemList {
             }
             ItemListMessage::SetHeadlines(v) => {
                 self.headlines = v;
-                self.focused_item_id = None;
             }
             ItemListMessage::SetParagraph(v) => self.paragraph = v,
             ItemListMessage::ItemSelected(id) => self.focused_item_id = Some(id),
             ItemListMessage::OpenEditor(_) => { /* handled by daemon */ }
-            ItemListMessage::NewParagraph(mut parent_item_id) => {
-                if let Some(Item {
-                    item_type: ItemType::Paragraph(Some(p)),
-                    ..
-                }) = self.get_item_paragraph_or_headline(Some(parent_item_id))
+            ItemListMessage::NewParagraph(parent_item_id) => {
+                let headline_id = match self
+                    .get_item_paragraph_or_headline(Some(parent_item_id))
+                    .map(|v| &v.item_type)
                 {
-                    parent_item_id = p.headline.id;
+                    Some(ItemType::Paragraph(Some(p))) => p.headline.id,
+                    Some(ItemType::Headline(Some(h))) => h.id,
+                    _ => return ItemListActions::Run(iced::Task::none()),
                 };
-                return ItemListActions::Run(
-                    iced::Task::future(async move {
-                        let item = Item {
-                            item_type: ItemType::Paragraph(None),
-                            title: i18n("no-title"),
-                            ..Default::default()
+                return ItemListActions::Run(iced::Task::future(async move {
+                    let item = Item {
+                        item_type: ItemType::Paragraph(None),
+                        title: i18n("no-title"),
+                        ..Default::default()
+                    };
+                    let mut conn = acquire_book_with_alert().await;
+                    if let Some(item) = item.register(&mut *conn, false).await.ok_or_log() {
+                        let paragraph = Paragraph {
+                            item_id: item.id,
+                            headline: Headline {
+                                id: headline_id,
+                                ..Default::default()
+                            },
+                            ..Paragraph::default()
                         };
-                        let mut conn = acquire_book_with_alert().await;
-                        if let Some(item) = item.register(&mut *conn, false).await.ok_or_log() {
-                            let paragraph = Paragraph {
-                                item_id: item.id,
-                                headline: Headline {
-                                    id: parent_item_id,
-                                    ..Default::default()
-                                },
-                                ..Paragraph::default()
-                            };
-                            if let Some(_) = paragraph.register(&mut *conn, true).await.ok_or_log()
-                            {
-                                return ItemListMessage::OpenEditor(Some(item.id));
-                            }
+                        if let Some(_) = paragraph.register(&mut *conn, true).await.ok_or_log() {
+                            return ItemListMessage::NewItemCreated(item.id);
                         }
-                        ItemListMessage::None
-                    })
-                    .chain(iced::Task::done(ItemListMessage::LoadItems)),
-                );
+                    }
+                    ItemListMessage::None
+                }));
             }
-            ItemListMessage::NewHeadline(mut parent_item_id) => {
-                if let Some(Item {
-                    item_type: ItemType::Paragraph(Some(p)),
-                    ..
-                }) = self.get_item_paragraph_or_headline(parent_item_id)
+            ItemListMessage::NewHeadline(parent_item_id) => {
+                let headline_id = match self
+                    .get_item_paragraph_or_headline(parent_item_id)
+                    .map(|v| &v.item_type)
                 {
-                    parent_item_id = Some(p.headline.id);
+                    Some(ItemType::Paragraph(Some(p))) => Some(p.headline.id),
+                    Some(ItemType::Headline(Some(h))) => Some(h.id),
+                    None => None,
+                    _ => return ItemListActions::Run(iced::Task::none()),
                 };
-                return ItemListActions::Run(
-                    iced::Task::future(async move {
-                        let item = Item {
-                            item_type: ItemType::Headline(None),
-                            title: i18n("no-title"),
-                            ..Default::default()
+                return ItemListActions::Run(iced::Task::future(async move {
+                    let item = Item {
+                        item_type: ItemType::Headline(None),
+                        title: i18n("no-title"),
+                        ..Default::default()
+                    };
+                    let mut conn = acquire_book_with_alert().await;
+                    if let Some(item) = item.register(&mut *conn, false).await.ok_or_log() {
+                        let headline = Headline {
+                            item_id: item.id,
+                            parent_id: headline_id,
+                            ..Headline::default()
                         };
-                        let mut conn = acquire_book_with_alert().await;
-                        if let Some(item) = item.register(&mut *conn, false).await.ok_or_log() {
-                            let headline = Headline {
-                                item_id: item.id,
-                                parent_id: parent_item_id,
-                                ..Headline::default()
-                            };
-                            if let Some(_) = headline.register(&mut *conn, true).await.ok_or_log() {
-                                return ItemListMessage::OpenEditor(Some(item.id));
-                            }
+                        if let Some(_) = headline.register(&mut *conn, true).await.ok_or_log() {
+                            return ItemListMessage::NewItemCreated(item.id);
                         }
-                        ItemListMessage::None
-                    })
-                    .chain(iced::Task::done(ItemListMessage::LoadItems)),
-                );
+                    }
+                    ItemListMessage::None
+                }));
             }
             ItemListMessage::None => {}
+            ItemListMessage::NewItemCreated(id) => {
+                return ItemListActions::Run(
+                    iced::Task::future(Self::load_headlines(self.page, self.per_page))
+                        .chain(iced::Task::future(Self::load_paragraph(
+                            self.page,
+                            self.per_page,
+                        )))
+                        .chain(iced::Task::done(ItemListMessage::ItemSelected(id)))
+                        .chain(iced::Task::done(ItemListMessage::OpenEditor(id))),
+                );
+            }
         }
         ItemListActions::Run(iced::Task::none())
     }

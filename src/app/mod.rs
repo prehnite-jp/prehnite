@@ -281,7 +281,7 @@ impl PrehniteApp {
                         .discard();
                     }
                     WindowMessage::MainWindowMessage(MainWindowMessage::ItemList(
-                        ItemListMessage::OpenEditor(Some(id)),
+                        ItemListMessage::OpenEditor(id),
                     )) => {
                         return Task::done(DaemonMessage::OpenWindow(WindowType::EditorWindow(
                             *id,
