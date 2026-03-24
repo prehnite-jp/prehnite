@@ -161,7 +161,6 @@ impl SettingRegistry {
         tx.commit().await.ok_or_log() != None
     }
 
-    // TODO: 独自のエラーを実装
     #[tracing::instrument]
     pub async fn save_by_key(key: SettingKey) -> sqlx::Result<()> {
         Self::save_by_key_with_conn(

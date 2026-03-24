@@ -38,6 +38,7 @@ prehnite-license-bundle.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 tracing-unwrap.workspace = true
+strum.workspace = true
 
 [dev-dependencies]
 rand = "0.10"

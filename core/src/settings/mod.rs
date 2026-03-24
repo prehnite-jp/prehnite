@@ -6,80 +6,28 @@ use log::error;
 use sqlx::pool::PoolConnection;
 use sqlx::Sqlite;
 use std::fmt::{Display, Formatter};
-
-macro_rules! key_impl {
-    ($x:ty) => {
-        impl $x {
-            fn as_str(&self) -> &'static str {
-                ""
-            }
-        }
-
-        impl TryFrom<&str> for $x {
-            type Error = ();
-
-            fn try_from(_value: &str) -> Result<Self, Self::Error> {
-                Err(())
-            }
-        }
-    };
-    ($x:ty, $(($v:path, $key:ident)),*) => {
-        impl $x {
-            fn as_str(&self) -> &'static str {
-                match self {
-                    $(
-                    $v => $key,
-                    )*
-                }
-            }
-        }
-
-        impl TryFrom<&str> for $x {
-            type Error = ();
-
-            fn try_from(value: &str) -> Result<Self, Self::Error> {
-                match value {
-                    $(
-                    $key => Ok($v),
-                    )*
-                    _=> Err(())
-                }
-            }
-        }
-    }
-}
+use strum::{EnumString, IntoStaticStr};
 
 // G: global
-const G_KEY_LOCALE: &str = "locale";
-const G_KEY_FONT: &str = "font";
-const G_KEY_AUTO_OPEN_LAST_OPENED: &str = "auto-open-last-opened-file";
-const G_KEY_LAST_OPENED: &str = "last-opened-file";
-
-#[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Ord, Copy, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Ord, Copy, Hash, EnumString, IntoStaticStr)]
 pub enum GlobalSettingKey {
+    #[strum(serialize = "locale")]
     Locale,
+    #[strum(serialize = "font")]
     Font,
+    #[strum(serialize = "auto-open-last-opened-file")]
     LastOpened,
+    #[strum(serialize = "last-opened-file")]
     AutoOpenLastOpened,
 }
 
-key_impl!(
-    GlobalSettingKey,
-    (GlobalSettingKey::Locale, G_KEY_LOCALE),
-    (GlobalSettingKey::Font, G_KEY_FONT),
-    (GlobalSettingKey::LastOpened, G_KEY_LAST_OPENED),
-    (
-        GlobalSettingKey::AutoOpenLastOpened,
-        G_KEY_AUTO_OPEN_LAST_OPENED
-    )
-);
-
 // B: book
 
-#[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Ord, Copy, Hash)]
-pub enum BookSettingKey {}
-
-key_impl!(BookSettingKey);
+#[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Ord, Copy, Hash, EnumString, IntoStaticStr)]
+pub enum BookSettingKey {
+    #[strum(serialize = "locked")]
+    Locked,
+}
 
 #[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Ord, Copy, Hash)]
 pub enum SettingKey {
@@ -117,8 +65,8 @@ impl From<BookSettingKey> for SettingKey {
 impl SettingKey {
     fn as_str(&self) -> &'static str {
         match self {
-            SettingKey::Global(g_key) => g_key.as_str(),
-            SettingKey::Book(b_key) => b_key.as_str(),
+            SettingKey::Global(g_key) => g_key.into(),
+            SettingKey::Book(b_key) => b_key.into(),
         }
     }
 }

@@ -41,6 +41,7 @@ image.workspace = true
 prehnite-font-manager.workspace = true
 opener.workspace = true
 anyhow.workspace = true
+tracing-unwrap.workspace = true
 
 [workspace.dependencies]
 prehnite-core = { version = "0.0.1-alpha", path = "core" }
@@ -74,7 +75,8 @@ zip = "8"
 opener = "0.8"
 anyhow = "1"
 thiserror = "2"
-tracing-unwrap = "1.0"
+tracing-unwrap = "1"
+strum = { version = "0.28", features = ["derive"] }
 
 [build-dependencies]
 prehnite-build-libs = { version = "0.0.1-alpha", path = "build-libs" }
