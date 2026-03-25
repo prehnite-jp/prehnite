@@ -1,5 +1,5 @@
 use crate::db::schema::app_global::book_search_api::BookSearchApi;
-use crate::db::schema::binder_helper::{Binder, placeholder_helper, placeholder_in_clause};
+use crate::db::schema::binder_helper::{placeholder_helper, placeholder_in_clause, Binder};
 use crate::db::schema::{
     BackgroundInfo, BackgroundReference, Bibliography, BibliographyAuthor, Draft, Headline, Item,
     ItemReference, Paragraph, ParagraphLink, ParagraphSummary, Publisher, RelBackgroundAndItem,
@@ -63,10 +63,11 @@ macro_rules! allow_c {
             }
 
             pub async fn register(&self, conn: &mut SqliteConnection, is_on_conflict_do_nothing: bool) -> Result<Self, Error> {
-                first_or_row_not_found(&Self::register_vec(&vec![self.clone()], conn, is_on_conflict_do_nothing).await?)
+                first_or_row_not_found(&Self::register_many(&vec![self.clone()], conn, is_on_conflict_do_nothing).await?)
             }
 
             pub async fn register_vec(values: &[Self], conn: &mut SqliteConnection, is_on_conflict_do_nothing: bool) -> Result<Vec<Self>, Error> {
+            pub async fn register_many(values: &[Self], conn: &mut SqliteConnection, is_on_conflict_do_nothing: bool) -> Result<Vec<Self>, Error> {
                 if values.is_empty() {
                     return Ok(vec![]);
                 }

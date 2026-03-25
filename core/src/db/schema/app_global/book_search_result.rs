@@ -125,7 +125,7 @@ impl BookSearchResult {
     ) -> Result<Vec<Bibliography>, sqlx::Error> {
         let mut tx = conn.begin().await?;
         let publishers: IndexMap<String, Publisher> = to_hash_map_key_name!(
-            Publisher::register_vec(
+            Publisher::register_many(
                 Self::publishers_from_bsr(book_search_result_list.as_slice()).as_slice(),
                 &mut *tx,
                 true,
@@ -133,21 +133,21 @@ impl BookSearchResult {
             .await?
         );
         let authors: IndexMap<String, BibliographyAuthor> = to_hash_map_key_name!(
-            BibliographyAuthor::register_vec(
+            BibliographyAuthor::register_many(
                 Self::authors_from_bsr(book_search_result_list.as_slice()).as_slice(),
                 &mut *tx,
                 true,
             )
             .await?
         );
-        let bibliographies = Bibliography::register_vec(
+        let bibliographies = Bibliography::register_many(
             Self::bibliographies_from_bsr(book_search_result_list.as_slice(), &publishers)
                 .as_slice(),
             &mut *tx,
             true,
         )
         .await?;
-        RelBibliographyAuthor::register_vec(
+        RelBibliographyAuthor::register_many(
             Self::rel_bibliography_author_from_bibliographies(
                 book_search_result_list.as_slice(),
                 bibliographies.as_slice(),

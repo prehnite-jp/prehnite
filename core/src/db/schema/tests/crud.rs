@@ -150,7 +150,7 @@ macro_rules! return_and_register_random_result {
     ($x:ty, $conn:ident, $records:ident) => {
         return Ok((
             $records.clone(),
-            <$x>::register_vec($records.as_slice(), $conn, true).await?,
+            <$x>::register_many($records.as_slice(), $conn, true).await?,
         )
             .into());
     };
@@ -225,7 +225,7 @@ impl Bibliography {
         conn: &mut SqliteConnection,
         n: usize,
     ) -> Result<RegisterRandomTestDataResult<Vec<Bibliography>>, sqlx::Error> {
-        let publishers = Publisher::register_vec(
+        let publishers = Publisher::register_many(
             Vec::<Publisher>::random_n_values(n / 4).as_slice(),
             conn,
             true,
@@ -305,7 +305,7 @@ impl Headline {
             (before_reg_root, headlines.clone()),
             (
                 root,
-                Headline::register_vec(headlines.as_slice(), conn, true).await?,
+                Headline::register_many(headlines.as_slice(), conn, true).await?,
             ),
         )
             .into())

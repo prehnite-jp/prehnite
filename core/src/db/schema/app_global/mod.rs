@@ -57,7 +57,7 @@ pub async fn register_default_data_task_category_and_templates(
             detail: Some(i18n("task-template-will-explain-detail")),
         },
     ];
-    AppGlobalDefaultTaskTemplate::register_vec(values.as_slice(), &mut *tx, false).await?;
+    AppGlobalDefaultTaskTemplate::register_many(values.as_slice(), &mut *tx, false).await?;
     Ok(())
 }
 
