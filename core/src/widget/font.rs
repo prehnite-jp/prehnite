@@ -7,7 +7,7 @@ use tracing_unwrap::{OptionExt, ResultExt};
 static DEFAULT_FONT: OnceLock<Font> = OnceLock::new();
 
 #[tracing::instrument]
-pub fn set_default_font(font: Font) {
+pub fn init_default_font(font: Font) {
     DEFAULT_FONT
         .set(font)
         .inspect_err(|_| error!("set_default_font was called twice."))

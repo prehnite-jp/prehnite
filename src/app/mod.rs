@@ -15,7 +15,7 @@ use prehnite_core::i18n::{change_lang_bundle, i18n_w, DEFAULT_LANG_ID};
 use prehnite_core::opt_unwrap_or_return;
 use prehnite_core::settings::registry::SettingRegistry;
 use prehnite_core::settings::GlobalSettingKey;
-use prehnite_core::widget::font::{get_default_font, set_default_font, set_font};
+use prehnite_core::widget::font::{get_default_font, init_default_font, set_font};
 use prehnite_core::font::{get_default_font_family, get_global_font_list, FontLoader};
 use std::collections::{BTreeMap, HashSet};
 use std::fmt::Debug;
@@ -111,7 +111,7 @@ macro_rules! window_creator {
 
 impl PrehniteApp {
     pub fn run() -> Result<(), iced::Error> {
-        set_default_font(Font::with_name(get_default_font_family()));
+        init_default_font(Font::with_name(get_default_font_family()));
         iced::daemon(Self::new, Self::update, Self::view)
             .title(Self::title)
             .subscription(Self::subscription)
