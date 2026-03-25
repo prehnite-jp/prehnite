@@ -8,7 +8,7 @@ use crate::db::schema::{
 };
 use sqlx::{Acquire, Error, SqliteConnection, SqliteExecutor, SqliteTransaction};
 
-const MAX_BIND_COUNT: usize = 30000; // sqlite 3.32.0 以降では32766が最大だが、マージンを取って30000
+pub const MAX_BIND_COUNT: usize = 30000; // sqlite 3.32.0 以降では32766が最大だが、マージンを取って30000
 
 fn first_or_row_not_found<T>(values: &Vec<T>) -> Result<T, Error>
 where
@@ -55,6 +55,7 @@ macro_rules! allow_r {
 macro_rules! allow_c {
     ($(($x: ty, $table_name:expr, $view_name:expr, $register_columns:expr, $place_holder_count:expr)),*) => {
         $(impl $x {
+            /// 値がSomeの場合に登録を実行する、[`Self::register()`]の糖衣関数
             pub async fn register_optional(val: Option<Self>, conn: &mut SqliteConnection, is_on_conflict_do_nothing: bool) -> Result<Option<Self>, Error> {
                 Ok(match val {
                     Some(v) => Some(v.register(conn, is_on_conflict_do_nothing).await?),
@@ -62,11 +63,23 @@ macro_rules! allow_c {
                 })
             }
 
+            /// 1つのレコードを登録するための、[`Self::register_many()`]の糖衣関数
             pub async fn register(&self, conn: &mut SqliteConnection, is_on_conflict_do_nothing: bool) -> Result<Self, Error> {
                 first_or_row_not_found(&Self::register_many(&vec![self.clone()], conn, is_on_conflict_do_nothing).await?)
             }
 
-            pub async fn register_vec(values: &[Self], conn: &mut SqliteConnection, is_on_conflict_do_nothing: bool) -> Result<Vec<Self>, Error> {
+            #[doc="複数レコードを一括で登録します。"]
+            #[doc=concat!("1クエリあたり、[`", stringify!(MAX_BIND_COUNT), "`]件の値が登録されます。")] // MAX_BIND_COUNT
+            #[doc="# SQL"]
+            #[doc="以下のクエリが実行されます。"]
+            #[doc="- ..はプレースホルダの省略です。"]
+            #[doc="- ON CONFLICT DO NOTHING はフラグが`true`の場合に有効化されます。"]
+            #[doc="```sql"]
+            #[doc=concat!("INSERT INTO ", $table_name, " (")]
+            #[doc=$register_columns]
+            #[doc=")"]
+            #[doc="VALUES (..) [ON CONFLICT DO NOTHING] RETURNING id"]
+            #[doc="```"]
             pub async fn register_many(values: &[Self], conn: &mut SqliteConnection, is_on_conflict_do_nothing: bool) -> Result<Vec<Self>, Error> {
                 if values.is_empty() {
                     return Ok(vec![]);
@@ -107,9 +120,9 @@ macro_rules! allow_c {
 macro_rules! allow_u {
     ($(($x: ty, $table_name:expr, $update_set_clause:expr)),*) => {
     $(impl $x {
-        #[doc=concat!("`", stringify!($x), "::id`に対応するレコードの値を更新します。")]
+        #[doc=concat!("[`Self::id`]に対応するレコードの値を更新します。")]
         #[doc="# Panics"]
-        #[doc=concat!("`", stringify!($x), "::id`が0の場合、パニックを発生させます。")]
+        #[doc=concat!("[`Self::id`]が`0`の場合、パニックを発生させます。")]
         #[doc="# SQL"]
         #[doc="以下のクエリが実行されます。"]
         #[doc="```sql"]
@@ -145,9 +158,9 @@ macro_rules! allow_d {
     ($(($x:ty, $table_name:expr)),*) => {
         $(
         impl $x {
-            #[doc=concat!("`", stringify!($x), "::id`に対応するレコードを削除します。")]
+            #[doc=concat!("[`Self::id`]に対応するレコードを削除します。")]
             #[doc="# Panics"]
-            #[doc=concat!("`", stringify!($x), "::id`が0の場合、パニックを発生させます。")]
+            #[doc=concat!("[`Self::id`]が`0`の場合、パニックを発生させます。")]
             #[doc="# SQL"]
             #[doc="以下のクエリが実行されます。"]
             #[doc="```sql"]
