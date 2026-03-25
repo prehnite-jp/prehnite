@@ -13,7 +13,10 @@ use chrono::{DateTime, Utc};
 use sqlx::{Acquire, Database, FromRow, Row};
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
-use indexmap::IndexMap;
+
+/// 最大のプレースホルダ数。
+/// sqlite 3.32.0 以降では32766が最大ですが、マージンを取って30000にしています。
+pub const MAX_BIND_COUNT: usize = 30000;
 
 #[derive(Default, Clone, Debug, FromRow, Eq, PartialEq)]
 pub struct ReturningId {

@@ -1,5 +1,6 @@
 use crate::db::schema::app_global::book_search_api::BookSearchApi;
 use crate::db::schema::binder_helper::{placeholder_helper, placeholder_in_clause, Binder};
+use crate::db::schema::MAX_BIND_COUNT;
 use crate::db::schema::{
     BackgroundInfo, BackgroundReference, Bibliography, BibliographyAuthor, Draft, Headline, Item,
     ItemReference, Paragraph, ParagraphLink, ParagraphSummary, Publisher, RelBackgroundAndItem,
