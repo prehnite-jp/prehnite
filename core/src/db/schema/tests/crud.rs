@@ -1,9 +1,4 @@
 use crate::db::schema::app_global::book_search_api::BookSearchApi;
-use crate::db::schema::app_global::{
-    AppGlobalDefaultBibliography, AppGlobalDefaultBibliographyAuthor, AppGlobalDefaultPublisher,
-    AppGlobalDefaultRelBibliographyAuthor, AppGlobalDefaultTag, AppGlobalDefaultTaskCategory,
-    AppGlobalDefaultTaskTemplate,
-};
 use crate::db::schema::*;
 use crate::test_util::{RandomValue, RandomValueVec};
 use sqlx::{SqliteConnection, SqlitePool};
@@ -573,10 +568,10 @@ test_crd_prehnite_book!(
 );
 
 test_crd_app_global!(
-    AppGlobalDefaultPublisher,
-    AppGlobalDefaultTaskCategory,
-    AppGlobalDefaultTag,
-    AppGlobalDefaultBibliographyAuthor,
+    Publisher,
+    TaskCategory,
+    Tag,
+    BibliographyAuthor,
     BookSearchApi
 );
 
@@ -597,9 +592,9 @@ test_cr_prehnite_book!(
 );
 
 test_cr_app_global!(
-    AppGlobalDefaultBibliography,
-    AppGlobalDefaultTaskTemplate,
-    AppGlobalDefaultRelBibliographyAuthor
+    Bibliography,
+    TaskTemplate,
+    RelBibliographyAuthor
 );
 
 #[sqlx::test(migrator = "crate::db::migrate::prehnite_book::MIGRATOR")]

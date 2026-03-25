@@ -1,3 +1,4 @@
+#![doc = "フォントに関連するicedウィジェット"]
 use iced::{widget, Font};
 
 pub enum IconFamily {
@@ -14,10 +15,12 @@ impl From<IconFamily> for Font {
     }
 }
 
+/// Material Symbolのフォントファミリを適用します。
 pub fn material_symbol<'a>(code_point: impl Into<String>) -> widget::Text<'a> {
     icon(code_point, IconFamily::MaterialSymbolsOutlined)
 }
 
+/// アイコンフォントを適用します。
 pub fn icon<'a>(code_point: impl Into<String>, icon_family: IconFamily) -> widget::Text<'a> {
     iced::widget::text(code_point.into()).font(icon_family)
 }

@@ -9,7 +9,7 @@ use crate::app::window::main_window::page::{MainWindowPage, MainWindowPageId};
 use crate::app::window::{Window, WindowMessage};
 use iced::futures::FutureExt;
 use iced::{window, Element, Task};
-use prehnite_core::db::{open_book_err_handled, DBType};
+use prehnite_core::db::{open_book_or_alert, DBType};
 use prehnite_core::i18n::i18n_w;
 use prehnite_core::settings::registry::SettingRegistry;
 use prehnite_core::settings::GlobalSettingKey;
@@ -75,7 +75,7 @@ impl MainWindow {
         {
             None => return_err(),
             Some(v) => {
-                if open_book_err_handled(v).await {
+                if open_book_or_alert(v).await {
                     MainWindowMessage::BookOpened
                 } else {
                     return_err()

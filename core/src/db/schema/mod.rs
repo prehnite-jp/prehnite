@@ -1,17 +1,17 @@
 #![allow(unused)]
-
+#![doc = "データベースのスキーマ定義"]
 pub mod app_global;
 mod binder_helper;
-pub mod crud;
-pub mod from_row;
-pub mod load;
+mod crud;
+mod from_row;
+mod load;
 mod prefixed_deserializer;
 #[cfg(test)]
 mod tests;
 
 use chrono::{DateTime, Utc};
+use indexmap::IndexMap;
 use sqlx::{Acquire, Database, FromRow, Row};
-use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 
 /// 最大のプレースホルダ数。
@@ -19,6 +19,7 @@ use std::fmt::{Display, Formatter};
 pub const MAX_BIND_COUNT: usize = 30000;
 
 #[derive(Default, Clone, Debug, FromRow, Eq, PartialEq)]
+/// 汎用のId取得クエリ用構造体
 pub struct ReturningId {
     pub id: i64,
 }
@@ -26,6 +27,7 @@ pub struct ReturningId {
 //noinspection RsUnnecessaryQualifications: suppress false positive
 //noinspection RsDerivableTraitMembers: suppress false positive
 #[derive(Default, Clone, Debug, FromRow, derive_more::Eq, derive_more::PartialEq)]
+/// 背景情報
 pub struct BackgroundInfo {
     pub id: i64,
     pub body: String,
@@ -39,6 +41,7 @@ pub struct BackgroundInfo {
 }
 
 #[derive(Default, Clone, Debug, FromRow, Eq, PartialEq)]
+/// タグ
 pub struct Tag {
     pub id: i64,
     pub name: String,
@@ -46,6 +49,7 @@ pub struct Tag {
 }
 
 #[derive(Default, Clone, Debug, Eq, PartialEq)]
+/// 出版社
 pub struct Publisher {
     pub id: i64,
     pub name: String,
@@ -55,6 +59,7 @@ pub struct Publisher {
 //noinspection RsUnnecessaryQualifications: suppress false positive
 //noinspection RsDerivableTraitMembers: suppress false positive
 #[derive(Default, Clone, Debug, derive_more::Eq, derive_more::PartialEq)]
+/// 参考文献
 pub struct Bibliography {
     pub id: i64,
     pub isbn: Option<String>,
@@ -73,6 +78,7 @@ pub struct Bibliography {
 }
 
 #[derive(Default, Clone, Debug, FromRow, Eq, PartialEq)]
+/// 参考文献の著者
 pub struct BibliographyAuthor {
     pub id: i64,
     pub name: String,
@@ -80,20 +86,25 @@ pub struct BibliographyAuthor {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+/// アイテムの種類
 pub enum ItemType {
+    /// 見出し
     Headline(Option<Headline>),
+    /// 段落
     Paragraph(Option<Paragraph>),
 }
 
 impl ItemType {
-    pub fn headline_unwrap_or_default(self) -> Option<Headline> {
+    /// 見出しを返します。見出しでないか、関連するオブジェクトが存在しない場合[`None`]を返します。
+    pub fn headline_or_none(self) -> Option<Headline> {
         match self {
             ItemType::Headline(v) => v,
             ItemType::Paragraph(_) => None,
         }
     }
 
-    pub fn paragraph_unwrap_or_default(self) -> Option<Paragraph> {
+    /// 段落を返します。段落でないか、関連するオブジェクトが存在しない場合[`None`]を返します。
+    pub fn paragraph_or_none(self) -> Option<Paragraph> {
         match self {
             ItemType::Headline(_) => None,
             ItemType::Paragraph(v) => v,
@@ -131,6 +142,7 @@ impl Display for ItemType {
 //noinspection RsUnnecessaryQualifications: suppress false positive
 //noinspection RsDerivableTraitMembers: suppress false positive
 #[derive(Default, Clone, Debug, derive_more::Eq, derive_more::PartialEq)]
+/// アイテム（見出しと段落のスーパータイプ）
 pub struct Item {
     pub id: i64,
     #[eq(skip)]
@@ -150,6 +162,7 @@ pub struct Item {
 //noinspection RsUnnecessaryQualifications: suppress false positive
 //noinspection RsDerivableTraitMembers: suppress false positive
 #[derive(Default, Clone, Debug, FromRow, derive_more::Eq, derive_more::PartialEq)]
+/// 見出しに固有の情報
 pub struct Headline {
     pub id: i64,
     pub item_id: i64,
@@ -161,6 +174,7 @@ pub struct Headline {
 }
 
 #[derive(Default, Clone, Debug, Eq, PartialEq)]
+/// 特定の見出しに紐づいている子見出し
 pub struct HeadlineChildren {
     pub parent: Headline,
     pub children: IndexMap<i64, Vec<Headline>>,
@@ -169,6 +183,7 @@ pub struct HeadlineChildren {
 //noinspection RsUnnecessaryQualifications: suppress false positive
 //noinspection RsDerivableTraitMembers: suppress false positive
 #[derive(Default, Clone, Debug, FromRow, derive_more::Eq, derive_more::PartialEq)]
+/// 下書き
 pub struct Draft {
     pub id: i64,
     pub paragraph_id: i64,
@@ -184,6 +199,7 @@ pub struct Draft {
 //noinspection RsUnnecessaryQualifications: suppress false positive
 //noinspection RsDerivableTraitMembers: suppress false positive
 #[derive(Default, Clone, Debug, derive_more::Eq, derive_more::PartialEq)]
+/// 段落に固有の情報
 pub struct Paragraph {
     pub id: i64,
     pub item_id: i64,
@@ -199,6 +215,7 @@ pub struct Paragraph {
 //noinspection RsUnnecessaryQualifications: suppress false positive
 //noinspection RsDerivableTraitMembers: suppress false positive
 #[derive(Default, Clone, Debug, FromRow, derive_more::Eq, derive_more::PartialEq)]
+/// 要約した段落の内容
 pub struct ParagraphSummary {
     pub id: i64,
     pub paragraph_id: i64,
@@ -212,6 +229,7 @@ pub struct ParagraphSummary {
 }
 
 #[derive(Default, Clone, Debug, Eq, PartialEq)]
+/// 背景情報と参考文献の関連付け
 pub struct BackgroundReference {
     pub id: i64,
     pub background_info_id: i64,
@@ -220,6 +238,7 @@ pub struct BackgroundReference {
 }
 
 #[derive(Default, Clone, Debug, Eq, PartialEq)]
+/// アイテムと参考文献の関連付け
 pub struct ItemReference {
     pub id: i64,
     pub item_id: i64,
@@ -228,6 +247,7 @@ pub struct ItemReference {
 }
 
 #[derive(Default, Clone, Debug, FromRow, Eq, PartialEq)]
+/// タスクのカテゴリ
 pub struct TaskCategory {
     pub id: i64,
     pub name: String,
@@ -235,6 +255,7 @@ pub struct TaskCategory {
 }
 
 #[derive(Default, Clone, Debug, Eq, PartialEq)]
+/// タスクのテンプレート
 pub struct TaskTemplate {
     pub id: i64,
     pub task_category: Option<TaskCategory>,
@@ -243,6 +264,7 @@ pub struct TaskTemplate {
 }
 
 #[derive(Default, Clone, Debug, Eq, PartialEq)]
+/// タスク
 pub struct Task {
     pub id: i64,
     pub item_id: i64,
@@ -254,6 +276,7 @@ pub struct Task {
 }
 
 #[derive(Default, Clone, Debug, Eq, PartialEq)]
+/// 段落間のリンク
 pub struct ParagraphLink {
     pub id: i64,
     pub from_paragraph: Paragraph,
@@ -263,6 +286,7 @@ pub struct ParagraphLink {
 }
 
 #[derive(Default, Clone, Debug, FromRow, Eq, PartialEq)]
+/// 設定値
 pub struct Setting {
     pub id: i64,
     pub setting_key: String,
@@ -270,6 +294,7 @@ pub struct Setting {
 }
 
 #[derive(Default, Clone, Debug, FromRow, Eq, PartialEq)]
+/// 参考文献と著者の関連付け
 pub struct RelBibliographyAuthor {
     pub id: i64,
     pub bibliography_id: i64,
@@ -277,6 +302,7 @@ pub struct RelBibliographyAuthor {
 }
 
 #[derive(Default, Clone, Debug, FromRow, Eq, PartialEq)]
+/// タグとアイテムの関連付け
 pub struct RelTagAndItem {
     pub id: i64,
     pub item_id: i64,
@@ -284,6 +310,7 @@ pub struct RelTagAndItem {
 }
 
 #[derive(Default, Clone, Debug, FromRow, Eq, PartialEq)]
+/// 背景情報とアイテムの関連付け
 pub struct RelBackgroundAndItem {
     pub id: i64,
     pub item_id: i64,

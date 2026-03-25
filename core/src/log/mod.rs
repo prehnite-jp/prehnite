@@ -1,3 +1,4 @@
+#![doc = "ロギングの実装"]
 use crate::env::ENV_KEY_LOG;
 use crate::util::app_global::global_dir;
 use std::path::{Path, PathBuf};
@@ -36,6 +37,7 @@ const LOG_DIR_NAME: &str = "";
 #[cfg(not(debug_assertions))]
 const LOG_DIR_NAME: &str = "log";
 
+/// ログディレクトリのパスを取得します。
 pub fn log_dir() -> PathBuf {
     let mut dir = global_dir();
     dir.push(LOG_DIR_NAME);
@@ -69,6 +71,7 @@ fn add_directive(env_filter: EnvFilter, directive: Directive) -> EnvFilter {
     env_filter.add_directive(directive)
 }
 
+/// ロガーを初期化します。
 pub fn initialize_logger() -> Result<(), InitError> {
     let default_log_filter: EnvFilter = DEFAULT_LOG_FILTER
         .iter()

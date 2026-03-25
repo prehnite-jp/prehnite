@@ -1,5 +1,5 @@
 #![allow(unused)]
-pub mod error;
+#![doc = "アプリケーションのデータベース"]
 pub mod query;
 pub mod schema;
 mod util;
@@ -19,6 +19,7 @@ use sqlx::{ConnectOptions, Sqlite, SqlitePool};
 use std::fmt::{Debug, Display, Formatter};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock, LockResult, OnceLock};
+use strum::{EnumString, IntoStaticStr};
 use thiserror::Error;
 use tokio::sync::RwLock;
 use tracing::error;
@@ -33,46 +34,41 @@ impl UnwrapOrErrorAlert<PoolConnection<Sqlite>> for Option<PoolConnection<Sqlite
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, EnumString, IntoStaticStr)]
 pub enum DBType {
+    #[strum(serialize = "Prehnite book")]
     PrehniteBook,
+    #[strum(serialize = "App global settings")]
     AppGlobal,
 }
 
-impl From<DBType> for String {
-    fn from(value: DBType) -> Self {
-        match value {
-            DBType::PrehniteBook => "Prehnite book",
-            DBType::AppGlobal => "App global settings",
-        }
-        .into()
-    }
-}
-
-impl Display for DBType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", String::from(self.clone()))
-    }
-}
-
+/// データベースのマイグレーション
 pub mod migrate {
     use crate::db::DBType;
     use sqlx::SqlitePool;
 
+    /// ブックファイル
     pub mod prehnite_book {
         use sqlx::migrate::Migrator;
         use sqlx::sqlx_macros::migrate;
 
+        /// マイグレーション定義
         pub static MIGRATOR: Migrator = migrate!("../migrations/prehnite_book");
     }
 
+    /// アプリのグローバルデータベース
     pub mod app_global {
         use sqlx::migrate::Migrator;
         use sqlx::sqlx_macros::migrate;
 
+        /// マイグレーション定義
         pub static MIGRATOR: Migrator = migrate!("../migrations/app_global");
     }
 
+    /// マイグレーションを実行します。
+    /// # Parameters
+    /// - `pool` マイグレーションを実行するDB接続
+    /// - `mode` 初期化したいデータベースのタイプ
     pub async fn migrate(
         pool: &SqlitePool,
         mode: DBType,
@@ -105,16 +101,17 @@ impl Pool {
     }
 }
 
+/// グローバルデータベース接続を初期化します。
 pub async fn initialize_db() -> Result<(), DatabaseError> {
     let v = Database::initialize().await?;
-    DATABASE.set(Arc::new(RwLock::new(v)));
+    DATABASE.set(RwLock::new(v));
     Ok(())
 }
 
-static DATABASE: OnceLock<Arc<RwLock<Database>>> = OnceLock::new();
+static DATABASE: OnceLock<RwLock<Database>> = OnceLock::new();
 
 #[tracing::instrument]
-pub fn get_database() -> Arc<RwLock<Database>> {
+fn get_database() -> &'static RwLock<Database> {
     match DATABASE.get() {
         None => {
             error!("Failed to get database. The database may not be initialized.");
@@ -122,55 +119,58 @@ pub fn get_database() -> Arc<RwLock<Database>> {
         }
         Some(v) => v,
     }
-    .clone()
+}
+
+/// グローバルデータベース接続を取得します。
+pub async fn acquire_conn(mode: DBType) -> Result<Option<PoolConnection<Sqlite>>, DatabaseError> {
+    get_database().read().await.acquire(mode.clone()).await
 }
 
 #[tracing::instrument]
-pub async fn acquire_err_handled(mode: DBType) -> Option<PoolConnection<Sqlite>> {
-    match get_database().read().await.acquire(mode.clone()).await {
-        Ok(Some(v)) => Some(v),
-        Ok(None) => {
-            error!("{} Database not connected.", mode);
-            None
-        }
-        Err(e) => {
-            error!("Failed to acquire {} Database. Error: {:#?}", mode, e);
+/// グローバルデータベース接続を取得します。エラーが発生した場合はログに出力します。
+pub async fn acquire_or_log(mode: DBType) -> Option<PoolConnection<Sqlite>> {
+    match acquire_conn(mode.clone()).await.ok_or_log()? {
+        Some(v) => Some(v),
+        None => {
+            error!("{} Database not connected.", <&'static str>::from(mode));
             None
         }
     }
 }
 
-pub async fn acquire_book_with_alert() -> PoolConnection<Sqlite> {
-    acquire_err_handled(DBType::PrehniteBook)
-        .await
-        .unwrap_or_alert()
+/// グローバルデータベース接続を取得します。エラーが発生した場合はログに出力し、アラートを表示します。
+pub async fn acquire_book_or_alert() -> PoolConnection<Sqlite> {
+    acquire_or_log(DBType::PrehniteBook).await.unwrap_or_alert()
 }
 
 #[tracing::instrument]
-pub async fn open_book_err_handled(book_path: PathBuf) -> bool {
-    let r = get_database()
+/// Prehniteブックファイルを開きます。エラーが発生した場合はログに出力し、アラートを表示します。
+pub async fn open_book_or_alert(book_path: PathBuf) -> bool {
+    match get_database()
         .write()
         .await
         .open_book(book_path.clone())
-        .await;
-    match r {
-        Ok(_) => {
+        .await
+        .ok_or_log()
+    {
+        Some(_) => {
             SettingRegistry::immediate_apply(
                 GlobalSettingKey::LastOpened.into(),
                 book_path.to_str().into(),
             )
-            .await;
+            .await
+            .ok_or_log();
             true
         }
-        Err(e) => {
-            error!("Failed to open the book. {}", e);
+        None => {
             alert_i18n_spawn(("error", "book-open-error"), MessageLevel::Error).await;
             false
         }
     }
 }
 
-pub async fn close_book_err_handled() {
+/// Prehniteブックファイルを閉じます。エラーが発生した場合はログに出力します。
+pub async fn close_book_or_log() {
     get_database()
         .write()
         .await
@@ -182,7 +182,8 @@ pub async fn close_book_err_handled() {
         GlobalSettingKey::LastOpened.into(),
         Option::<String>::from(None).into(),
     )
-    .await;
+    .await
+    .ok_or_log();
 }
 
 static IS_PREHNITE_BOOK_OPENED: LazyLock<Arc<std::sync::RwLock<DbOpenedStatus>>> =
@@ -203,17 +204,21 @@ impl DbOpenedStatus {
 }
 
 #[derive(Debug)]
+/// グローバルデータベース接続の構造体
 pub struct Database {
     app_global_db_pool: Arc<RwLock<Pool>>,
     prehnite_book_db_pool: Arc<RwLock<Pool>>,
 }
 
 #[derive(Error, Debug)]
+/// グローバルデータベース接続のエラー
 pub enum DatabaseError {
     #[error("Failed to execute statement.")]
     DBError(#[from] sqlx::Error),
     #[error("Failed to execute database migrations.")]
     MigrateError(#[from] sqlx::migrate::MigrateError),
+    #[error("Failed to decode item_type.")]
+    ItemTypeDecodeError,
 }
 
 impl Database {
@@ -235,6 +240,7 @@ impl Database {
             .log_statements(LevelFilter::Trace)
     }
 
+    /// 接続を初期化し、マイグレーションを実行します。
     pub async fn initialize() -> Result<Self, DatabaseError> {
         let app_global_path = Self::get_app_global_database_url();
         let mut pool = SqlitePoolOptions::new()
@@ -250,6 +256,7 @@ impl Database {
     }
 
     #[tracing::instrument]
+    /// Prehniteブックを新しく開き、マイグレーションを実行します。
     pub async fn open_book(&mut self, path: impl AsRef<Path> + Debug) -> Result<(), DatabaseError> {
         let pool_result = SqlitePoolOptions::new()
             .connect_with(Self::connect_option(path))
@@ -267,6 +274,7 @@ impl Database {
         Ok(())
     }
 
+    /// データベース接続を取得します。
     pub async fn acquire(
         &self,
         mode: DBType,
@@ -285,6 +293,7 @@ impl Database {
         })
     }
 
+    /// Prehniteブックが開かれているか否か。
     pub fn is_book_opened() -> bool {
         IS_PREHNITE_BOOK_OPENED
             .clone()

@@ -1,11 +1,13 @@
+#![doc = "メッセージダイアログ及び確認ダイアログ"]
 use crate::i18n::get_locale_language;
 use iced::{window, Task};
 use native_dialog::{MessageAlert, MessageLevel};
 use std::fmt::Debug;
-use tracing::error;
 use tracing_unwrap::ResultExt;
 
+/// 値を取り出すかダイアログを表示します。
 pub trait UnwrapOrErrorAlert<T> {
+    /// 値を取り出します。失敗した場合、ダイアログを表示します。
     fn unwrap_or_alert(self) -> T;
 }
 
@@ -93,10 +95,8 @@ macro_rules! dialog_spawner {
                 .spawn()
                 .await
                 .map(DialogResult::result)
-                .unwrap_or_else(|e| {
-                    error!("Spawn alert error: Error: {e:#?}");
-                    false
-                })
+                .ok_or_log()
+                .unwrap_or(false)
         })
     };
 }
@@ -117,6 +117,7 @@ macro_rules! show_dialog {
 }
 
 #[tracing::instrument]
+/// [`Task`]として非同期にメッセージダイアログを表示します。エラーが発生した場合は、ログを出力します。
 pub fn alert<T>(
     owner_window_id: Option<window::Id>,
     (title, msg): (impl ToString + Debug, impl ToString + Debug),
@@ -130,6 +131,7 @@ where
 }
 
 #[tracing::instrument]
+/// [`Task`]として非同期にメッセージダイアログを表示します。`content`をi18nキーで指定します。エラーが発生した場合は、ログを出力します。
 pub fn alert_i18n<T>(
     owner_window_id: Option<window::Id>,
     content: (&'static str, &'static str),
@@ -142,6 +144,7 @@ where
 }
 
 #[tracing::instrument]
+/// 即座にメッセージダイアログを表示します。エラーが発生した場合は、ログを出力します。
 pub fn alert_show(
     (title, msg): (impl ToString + Debug, impl ToString + Debug),
     level: MessageLevel,
@@ -151,6 +154,7 @@ pub fn alert_show(
 }
 
 #[tracing::instrument]
+/// 非同期にメッセージダイアログ表示します。エラーが発生した場合は、ログを出力します。
 pub async fn alert_spawn(
     (title, msg): (impl ToString + Debug, impl ToString + Debug),
     level: MessageLevel,
@@ -163,6 +167,7 @@ pub async fn alert_spawn(
 }
 
 #[tracing::instrument]
+/// 即座にメッセージダイアログを表示します。`content`をi18nキーで指定します。エラーが発生した場合は、ログを出力します。
 pub fn alert_i18n_show(content: (&'static str, &'static str), level: MessageLevel) {
     builder::alert_i18n_(&None, content, level)
         .show()
@@ -170,6 +175,7 @@ pub fn alert_i18n_show(content: (&'static str, &'static str), level: MessageLeve
 }
 
 #[tracing::instrument]
+/// 非同期にメッセージダイアログを表示します。`content`をi18nキーで指定します。エラーが発生した場合は、ログを出力します。
 pub async fn alert_i18n_spawn(content: (&'static str, &'static str), level: MessageLevel) {
     builder::alert_i18n_(&None, content, level)
         .spawn()
@@ -178,6 +184,7 @@ pub async fn alert_i18n_spawn(content: (&'static str, &'static str), level: Mess
 }
 
 #[tracing::instrument]
+/// [`Task`]として非同期に確認ダイアログを表示します。エラーが発生した場合は、ログを出力します。
 pub fn confirm(
     owner_window_id: Option<window::Id>,
     (title, msg): (impl ToString + Debug, impl ToString + Debug),
@@ -188,6 +195,7 @@ pub fn confirm(
 }
 
 #[tracing::instrument]
+/// [`Task`]として非同期に確認ダイアログを表示します。`content`をi18nキーで指定します。エラーが発生した場合は、ログを出力します。
 pub fn confirm_i18n(
     owner_window_id: Option<window::Id>,
     content: (&'static str, &'static str),
@@ -197,6 +205,7 @@ pub fn confirm_i18n(
 }
 
 #[tracing::instrument]
+/// 即座に確認ダイアログを表示します。エラーが発生した場合は、ログを出力します。
 pub fn confirm_show(
     (title, msg): (impl ToString + Debug, impl ToString + Debug),
     level: MessageLevel,
@@ -206,6 +215,7 @@ pub fn confirm_show(
 }
 
 #[tracing::instrument]
+/// 非同期に確認ダイアログを表示します。エラーが発生した場合は、ログを出力します。
 pub async fn confirm_spawn(
     (title, msg): (impl ToString + Debug, impl ToString + Debug),
     level: MessageLevel,
@@ -218,6 +228,7 @@ pub async fn confirm_spawn(
 }
 
 #[tracing::instrument]
+/// 即座に確認ダイアログを表示します。`content`をi18nキーで指定します。エラーが発生した場合は、ログを出力します。
 pub fn confirm_i18n_show(content: (&'static str, &'static str), level: MessageLevel) {
     builder::confirm_i18n_(&None, content, level)
         .show()
@@ -225,6 +236,7 @@ pub fn confirm_i18n_show(content: (&'static str, &'static str), level: MessageLe
 }
 
 #[tracing::instrument]
+/// 非同期に確認ダイアログを表示します。`content`をi18nキーで指定します。エラーが発生した場合は、ログを出力します。
 pub async fn confirm_i18n_spawn(content: (&'static str, &'static str), level: MessageLevel) {
     builder::confirm_i18n_(&None, content, level)
         .spawn()
@@ -243,6 +255,8 @@ const FATAL_INIT_DB_ERROR_MESSAGE_EN: &str = "Unable to create database for app 
 Could not determine directory for app.
 Specify the PREHNITE_GLOBAL_DIR_PATH environment variable as follows:
 Example (created in the runtime directory): PREHNITE_GLOBAL_DIR_PATH = \".\"";
+
+/// データベースの初期化エラーを表すダイアログ
 pub fn fatal_init_db_error() -> MessageAlert {
     builder::alert_(
         &None,
@@ -256,6 +270,7 @@ pub fn fatal_init_db_error() -> MessageAlert {
 
 const FATAL_INIT_APP_ERROR_MESSAGE_JA: &str = "アプリケーションの初期化に失敗しました。";
 const FATAL_INIT_APP_ERROR_MESSAGE_EN: &str = "Application initialization failed.";
+/// アプリの致命的な初期化エラーを表すダイアログ
 pub fn fatal_initialize_app_error_db(e: impl Debug) -> MessageAlert {
     let (title, err_msg) = match get_locale_language().as_str() {
         "ja" => (FATAL_JA, FATAL_INIT_APP_ERROR_MESSAGE_JA),
@@ -271,6 +286,7 @@ pub fn fatal_initialize_app_error_db(e: impl Debug) -> MessageAlert {
 const FATAL_INIT_SETTING_REGISTRY_ERROR_MESSAGE_JA: &str =
     "設定レジストリの読み込みに失敗しました。";
 const FATAL_INIT_SETTING_REGISTRY_ERROR_MESSAGE_EN: &str = "Failed to load settings registry.";
+/// 設定レジストリの読み込みエラーを表すダイアログ
 pub fn fatal_initialize_setting_registry_error() -> MessageAlert {
     let (title, err_msg) = match get_locale_language().as_str() {
         "ja" => (FATAL_JA, FATAL_INIT_SETTING_REGISTRY_ERROR_MESSAGE_JA),

@@ -7,7 +7,7 @@ use iced_aw::menu_items;
 use iced_aw::{menu_bar, Menu};
 use indexmap::IndexMap;
 use prehnite_core::db::schema::{Headline, Item, ItemType, Paragraph, ParagraphSummary};
-use prehnite_core::db::{acquire_book_with_alert, query};
+use prehnite_core::db::{acquire_book_or_alert, query};
 use prehnite_core::font::material_symbol;
 use prehnite_core::font::material_symbol::CIRCLE;
 use prehnite_core::font::widget::material_symbol;
@@ -79,7 +79,7 @@ impl ItemList {
     async fn load_headlines(page: u32, per_page: u8) -> ItemListMessage {
         ItemListMessage::SetHeadlines(
             query::fetch_root_headline_items(
-                acquire_book_with_alert().await.as_mut(),
+                acquire_book_or_alert().await.as_mut(),
                 per_page,
                 page,
             )
@@ -93,7 +93,7 @@ impl ItemList {
 
     #[tracing::instrument]
     async fn load_paragraph(page: u32, per_page: u8) -> ItemListMessage {
-        let mut conn = acquire_book_with_alert().await;
+        let mut conn = acquire_book_or_alert().await;
         let mut res = query::fetch_root_headline_related_paragraph(&mut conn, per_page, page)
             .await
             .unwrap_or_else(|e| {
@@ -154,7 +154,7 @@ impl ItemList {
                         title: i18n("no-title"),
                         ..Default::default()
                     };
-                    let mut conn = acquire_book_with_alert().await;
+                    let mut conn = acquire_book_or_alert().await;
                     if let Some(item) = item.register(&mut *conn, false).await.ok_or_log() {
                         let paragraph = Paragraph {
                             item_id: item.id,
@@ -187,7 +187,7 @@ impl ItemList {
                         title: i18n("no-title"),
                         ..Default::default()
                     };
-                    let mut conn = acquire_book_with_alert().await;
+                    let mut conn = acquire_book_or_alert().await;
                     if let Some(item) = item.register(&mut *conn, false).await.ok_or_log() {
                         let headline = Headline {
                             item_id: item.id,
@@ -222,7 +222,7 @@ impl ItemList {
     }
 
     pub fn item(item: &'_ Item, focused: bool) -> Element<'_, ItemListMessage> {
-        let paragraph = item.item_type.clone().paragraph_unwrap_or_default();
+        let paragraph = item.item_type.clone().paragraph_or_none();
         let is_summary_visible = paragraph.is_some();
         MouseArea::new(
             Container::new(widget::column![

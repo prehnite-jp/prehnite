@@ -1,24 +1,13 @@
+#![doc = "アプリケーションのグローバル設定"]
 pub mod book_search_api;
 pub mod book_search_result;
 
 use crate::db::schema::app_global::book_search_api::BookSearchApi;
+use crate::db::schema::{TaskCategory, TaskTemplate};
 use crate::i18n::i18n;
 use sqlx::{Acquire, FromRow, SqliteConnection, SqliteTransaction};
 
-pub type AppGlobalDefaultTaskCategory = crate::db::schema::TaskCategory;
-
-pub type AppGlobalDefaultTaskTemplate = crate::db::schema::TaskTemplate;
-
-pub type AppGlobalDefaultTag = crate::db::schema::Tag;
-
-pub type AppGlobalDefaultPublisher = crate::db::schema::Publisher;
-
-pub type AppGlobalDefaultBibliography = crate::db::schema::Bibliography;
-
-pub type AppGlobalDefaultBibliographyAuthor = crate::db::schema::BibliographyAuthor;
-
-pub type AppGlobalDefaultRelBibliographyAuthor = crate::db::schema::RelBibliographyAuthor;
-
+/// タスクカテゴリの初期値を登録します。
 async fn register_default_data_task_categories(
     tx: &mut SqliteTransaction<'_>,
 ) -> Result<(), sqlx::Error> {
@@ -33,23 +22,24 @@ async fn register_default_data_task_categories(
     Ok(())
 }
 
+/// タスクカテゴリとタスクテンプレートの初期値を登録します。
 pub async fn register_default_data_task_category_and_templates(
     tx: &mut SqliteTransaction<'_>,
 ) -> Result<(), sqlx::Error> {
     register_default_data_task_categories(tx).await?;
     let values = vec![
-        AppGlobalDefaultTaskTemplate {
+        TaskTemplate {
             id: 1,
-            task_category: Some(AppGlobalDefaultTaskCategory {
+            task_category: Some(TaskCategory {
                 id: 1,
                 ..Default::default()
             }),
             title: i18n("task-template-recover"),
             detail: Some(i18n("task-template-recover-detail")),
         },
-        AppGlobalDefaultTaskTemplate {
+        TaskTemplate {
             id: 2,
-            task_category: Some(AppGlobalDefaultTaskCategory {
+            task_category: Some(TaskCategory {
                 id: 2,
                 ..Default::default()
             }),
@@ -57,10 +47,11 @@ pub async fn register_default_data_task_category_and_templates(
             detail: Some(i18n("task-template-will-explain-detail")),
         },
     ];
-    AppGlobalDefaultTaskTemplate::register_many(values.as_slice(), &mut *tx, false).await?;
+    TaskTemplate::register_many(values.as_slice(), &mut *tx, false).await?;
     Ok(())
 }
 
+/// BookSearchAPIの設定例を登録します。
 pub async fn register_default_data_book_search_api(
     tx: &mut SqliteTransaction<'_>,
 ) -> Result<(), sqlx::Error> {
@@ -93,6 +84,7 @@ pub async fn register_default_data_book_search_api(
     Ok(())
 }
 
+/// すべての初期データを登録します。
 pub async fn register_all_default_data(conn: &mut SqliteConnection) -> Result<(), sqlx::Error> {
     let mut tx = conn.begin().await?;
     register_default_data_task_category_and_templates(&mut tx).await?;

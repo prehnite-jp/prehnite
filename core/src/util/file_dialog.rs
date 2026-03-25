@@ -1,4 +1,5 @@
-use crate::db::open_book_err_handled;
+#![doc = "Prehniteブックを開く"]
+use crate::db::open_book_or_alert;
 use crate::i18n::i18n;
 use crate::opt_unwrap_or_return;
 use crate::settings::registry::SettingRegistry;
@@ -52,12 +53,14 @@ fn dialog_open_prehnite_book(window_id: window::Id) -> Task<Option<PathBuf>> {
 }
 
 #[derive(Clone, Debug)]
+/// ファイルダイアログの種類
 pub enum FileOpe {
     New,
     Open,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+/// ダイアログの結果
 pub enum OpenPrehniteBookStatus {
     Success,
     Failed,
@@ -65,6 +68,7 @@ pub enum OpenPrehniteBookStatus {
 }
 
 impl OpenPrehniteBookStatus {
+    /// ファイルパスの取得に成功したかどうか
     pub fn is_success(&self) -> bool {
         OpenPrehniteBookStatus::Success == *self
     }
@@ -102,7 +106,7 @@ async fn prehnite_book_file_process(book_path: PathBuf, ope: FileOpe) -> OpenPre
             }
         }
     }
-    if open_book_err_handled(book_path).await {
+    if open_book_or_alert(book_path).await {
         OpenPrehniteBookStatus::Success
     } else {
         OpenPrehniteBookStatus::Failed
@@ -110,6 +114,7 @@ async fn prehnite_book_file_process(book_path: PathBuf, ope: FileOpe) -> OpenPre
 }
 
 #[tracing::instrument]
+/// [`Task`]として非同期にファイルダイアログを開きPrehniteブックを開きます。
 pub fn select_and_open_prehnite_book_file(
     window_id: window::Id,
     ope: FileOpe,

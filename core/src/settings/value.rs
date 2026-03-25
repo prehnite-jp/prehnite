@@ -1,8 +1,10 @@
+#![doc = "設定の項目値"]
 use crate::db::query;
 use crate::settings::SettingKey;
 use sqlx::SqliteConnection;
 
 #[derive(Clone, Debug)]
+/// 設定の項目値を型付きで表現します。
 pub enum SettingValueType {
     Bool(Option<bool>),
     Int(Option<i64>),
@@ -88,6 +90,7 @@ impl From<Option<&str>> for SettingValueType {
 }
 
 impl SettingValueType {
+    /// 文字列をパースし、設定項目の値に変更します。
     pub fn converter(&self, value: Option<String>) -> Self {
         match self {
             SettingValueType::Bool(_) => value.and_then(|v| v.parse::<bool>().ok()).into(),
@@ -97,11 +100,13 @@ impl SettingValueType {
         }
     }
 
+    /// 設定項目の値を設定します。
     pub fn set(mut self, v: SettingValueType) {
         self = v;
     }
 
     #[tracing::instrument]
+    /// 設定項目を保存します。
     pub async fn save(
         &self,
         conn: &mut SqliteConnection,
@@ -110,6 +115,7 @@ impl SettingValueType {
         query::update_setting(conn, setting_key, self.clone().to_opt_string()).await
     }
 
+    /// 設定値を取得します。
     pub fn get<T>(self) -> Option<T>
     where
         Option<T>: From<SettingValueType>,
@@ -117,6 +123,7 @@ impl SettingValueType {
         Option::<T>::from(self)
     }
 
+    /// 設定値を文字列として取得します。
     pub fn to_opt_string(self) -> Option<String> {
         match self {
             SettingValueType::Bool(v) => setting_value_type_to_string!(v),
@@ -126,18 +133,22 @@ impl SettingValueType {
         }
     }
 
+    /// [`bool`]の設定値を取得します。[`bool`]以外の場合は[`None`]を返します。
     fn bool(self) -> Option<bool> {
         if let Self::Bool(v) = self { v } else { None }
     }
 
+    /// [`i64`]の設定値を取得します。[`i64`]以外の場合は[`None`]を返します。
     fn int(self) -> Option<i64> {
         if let Self::Int(v) = self { v } else { None }
     }
 
+    /// [`String`]の設定値を取得します。[`String`]以外の場合は[`None`]を返します。
     fn string(self) -> Option<String> {
         if let Self::String(v) = self { v } else { None }
     }
 
+    /// [`f64`]の設定値を取得します。[`f64`]以外の場合は[`None`]を返します。
     fn float(self) -> Option<f64> {
         if let Self::Float(v) = self { v } else { None }
     }

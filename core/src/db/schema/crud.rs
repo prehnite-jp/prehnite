@@ -9,8 +9,6 @@ use crate::db::schema::{
 };
 use sqlx::{Acquire, Error, SqliteConnection, SqliteExecutor, SqliteTransaction};
 
-pub const MAX_BIND_COUNT: usize = 30000; // sqlite 3.32.0 以降では32766が最大だが、マージンを取って30000
-
 fn first_or_row_not_found<T>(values: &Vec<T>) -> Result<T, Error>
 where
     T: Clone,

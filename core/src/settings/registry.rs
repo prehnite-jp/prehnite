@@ -1,5 +1,6 @@
+#![doc = "設定レジストリ"]
 use crate::db::schema::Setting;
-use crate::db::{acquire_err_handled, DBType};
+use crate::db::{acquire_or_log, DBType};
 use crate::i18n::{DEFAULT_LANG_ID, SUPPORTED_LANG_ID};
 use crate::opt_unwrap_or_return;
 use crate::settings::value::SettingValueType;
@@ -51,9 +52,13 @@ fn registry() -> SettingRegistry {
 }
 
 #[derive(Default, Debug)]
+/// 設定レジストリ
 pub struct SettingRegistry {
+    /// 設定カテゴリ
     pub categories: Vec<SettingCategory>,
+    /// 設定項目
     pub entries: HashMap<SettingKey, SettingEntry>,
+    /// 実際の設定値
     values: RwLock<HashMap<SettingKey, SettingValueType>>,
 }
 
@@ -77,16 +82,21 @@ impl SettingRegistry {
     }
 
     #[tracing::instrument]
+    /// 設定値を取得します。
+    ///
+    /// # Panics
+    /// LockPoisoningが発生している場合、ログに出力し、Panicを起こします。
     pub fn get(key: &SettingKey) -> Option<SettingValueType> {
         Some(REGISTRY.values.read().unwrap_or_log().get(key)?.clone())
     }
 
     #[tracing::instrument]
+    /// すべての設定値を読み込みます。
     pub async fn load(target: DBType) -> bool {
         let values = opt_unwrap_or_return!(
             async {
                 let mut values: HashMap<SettingKey, SettingValueType> = HashMap::new();
-                let mut conn = match acquire_err_handled(target).await {
+                let mut conn = match acquire_or_log(target).await {
                     None => {
                         return None;
                     }
@@ -131,8 +141,9 @@ impl SettingRegistry {
     }
 
     #[tracing::instrument]
+    /// すべての設定値を保存します。
     pub async fn save(target: DBType) -> bool {
-        let mut conn = match acquire_err_handled(target).await {
+        let mut conn = match acquire_or_log(target).await {
             None => return false,
             Some(conn) => conn,
         };
@@ -162,6 +173,7 @@ impl SettingRegistry {
     }
 
     #[tracing::instrument]
+    /// 特定の設定項目の値を保存します。
     pub async fn save_by_key(key: SettingKey) -> sqlx::Result<()> {
         Self::save_by_key_with_conn(
             &mut *match key.get_conn().await {
@@ -173,7 +185,7 @@ impl SettingRegistry {
         .await
     }
 
-    pub async fn save_by_key_with_conn(
+    pub(crate) async fn save_by_key_with_conn(
         conn: &mut SqliteConnection,
         key: SettingKey,
     ) -> sqlx::Result<()> {
@@ -188,10 +200,12 @@ impl SettingRegistry {
     }
 
     #[tracing::instrument]
+    /// 設定項目の初期値を取得します。
     pub fn get_default(key: SettingKey) -> Option<SettingValueType> {
         REGISTRY.entries.get(&key).map(|v| v.default_value.clone())
     }
 
+    /// 設定項目を変更し、値を保存します。
     pub async fn immediate_apply(key: SettingKey, value: SettingValueType) -> sqlx::Result<()> {
         match REGISTRY.values.write().unwrap_or_log().get_mut(&key) {
             None => {}
@@ -200,7 +214,7 @@ impl SettingRegistry {
         Self::save_by_key(key).await
     }
 
-    pub async fn immediate_apply_with_conn(
+    pub(crate) async fn immediate_apply_with_conn(
         conn: &mut SqliteConnection,
         key: SettingKey,
         value: SettingValueType,
@@ -212,14 +226,17 @@ impl SettingRegistry {
         Self::save_by_key_with_conn(conn, key).await
     }
 
+    /// 設定項目の初期値リストを取得します。
     pub fn get_values() -> HashMap<SettingKey, SettingValueType> {
         REGISTRY.values.read().unwrap().clone()
     }
 
+    /// 設定カテゴリを取得します。
     pub fn get_categories() -> &'static Vec<SettingCategory> {
         &REGISTRY.categories
     }
 
+    /// 設定項目を取得します。
     pub fn get_entries() -> &'static HashMap<SettingKey, SettingEntry> {
         &REGISTRY.entries
     }

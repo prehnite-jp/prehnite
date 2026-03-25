@@ -1,5 +1,5 @@
 use crate::app::window::{app_default_window_settings, Window, WindowMessage};
-use prehnite_core::db::acquire_book_with_alert;
+use prehnite_core::db::acquire_book_or_alert;
 use iced::window::Settings;
 use iced::{window, Element, Size, Task};
 use prehnite_core::db::schema::Item;
@@ -32,7 +32,7 @@ impl EditorWindow {
                 }
             }
             EditorWindowMessage::ChangeItemFromId(id) => Task::future(async move {
-                let mut conn = acquire_book_with_alert().await;
+                let mut conn = acquire_book_or_alert().await;
                 EditorWindowMessage::ChangeItem(
                     Item::from_id(&mut *conn, id).await.unwrap_or_default(),
                 )

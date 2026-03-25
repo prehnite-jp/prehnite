@@ -8,7 +8,6 @@ use iced::widget::text::Wrapping;
 use iced::widget::{button, pane_grid, scrollable, span, text_input, Container, MouseArea};
 use iced::window::Id;
 use iced::{padding, widget, Alignment, Background, Color, Element, Length, Task};
-use indexmap::IndexMap;
 use license::license_bundle;
 use opener::open_browser;
 use prehnite_core::font::material_symbol::ARROW_UPWARD;
@@ -19,7 +18,7 @@ use prehnite_core::util::alert::alert_i18n;
 use prehnite_core::widget::font::{ftext, get_font};
 use prehnite_core::widget::text::TextBuilder;
 use prehnite_core::MessageLevel;
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet};
 use tracing::error;
 use tracing::log::warn;
 

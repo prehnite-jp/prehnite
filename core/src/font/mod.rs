@@ -1,12 +1,13 @@
+#![doc = "アプリ全体のフォントマネージャ"]
+use crate::i18n::get_locale_language;
 use iced::{Application, Daemon, Program};
 use iced_graphics::text::font_system;
-use crate::i18n::get_locale_language;
-use std::sync::{OnceLock};
+use std::sync::OnceLock;
 use tracing::error;
 
 pub mod fonts;
-pub mod widget;
 pub mod material_symbol;
+pub mod widget;
 
 #[tracing::instrument]
 fn font_list() -> Vec<String> {
@@ -27,11 +28,15 @@ fn font_list() -> Vec<String> {
     font_list
 }
 
+/// 読み込まれているフォントのリストを取得します。
+///
+/// 最初に呼び出した時点で読み込まれているフォントのみが含まれます。
 pub fn get_global_font_list() -> &'static Vec<String> {
     static FONT_LIST: OnceLock<Vec<String>> = OnceLock::new();
     FONT_LIST.get_or_init(|| font_list())
 }
 
+/// デフォルトのフォントファミリ名を取得します。
 pub fn get_default_font_family() -> &'static str {
     static EN_DEFAULT_FONT: &&str = &fonts::noto_sans::NAME;
     static JA_DEFAULT_FONT: &&str = &fonts::sawarabi_gothic::NAME;
@@ -41,6 +46,7 @@ pub fn get_default_font_family() -> &'static str {
     }
 }
 
+/// フォントを読み込ませるために必要な実装。
 pub trait FontLoader {
     fn load_all_prehnite_bundled_font(self) -> Self;
 }

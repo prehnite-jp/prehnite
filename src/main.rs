@@ -15,6 +15,7 @@ use prehnite_core::util::alert::{
 use std::fmt::Debug;
 use thiserror::Error;
 use tracing::error;
+use tracing_unwrap::ResultExt;
 
 #[derive(Debug, Error)]
 enum InitializeError {
@@ -59,10 +60,10 @@ async fn initializer() {
         error!("{}", err_msg);
         match e {
             InitializeError::DatabaseError(_) | InitializeError::InitializeLogRotateConfig(_) => {
-                fatal_initialize_app_error_db(e).show().unwrap();
+                fatal_initialize_app_error_db(e).show().unwrap_or_log();
             }
             InitializeError::LoadSettingRegistry => {
-                fatal_initialize_setting_registry_error().show().unwrap();
+                fatal_initialize_setting_registry_error().show().unwrap_or_log();
             }
         }
         panic!()

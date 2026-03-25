@@ -1,11 +1,12 @@
+#![allow(unused)]
+#![doc = "多言語対応"]
 use crate::settings::registry::SettingRegistry;
 use crate::settings::GlobalSettingKey;
 use crate::widget::font::ftext;
 use fluent_bundle::concurrent::FluentBundle;
 use fluent_bundle::{FluentArgs, FluentError, FluentResource};
+use iced::widget::Text;
 use sqlx::SqliteConnection;
-use std::error::Error;
-use std::fmt::{Display, Formatter};
 use std::sync::{Arc, LazyLock, RwLock};
 use sys_locale::get_locale;
 use thiserror::Error;
@@ -13,17 +14,21 @@ use tracing::{debug, error};
 use tracing_unwrap::ResultExt;
 use unic_langid::{LanguageIdentifier, LanguageIdentifierError};
 
+/// 対応言語
 pub const SUPPORTED_LANG_ID: &[&str] = &["en-US", "ja-JP"];
 
+/// デフォルトの言語
 pub const DEFAULT_LANG_ID: &str = "en-US";
 
-static CURRENT_RESOURCE_BUNDLE: LazyLock<Arc<RwLock<CurrentI18nBundle>>> =
-    LazyLock::new(|| Arc::new(RwLock::new(CurrentI18nBundle::new(None))));
+static CURRENT_RESOURCE_BUNDLE: LazyLock<RwLock<CurrentI18nBundle>> =
+    LazyLock::new(|| RwLock::new(CurrentI18nBundle::new(None)));
 
+/// ローカルの`lang_id`を取得します。
 pub fn get_locale_lang_id() -> String {
     get_locale().unwrap_or(DEFAULT_LANG_ID.into())
 }
 
+/// ローカルの言語を取得します。
 pub fn get_locale_language() -> String {
     if let Ok(v) = get_locale_lang_id().parse::<LanguageIdentifier>() {
         v.language.to_string()
@@ -32,6 +37,7 @@ pub fn get_locale_language() -> String {
     }
 }
 
+/// 現在読み込まれている言語バンドル
 pub struct CurrentI18nBundle {
     bundle: Option<FluentBundle<FluentResource>>,
 }
@@ -45,12 +51,14 @@ impl CurrentI18nBundle {
         self.bundle = bundle;
     }
 
+    /// 現在読み込まれている[`FluentBundle`]を取得する。
     pub fn get_bundle(&self) -> Option<&FluentBundle<FluentResource>> {
         self.bundle.as_ref()
     }
 }
 
 #[derive(Error, Debug)]
+/// 多言語対応のエラー
 pub enum I18nError {
     #[error("Invalid lang id received")]
     FailedToParseLangId(#[from] LanguageIdentifierError),
@@ -76,22 +84,11 @@ impl From<Vec<FluentError>> for I18nError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Error, Debug)]
 enum TryGetFtlPathError {
+    #[error("language resource not found")]
     LangNotFound,
 }
-
-impl Display for TryGetFtlPathError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "i18n: Failed to get ftl path. \n\tTryGetFtlPathError = {:#?}",
-            self
-        )
-    }
-}
-
-impl Error for TryGetFtlPathError {}
 
 fn try_get_ftl_str(lang_id: &str) -> Result<String, TryGetFtlPathError> {
     Ok(match lang_id {
@@ -119,6 +116,7 @@ fn parse_lang_bundle(lang_id: &str) -> Result<FluentBundle<FluentResource>, I18n
 }
 
 #[tracing::instrument]
+/// 言語バンドルを差し替えます。
 pub async fn change_lang_bundle(arg_lang_id_str: &str) -> Result<(), I18nError> {
     let (lang_id, lang_id_str): (LanguageIdentifier, &str) = match arg_lang_id_str.parse() {
         Ok(v) => (v, arg_lang_id_str),
@@ -152,7 +150,7 @@ pub async fn change_lang_bundle(arg_lang_id_str: &str) -> Result<(), I18nError> 
     Ok(())
 }
 
-pub async fn change_lang_bundle_with_conn(
+pub(crate) async fn change_lang_bundle_with_conn(
     conn: &mut SqliteConnection,
     arg_lang_id_str: &str,
 ) -> Result<(), I18nError> {
@@ -189,23 +187,29 @@ pub async fn change_lang_bundle_with_conn(
     Ok(())
 }
 
-pub fn get_lang_bundle() -> Arc<RwLock<CurrentI18nBundle>> {
-    CURRENT_RESOURCE_BUNDLE.clone()
+/// 現在の言語バンドルを取得します。
+#[inline]
+pub fn get_lang_bundle() -> &'static RwLock<CurrentI18nBundle> {
+    &CURRENT_RESOURCE_BUNDLE
 }
 
+/// i18nキーから表示内容を取得します。
 pub fn i18n(id: &str) -> String {
     i18n_fmt(id, None)
 }
 
-pub fn i18n_w(id: &str) -> iced::widget::Text<'_> {
+/// i18nキーから表示内容を[`Text`]として取得します。
+pub fn i18n_w(id: &str) -> Text<'_> {
     ftext(i18n_fmt(id, None))
 }
 
-pub fn i18n_fmt_w<'a>(id: &str, args: Option<&FluentArgs<'_>>) -> iced::widget::Text<'a> {
+/// i18nキーとフォーマットを使用し表示内容を[`Text`]として取得します。
+pub fn i18n_fmt_w<'a>(id: &str, args: Option<&FluentArgs<'_>>) -> Text<'a> {
     ftext(i18n_fmt(id, args))
 }
 
 #[tracing::instrument]
+/// i18nキーとフォーマットを使用し表示内容を取得します。
 pub fn i18n_fmt(id: &str, args: Option<&FluentArgs<'_>>) -> String {
     #[derive(Debug)]
     enum Error {
@@ -245,6 +249,7 @@ pub fn i18n_fmt(id: &str, args: Option<&FluentArgs<'_>>) -> String {
     })
 }
 
+/// i18nを初期化します。
 pub async fn initialize_i18n_from_db() -> Result<(), sqlx::Error> {
     let lang_id =
         SettingRegistry::get(&GlobalSettingKey::Locale.into()).and_then(|v| v.to_opt_string());
@@ -254,7 +259,7 @@ pub async fn initialize_i18n_from_db() -> Result<(), sqlx::Error> {
     Ok(())
 }
 
-pub async fn initialize_i18n_from_db_with_conn(
+pub(crate) async fn initialize_i18n_from_db_with_conn(
     conn: &mut SqliteConnection,
 ) -> Result<(), sqlx::Error> {
     let lang_id =

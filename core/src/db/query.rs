@@ -9,6 +9,10 @@ use sqlx::SqliteConnection;
 
 const UPDATE_SETTING_SQL: &str = include_str!("../../../assets/query/update_settings.sql");
 #[tracing::instrument]
+/// 設定を更新します。
+/// ```sql
+#[doc = include_str!("../../../assets/query/update_settings.sql")]
+/// ```
 pub async fn update_setting(
     conn: &mut SqliteConnection,
     setting_key: SettingKey,
@@ -24,6 +28,10 @@ pub async fn update_setting(
 
 const FETCH_SETTING_SQL: &str = include_str!("../../../assets/query/fetch_settings.sql");
 #[tracing::instrument]
+/// 設定を取得します。
+/// ```sql
+#[doc = include_str!("../../../assets/query/fetch_settings.sql")]
+/// ```
 pub async fn fetch_setting(
     conn: &mut SqliteConnection,
     setting_key: SettingKey,
@@ -37,6 +45,10 @@ pub async fn fetch_setting(
 const FETCH_BACKGROUND_INFO_FROM_ITEM_ID_SQL: &str =
     include_str!("../../../assets/query/fetch_background_info_from_item_id.sql");
 #[tracing::instrument]
+/// アイテムに紐づいた背景情報をアイテムIDから取得します。
+/// ```sql
+#[doc = include_str!("../../../assets/query/fetch_background_info_from_item_id.sql")]
+/// ```
 pub async fn fetch_background_info_from_item_id(
     conn: &mut SqliteConnection,
     item_id: i64,
@@ -50,6 +62,11 @@ pub async fn fetch_background_info_from_item_id(
 const FETCH_HEADLINE_CHILDREN_RECURSE_SQL: &str =
     include_str!("../../../assets/query/fetch_headline_children_recurse.sql");
 #[tracing::instrument]
+/// 再帰的に見出しアイテムの子孫を取得します。
+// TODO: 要確認 要変更
+/// ```sql
+#[doc = include_str!("../../../assets/query/fetch_headline_children_recurse.sql")]
+/// ```
 pub async fn fetch_headline_children_recurse(
     conn: &mut SqliteConnection,
     headline_id: i64,
@@ -76,6 +93,10 @@ pub async fn fetch_headline_children_recurse(
 const FETCH_BACKGROUND_REFERENCES_SQL: &str =
     include_str!("../../../assets/query/fetch_background_references.sql");
 #[tracing::instrument]
+/// 背景情報に紐づいた参考文献リストを背景情報idから取得します。
+/// ```sql
+#[doc = include_str!("../../../assets/query/fetch_background_references.sql")]
+/// ```
 pub async fn fetch_background_references(
     conn: &mut SqliteConnection,
     background_info_id: i64,
@@ -89,6 +110,10 @@ pub async fn fetch_background_references(
 const FETCH_BIBLIOGRAPHY_AUTHORS_SQL: &str =
     include_str!("../../../assets/query/fetch_bibliography_authors.sql");
 #[tracing::instrument]
+/// 参考文献の著者リストを参考文献idから取得します。
+/// ```sql
+#[doc = include_str!("../../../assets/query/fetch_bibliography_authors.sql")]
+/// ```
 pub async fn fetch_bibliography_authors(
     conn: &mut SqliteConnection,
     bibliography_id: i64,
@@ -102,6 +127,10 @@ pub async fn fetch_bibliography_authors(
 const FETCH_ITEM_REFERENCES_SQL: &str =
     include_str!("../../../assets/query/fetch_item_references.sql");
 #[tracing::instrument]
+/// アイテムに紐づいた参考文献リストをアイテムidから取得します。
+/// ```sql
+#[doc = include_str!("../../../assets/query/fetch_item_references.sql")]
+/// ```
 pub async fn fetch_item_references(
     conn: &mut SqliteConnection,
     item_id: i64,
@@ -115,6 +144,10 @@ pub async fn fetch_item_references(
 const FETCH_ITEM_RELATED_TAGS_SQL: &str =
     include_str!("../../../assets/query/fetch_item_related_tags.sql");
 #[tracing::instrument]
+/// アイテムに紐づいたタグリストをアイテムidから取得します。
+/// ```sql
+#[doc = include_str!("../../../assets/query/fetch_item_related_tags.sql")]
+/// ```
 pub async fn fetch_item_related_tags(
     conn: &mut SqliteConnection,
     item_id: i64,
@@ -128,6 +161,10 @@ pub async fn fetch_item_related_tags(
 const FETCH_ITEM_RELATED_TASKS_SQL: &str =
     include_str!("../../../assets/query/fetch_item_related_tasks.sql");
 #[tracing::instrument]
+/// アイテムに紐づいたタスクをアイテムidから取得します。
+/// ```sql
+#[doc = include_str!("../../../assets/query/fetch_item_related_tasks.sql")]
+/// ```
 pub async fn fetch_item_related_tasks(
     conn: &mut SqliteConnection,
     item_id: i64,
@@ -141,6 +178,10 @@ pub async fn fetch_item_related_tasks(
 const FETCH_HEADLINE_RELATED_PARAGRAPH_SQL: &str =
     include_str!("../../../assets/query/fetch_headline_related_paragraph.sql");
 #[tracing::instrument]
+/// 見出しに紐づいた段落リストを見出しidから取得します。
+/// ```sql
+#[doc = include_str!("../../../assets/query/fetch_headline_related_paragraph.sql")]
+/// ```
 pub async fn fetch_headline_related_paragraph(
     conn: &mut SqliteConnection,
     headline_id: i64,
@@ -154,6 +195,10 @@ pub async fn fetch_headline_related_paragraph(
 const FETCH_PARAGRAPH_RELATED_SUMMARIES_SQL: &str =
     include_str!("../../../assets/query/fetch_paragraph_related_summaries.sql");
 #[tracing::instrument]
+/// 段落に紐づいた要約を段落idから取得します。
+/// ```sql
+#[doc = include_str!("../../../assets/query/fetch_paragraph_related_summaries.sql")]
+/// ```
 pub async fn fetch_paragraph_related_summaries(
     conn: &mut SqliteConnection,
     paragraph_id: i64,
@@ -167,6 +212,10 @@ pub async fn fetch_paragraph_related_summaries(
 const FETCH_PARAGRAPH_RELATED_DRAFT_SQL: &str =
     include_str!("../../../assets/query/fetch_paragraph_related_draft.sql");
 #[tracing::instrument]
+/// 段落に紐づいた下書きを段落idから取得します。
+/// ```sql
+#[doc = include_str!("../../../assets/query/fetch_paragraph_related_draft.sql")]
+/// ```
 pub async fn fetch_paragraph_related_draft(
     conn: &mut SqliteConnection,
     paragraph_id: i64,
@@ -180,6 +229,10 @@ pub async fn fetch_paragraph_related_draft(
 const FETCH_ROOT_HEADLINES_SQL: &str =
     include_str!("../../../assets/query/fetch_root_headline_query.sql");
 
+/// 親が存在しない見出しを取得します。
+/// ```sql
+#[doc = include_str!("../../../assets/query/fetch_root_headline_query.sql")]
+/// ```
 pub async fn fetch_root_headline_items(
     conn: &mut SqliteConnection,
     per_page: u8,
@@ -198,6 +251,10 @@ pub async fn fetch_root_headline_items(
 const FETCH_ROOT_HEADLINE_RELATED_PARAGRAPH_SQL: &str =
     include_str!("../../../assets/query/fetch_root_headline_related_paragraph.sql");
 
+/// 親が存在しない見出しとそれらに紐づいた段落を取得します。
+/// ```sql
+#[doc = include_str!("../../../assets/query/fetch_root_headline_related_paragraph.sql")]
+/// ```
 pub async fn fetch_root_headline_related_paragraph(
     conn: &mut SqliteConnection,
     headline_per_page: u8,

@@ -3,9 +3,9 @@ use crate::db::schema::{
     ParagraphLink, Publisher, Task, TaskCategory, TaskTemplate,
 };
 use crate::db::util::prefixer::Prefixer;
+use crate::db::DatabaseError;
 use sqlx::sqlite::SqliteRow;
 use sqlx::Row;
-use crate::db::error::ItemTypeDecodeError;
 
 pub struct PrefixedDeserializer;
 
@@ -66,7 +66,7 @@ impl PrefixedDeserializer {
         } else {
             return Err(sqlx::Error::ColumnDecode {
                 index: "item_type".to_string(),
-                source: Box::new(ItemTypeDecodeError("Failed to decode item_type.")),
+                source: Box::new(DatabaseError::ItemTypeDecodeError),
             });
         };
 

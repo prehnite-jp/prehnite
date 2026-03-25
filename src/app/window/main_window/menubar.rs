@@ -8,7 +8,7 @@ use iced::{widget, Element, Length, Task};
 use iced_aw::menu::Item;
 use iced_aw::menu_items;
 use iced_aw::{menu, menu_bar};
-use prehnite_core::db::close_book_err_handled;
+use prehnite_core::db::close_book_or_log;
 
 #[derive(Clone, Debug)]
 pub enum MenuType {
@@ -124,7 +124,7 @@ pub fn menubar_handler(
         MenuBarMessage::CloseFile => {
             main_window.is_book_opened = false;
             return Task::future(async {
-                close_book_err_handled().await;
+                close_book_or_log().await;
                 MainWindowMessage::ChangePage(MainWindowPageId::BookNotOpened)
             });
         }

@@ -1,5 +1,7 @@
+#![doc = "バンドル済みフォント"]
 macro_rules! font_mod {
     ($mod_name:ident, $font_name:expr, $font_file_path:expr) => {
+        #[doc=$font_name]
         pub mod $mod_name {
             pub const NAME: &str = $font_name;
             pub(crate) const FONT: &[u8] = include_bytes!($font_file_path);
