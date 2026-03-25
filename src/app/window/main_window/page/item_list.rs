@@ -5,6 +5,7 @@ use iced::widget::{button, pane_grid, scrollable, space, Container, MouseArea};
 use iced::{padding, widget, Element, Length};
 use iced_aw::menu_items;
 use iced_aw::{menu_bar, Menu};
+use indexmap::IndexMap;
 use prehnite_core::db::schema::{Headline, Item, ItemType, Paragraph, ParagraphSummary};
 use prehnite_core::db::{acquire_book_with_alert, query};
 use prehnite_core::font::material_symbol;
@@ -12,7 +13,6 @@ use prehnite_core::font::material_symbol::CIRCLE;
 use prehnite_core::font::widget::material_symbol;
 use prehnite_core::i18n::{i18n, i18n_w};
 use prehnite_core::widget::font::ftext;
-use std::collections::HashMap;
 use tracing::error;
 use tracing_unwrap::ResultExt;
 
@@ -20,8 +20,8 @@ use tracing_unwrap::ResultExt;
 pub enum ItemListMessage {
     LoadItems,
     ItemListPaneResized(ResizeEvent),
-    SetHeadlines(HashMap<i64, Item>),
-    SetParagraph(HashMap<i64, HashMap<i64, Item>>),
+    SetHeadlines(IndexMap<i64, Item>),
+    SetParagraph(IndexMap<i64, IndexMap<i64, Item>>),
     ItemSelected(i64),
     OpenEditor(i64),
     NewParagraph(i64 /* headline-id */),
@@ -42,8 +42,8 @@ enum ItemListPane {
 
 #[derive(Debug, Clone)]
 pub struct ItemList {
-    headlines: HashMap<i64 /* item_id */, Item>,
-    paragraph: HashMap<i64 /* headline_id */, HashMap<i64 /* item_id */, Item>>,
+    headlines: IndexMap<i64 /* item_id */, Item>,
+    paragraph: IndexMap<i64 /* headline_id */, IndexMap<i64 /* item_id */, Item>>,
     focused_item_id: Option<i64>,
     per_page: u8,
     page: u32,

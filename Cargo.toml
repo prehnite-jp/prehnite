@@ -42,6 +42,7 @@ opener.workspace = true
 anyhow.workspace = true
 tracing-unwrap.workspace = true
 thiserror.workspace = true
+indexmap.workspace = true
 
 [workspace.dependencies]
 prehnite-core = { version = "0.0.1-alpha", path = "core" }
@@ -73,6 +74,7 @@ anyhow = "1"
 thiserror = "2"
 tracing-unwrap = "1"
 strum = { version = "0.28", features = ["derive"] }
+indexmap = { version = "2" }
 
 [build-dependencies]
 prehnite-build-libs = { version = "0.0.1-alpha", path = "build-libs" }

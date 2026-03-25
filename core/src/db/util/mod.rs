@@ -7,14 +7,6 @@ use std::hash::Hash;
 pub mod cushion_types;
 pub(crate) mod prefixer;
 
-pub fn get_optional<K, V>(items: &HashMap<K, V>, key: &Option<K>) -> Option<V>
-where
-    K: Eq + Hash + Clone,
-    V: Clone,
-{
-    Some(items.get(&(key.clone()?))?.clone())
-}
-
 pub fn utc_parse_format(datetime: Option<String>, format: &str) -> Option<DateTime<Utc>> {
     Some(DateTime::parse_from_str(&datetime?, format).ok()?.to_utc())
 }

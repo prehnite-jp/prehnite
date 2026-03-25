@@ -56,7 +56,7 @@ fn license_collector() -> anyhow::Result<LicenseBundle> {
         Some(reqwest::blocking::ClientBuilder::new().build()?),
     );
 
-    let crate_names: HashSet<String> = license.iter().map(|v| v.krate.name.clone()).collect();
+    let crate_names: BTreeSet<String> = license.iter().map(|v| v.krate.name.clone()).collect();
 
     fn load_full_text(v: &KrateLicense) -> anyhow::Result<Vec<prehnite_core::license_bundle::License>> {
         v.license_files
@@ -69,7 +69,7 @@ fn license_collector() -> anyhow::Result<LicenseBundle> {
             .collect::<anyhow::Result<Vec<prehnite_core::license_bundle::License>>>()
     }
 
-    fn dependencies(v: &KrateLicense, crate_names: &HashSet<String>) -> BTreeSet<String> {
+    fn dependencies(v: &KrateLicense, crate_names: &BTreeSet<String>) -> BTreeSet<String> {
         v.krate
             .dependencies
             .iter()

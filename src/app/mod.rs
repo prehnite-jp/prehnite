@@ -11,13 +11,13 @@ use crate::app::window::{Window, WindowMessage};
 use iced::border::Radius;
 use iced::widget::{button, space};
 use iced::{Border, Element, Font, Subscription, Task};
+use indexmap::{IndexMap, IndexSet};
+use prehnite_core::font::{get_default_font_family, get_global_font_list, FontLoader};
 use prehnite_core::i18n::{change_lang_bundle, i18n_w, DEFAULT_LANG_ID};
 use prehnite_core::opt_unwrap_or_return;
 use prehnite_core::settings::registry::SettingRegistry;
 use prehnite_core::settings::GlobalSettingKey;
 use prehnite_core::widget::font::{get_default_font, init_default_font, set_font};
-use prehnite_core::font::{get_default_font_family, get_global_font_list, FontLoader};
-use std::collections::{BTreeMap, HashSet};
 use std::fmt::Debug;
 use tracing::error;
 
@@ -80,8 +80,8 @@ pub struct PrehniteApp {
     main_window_id: Option<iced::window::Id>,
     version_info_window_id: Option<iced::window::Id>,
     setting_window_id: Option<iced::window::Id>,
-    window: BTreeMap<iced::window::Id, TypedWindow>,
-    window_was_shown: HashSet<iced::window::Id>,
+    window: IndexMap<iced::window::Id, TypedWindow>,
+    window_was_shown: IndexSet<iced::window::Id>,
     license_info_window_id: Option<iced::window::Id>,
     background_info_editor_window_id: Option<iced::window::Id>,
     bibliography_editor_window_id: Option<iced::window::Id>,
@@ -300,7 +300,7 @@ impl PrehniteApp {
                     .map(move |msg| DaemonMessage::WindowMessage(id, msg))
             }
             DaemonMessage::WindowClosed(id) => {
-                let typed_window = self.window.remove(&id);
+                let typed_window = self.window.shift_remove(&id);
                 // ウィンドウが存在しないならアプリケーションを終了
                 if self.window.is_empty() {
                     return iced::exit();

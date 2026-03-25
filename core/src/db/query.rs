@@ -1,8 +1,11 @@
-use crate::db::schema::{BackgroundInfo, BackgroundReference, BibliographyAuthor, Draft, Headline, HeadlineChildren, Item, ItemReference, ItemType, Paragraph, ParagraphSummary, Setting, Tag, Task};
+use crate::db::schema::{
+    BackgroundInfo, BackgroundReference, BibliographyAuthor, Draft, Headline, HeadlineChildren,
+    Item, ItemReference, ItemType, Paragraph, ParagraphSummary, Setting, Tag, Task,
+};
 use crate::settings::SettingKey;
 use crate::{opt_unwrap_or_continue, opt_unwrap_or_return, to_hash_map_key_id};
+use indexmap::IndexMap;
 use sqlx::SqliteConnection;
-use std::collections::HashMap;
 
 const UPDATE_SETTING_SQL: &str = include_str!("../../../assets/query/update_settings.sql");
 #[tracing::instrument]
@@ -55,9 +58,9 @@ pub async fn fetch_headline_children_recurse(
         .bind(headline_id)
         .fetch_all(conn)
         .await?;
-    let headlines: HashMap<i64, Headline> = to_hash_map_key_id!(query_result);
+    let headlines: IndexMap<i64, Headline> = to_hash_map_key_id!(query_result);
     let parent = opt_unwrap_or_return!(headlines.get(&headline_id).cloned(), Ok(None));
-    let mut children: HashMap<i64, Vec<Headline>> = HashMap::new();
+    let mut children: IndexMap<i64, Vec<Headline>> = IndexMap::new();
     for i in headlines.keys() {
         let headline = opt_unwrap_or_continue!(headlines.get(i));
         match children.get_mut(&opt_unwrap_or_continue!(headline.parent_id)) {
@@ -181,7 +184,7 @@ pub async fn fetch_root_headline_items(
     conn: &mut SqliteConnection,
     per_page: u8,
     page: u32,
-) -> Result<HashMap<i64, Item>, sqlx::Error> {
+) -> Result<IndexMap<i64, Item>, sqlx::Error> {
     Ok(sqlx::query_as::<_, Item>(FETCH_ROOT_HEADLINES_SQL)
         .bind(per_page)
         .bind(page * per_page as u32)
@@ -199,8 +202,8 @@ pub async fn fetch_root_headline_related_paragraph(
     conn: &mut SqliteConnection,
     headline_per_page: u8,
     headline_page: u32,
-) -> Result<HashMap<i64, HashMap<i64, Item>>, sqlx::Error> {
-    let mut result: HashMap<i64, HashMap<i64, Item>> = HashMap::new();
+) -> Result<IndexMap<i64, IndexMap<i64, Item>>, sqlx::Error> {
+    let mut result: IndexMap<i64, IndexMap<i64, Item>> = IndexMap::new();
     sqlx::query_as::<_, Item>(FETCH_ROOT_HEADLINE_RELATED_PARAGRAPH_SQL)
         .bind(headline_per_page)
         .bind(headline_page * headline_per_page as u32)
@@ -218,7 +221,7 @@ pub async fn fetch_root_headline_related_paragraph(
             if result.contains_key(&headline_itm_id) {
                 result.get_mut(&headline_itm_id).unwrap().insert(v.id, v);
             } else {
-                let mut tmp = HashMap::new();
+                let mut tmp = IndexMap::new();
                 tmp.insert(v.id, v);
                 result.insert(headline_itm_id, tmp);
             }

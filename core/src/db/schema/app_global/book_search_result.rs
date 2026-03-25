@@ -1,10 +1,9 @@
 use crate::db::schema::{Bibliography, BibliographyAuthor, Publisher, RelBibliographyAuthor};
 use crate::db::util::cushion_types::{OptionString, VecString};
-use crate::db::util::get_optional;
 use crate::to_hash_map_key_name;
+use indexmap::IndexMap;
 use rhai::{CustomType, Dynamic, EvalAltResult, Position, TypeBuilder};
 use sqlx::{Acquire, SqliteConnection};
-use std::collections::HashMap;
 
 #[derive(Default, Clone, CustomType, Debug, PartialEq)]
 pub struct BookSearchResult {
@@ -80,7 +79,7 @@ impl BookSearchResult {
 
     fn bibliographies_from_bsr(
         bsr: &[BookSearchResult],
-        publishers: &HashMap<String, Publisher>,
+        publishers: &IndexMap<String, Publisher>,
     ) -> Vec<Bibliography> {
         bsr.iter()
             .enumerate()
@@ -89,7 +88,10 @@ impl BookSearchResult {
                 url: v.url.clone(),
                 title: v.title.clone(),
                 detail: v.detail.clone(),
-                publisher: get_optional(publishers, &v.publisher),
+                publisher: v
+                    .publisher
+                    .as_ref()
+                    .and_then(|v| publishers.get(v).cloned()),
                 publication_date: v.publication_date.clone(),
                 tmp_registration_id: Some(i),
                 ..Default::default()
@@ -100,7 +102,7 @@ impl BookSearchResult {
     fn rel_bibliography_author_from_bibliographies(
         bsr: &[BookSearchResult],
         bibliographies: &[Bibliography],
-        authors: &HashMap<String, BibliographyAuthor>,
+        authors: &IndexMap<String, BibliographyAuthor>,
     ) -> Vec<RelBibliographyAuthor> {
         bibliographies
             .iter()
@@ -122,7 +124,7 @@ impl BookSearchResult {
         book_search_result_list: Vec<BookSearchResult>,
     ) -> Result<Vec<Bibliography>, sqlx::Error> {
         let mut tx = conn.begin().await?;
-        let publishers: HashMap<String, Publisher> = to_hash_map_key_name!(
+        let publishers: IndexMap<String, Publisher> = to_hash_map_key_name!(
             Publisher::register_vec(
                 Self::publishers_from_bsr(book_search_result_list.as_slice()).as_slice(),
                 &mut *tx,
@@ -130,7 +132,7 @@ impl BookSearchResult {
             )
             .await?
         );
-        let authors: HashMap<String, BibliographyAuthor> = to_hash_map_key_name!(
+        let authors: IndexMap<String, BibliographyAuthor> = to_hash_map_key_name!(
             BibliographyAuthor::register_vec(
                 Self::authors_from_bsr(book_search_result_list.as_slice()).as_slice(),
                 &mut *tx,

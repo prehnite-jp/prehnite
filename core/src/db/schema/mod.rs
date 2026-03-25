@@ -13,6 +13,7 @@ use chrono::{DateTime, Utc};
 use sqlx::{Acquire, Database, FromRow, Row};
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+use indexmap::IndexMap;
 
 #[derive(Default, Clone, Debug, FromRow, Eq, PartialEq)]
 pub struct ReturningId {
@@ -159,7 +160,7 @@ pub struct Headline {
 #[derive(Default, Clone, Debug, Eq, PartialEq)]
 pub struct HeadlineChildren {
     pub parent: Headline,
-    pub children: HashMap<i64, Vec<Headline>>,
+    pub children: IndexMap<i64, Vec<Headline>>,
 }
 
 //noinspection RsUnnecessaryQualifications: suppress false positive

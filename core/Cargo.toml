@@ -39,6 +39,7 @@ thiserror.workspace = true
 tracing-unwrap.workspace = true
 strum.workspace = true
 iced_graphics.workspace = true
+indexmap.workspace = true
 
 [dev-dependencies]
 rand = "0.10"
