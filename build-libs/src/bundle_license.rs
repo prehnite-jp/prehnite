@@ -23,7 +23,6 @@ fn license_zip_path() -> anyhow::Result<PathBuf> {
 
 #[cfg(feature = "bundle_license")]
 fn license_collector() -> anyhow::Result<LicenseBundle> {
-    use std::collections::HashSet;
 
     const MY_APP_HOMEPAGE: &str = "https://prehnite.jp/";
 
