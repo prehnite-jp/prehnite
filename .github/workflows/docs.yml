@@ -13,10 +13,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
         with:
-          submodules: true
+          workspaces: |
+            . -> target
+            core -> target
+            build-libs -> target
       - name: Run doc
-        run: cargo doc --no-deps
+        run: cargo doc --no-deps --workspace
       - name: Deploy
         uses: actions/upload-pages-artifact@v4
         with:
