@@ -93,6 +93,16 @@ macro_rules! allow_c {
 macro_rules! allow_u {
     ($(($x: ty, $table_name:expr, $update_set_clause:expr)),*) => {
     $(impl $x {
+        #[doc=concat!("`", stringify!($x), "::id`に対応するレコードの値を更新します。")]
+        #[doc="# Panics"]
+        #[doc=concat!("`", stringify!($x), "::id`が0の場合、パニックを発生させます。")]
+        #[doc="# SQL"]
+        #[doc="以下のクエリが実行されます。"]
+        #[doc="```"]
+        #[doc=concat!("UPDATE ", $table_name)]
+        #[doc=concat!("SET ", $update_set_clause)]
+        #[doc="WHERE id=?"]
+        #[doc="```"]
         #[tracing::instrument]
         pub async fn update(&self, conn: &mut SqliteConnection) -> Result<(), Error> {
             if self.id == 0 {
