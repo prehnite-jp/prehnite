@@ -24,11 +24,24 @@ where
 macro_rules! allow_r {
     ($(($x: ty, $view_name:expr)),*) => {
         $(impl $x {
+            #[doc=concat!(stringify!($view_name), "からすべてのレコードを取得します。")]
+            #[doc="# SQL"]
+            #[doc="以下のクエリが実行されます。"]
+            #[doc="```sql"]
+            #[doc=concat!("SELECT * FROM ", $view_name)]
+            #[doc="```"]
             pub async fn select_all(conn: &mut SqliteConnection) ->  Result<Vec<Self>, Error> {
                 sqlx::query_as(concat!("SELECT * FROM ", $view_name))
                     .fetch_all(conn).await
             }
 
+            #[doc=concat!(stringify!($view_name), "から対応するidのレコードを取得します。")]
+            #[doc="# SQL"]
+            #[doc="以下のクエリが実行されます。"]
+            #[doc="```sql"]
+            #[doc=concat!("SELECT * FROM ", $view_name)]
+            #[doc="WHERE id=?"]
+            #[doc="```"]
             pub async fn from_id(conn: &mut SqliteConnection, id: i64) -> Result<Option<Self>, Error> {
                 sqlx::query_as(concat!("SELECT * FROM ", $view_name, " WHERE id = ?"))
                 .bind(id)
@@ -131,13 +144,22 @@ macro_rules! allow_d {
     ($(($x:ty, $table_name:expr)),*) => {
         $(
         impl $x {
+            #[doc=concat!("`", stringify!($x), "::id`に対応するレコードを削除します。")]
+            #[doc="# Panics"]
+            #[doc=concat!("`", stringify!($x), "::id`が0の場合、パニックを発生させます。")]
+            #[doc="# SQL"]
+            #[doc="以下のクエリが実行されます。"]
+            #[doc="```sql"]
+            #[doc=concat!("DELETE FROM ", $table_name)]
+            #[doc="WHERE id=?"]
+            #[doc="```"]
             #[tracing::instrument]
             pub async fn delete(self, conn: &mut SqliteConnection) -> Result<(), Error> {
                 if self.id == 0 {
                     tracing::error!("Unexpected data is included!! Self: {:#?}", self);
                     panic!()
                 }
-                sqlx::query(concat!("DELETE FROM ", $table_name, " WHERE id = ?"))
+                sqlx::query(concat!("DELETE FROM ", $table_name, " WHERE id=?"))
                     .bind(self.id)
                     .execute(conn)
                     .await?;
