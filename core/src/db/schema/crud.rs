@@ -98,7 +98,7 @@ macro_rules! allow_u {
         #[doc=concat!("`", stringify!($x), "::id`が0の場合、パニックを発生させます。")]
         #[doc="# SQL"]
         #[doc="以下のクエリが実行されます。"]
-        #[doc="```"]
+        #[doc="```sql"]
         #[doc=concat!("UPDATE ", $table_name)]
         #[doc=concat!("SET ", $update_set_clause)]
         #[doc="WHERE id=?"]
