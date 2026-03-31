@@ -1,3 +1,4 @@
+#![cfg_attr(feature = "release", windows_subsystem = "windows")]
 mod app;
 mod util;
 pub mod widget;
@@ -63,7 +64,9 @@ async fn initializer() {
                 fatal_initialize_app_error_db(e).show().unwrap_or_log();
             }
             InitializeError::LoadSettingRegistry => {
-                fatal_initialize_setting_registry_error().show().unwrap_or_log();
+                fatal_initialize_setting_registry_error()
+                    .show()
+                    .unwrap_or_log();
             }
         }
         panic!()
