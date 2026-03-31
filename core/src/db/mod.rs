@@ -146,13 +146,13 @@ pub async fn acquire_book_or_alert() -> PoolConnection<Sqlite> {
 #[tracing::instrument]
 /// Prehniteブックファイルを開きます。エラーが発生した場合はログに出力し、アラートを表示します。
 pub async fn open_book_or_alert(book_path: PathBuf) -> bool {
-    match get_database()
+    let r = get_database()
         .write()
         .await
         .open_book(book_path.clone())
         .await
-        .ok_or_log()
-    {
+        .ok_or_log();
+    match r {
         Some(_) => {
             SettingRegistry::immediate_apply(
                 GlobalSettingKey::LastOpened.into(),
