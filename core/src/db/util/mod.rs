@@ -12,7 +12,7 @@ pub fn utc_parse_format(datetime: Option<String>, format: &str) -> Option<DateTi
 }
 
 #[macro_export]
-/// `v.name` をキーとして `v`のリストからタプルを作成します。
+/// `v.name` をキーとして `v` のリストからタプルを作成します。
 macro_rules! to_hash_map_key_name {
     ($v:expr) => {
         $v.into_iter().map(|v| (v.name.clone(), v)).collect()
@@ -20,7 +20,7 @@ macro_rules! to_hash_map_key_name {
 }
 
 #[macro_export]
-/// `v.id` をキーとして `v`のリストからタプルを作成します。
+/// `v.id` をキーとして `v` のリストからタプルを作成します。
 macro_rules! to_hash_map_key_id {
     ($v:expr) => {
         $v.into_iter().map(|v| (v.id.clone(), v)).collect()

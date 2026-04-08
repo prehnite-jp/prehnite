@@ -72,7 +72,7 @@ macro_rules! allow_c {
             #[doc="# SQL"]
             #[doc="以下のクエリが実行されます。"]
             #[doc="- ..はプレースホルダの省略です。"]
-            #[doc="- ON CONFLICT DO NOTHING はフラグが`true`の場合に有効化されます。"]
+            #[doc="- ON CONFLICT DO NOTHING はフラグが `true` の場合に有効化されます。"]
             #[doc="```sql"]
             #[doc=concat!("INSERT INTO ", $table_name, " (")]
             #[doc=$register_columns]

@@ -131,7 +131,7 @@ where
 }
 
 #[tracing::instrument]
-/// [`Task`]として非同期にメッセージダイアログを表示します。`content`をi18nキーで指定します。エラーが発生した場合は、ログを出力します。
+/// [`Task`]として非同期にメッセージダイアログを表示します。`content` をi18nキーで指定します。エラーが発生した場合は、ログを出力します。
 pub fn alert_i18n<T>(
     owner_window_id: Option<window::Id>,
     content: (&'static str, &'static str),
@@ -195,7 +195,7 @@ pub fn confirm(
 }
 
 #[tracing::instrument]
-/// [`Task`]として非同期に確認ダイアログを表示します。`content`をi18nキーで指定します。エラーが発生した場合は、ログを出力します。
+/// [`Task`]として非同期に確認ダイアログを表示します。`content` をi18nキーで指定します。エラーが発生した場合は、ログを出力します。
 pub fn confirm_i18n(
     owner_window_id: Option<window::Id>,
     content: (&'static str, &'static str),
@@ -228,7 +228,7 @@ pub async fn confirm_spawn(
 }
 
 #[tracing::instrument]
-/// 即座に確認ダイアログを表示します。`content`をi18nキーで指定します。エラーが発生した場合は、ログを出力します。
+/// 即座に確認ダイアログを表示します。`content` をi18nキーで指定します。エラーが発生した場合は、ログを出力します。
 pub fn confirm_i18n_show(content: (&'static str, &'static str), level: MessageLevel) {
     builder::confirm_i18n_(&None, content, level)
         .show()
@@ -236,7 +236,7 @@ pub fn confirm_i18n_show(content: (&'static str, &'static str), level: MessageLe
 }
 
 #[tracing::instrument]
-/// 非同期に確認ダイアログを表示します。`content`をi18nキーで指定します。エラーが発生した場合は、ログを出力します。
+/// 非同期に確認ダイアログを表示します。`content` をi18nキーで指定します。エラーが発生した場合は、ログを出力します。
 pub async fn confirm_i18n_spawn(content: (&'static str, &'static str), level: MessageLevel) {
     builder::confirm_i18n_(&None, content, level)
         .spawn()
