@@ -4512,6 +4512,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "prehnite-core-proc-macros"
+version = "0.0.1-alpha"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "presser"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

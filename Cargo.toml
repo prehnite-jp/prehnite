@@ -11,7 +11,7 @@ homepage.workspace = true
 rust-version.workspace = true
 
 [workspace]
-members = ["build-libs", "core"]
+members = ["build-libs", "core", "core/proc-macros"]
 
 [workspace.package]
 version = "0.0.1-alpha"

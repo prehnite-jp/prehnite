@@ -8,6 +8,7 @@
       <sourceFolder url="file://$MODULE_DIR$/builder/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/build-libs/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/license-bundle/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/core/proc-macros/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.idea/dataSources" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
       <excludeFolder url="file://$MODULE_DIR$/core/target" />
