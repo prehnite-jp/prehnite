@@ -1,6 +1,6 @@
-use fluent_bundle::FluentArgs;
 use crate::app::resources::app_icon_handle;
 use crate::app::window::{app_default_window_settings, Window, WindowMessage};
+use fluent_bundle::FluentArgs;
 use iced::alignment::Horizontal;
 use iced::widget::text::Wrapping;
 use iced::widget::{button, Container};
@@ -28,6 +28,13 @@ fn app_build_profile() -> &'static str {
     env!("BUILD_PROFILE")
 }
 
+fn feature_decoration(features: &'static str) -> String {
+    if features.is_empty() {
+        "".into()
+    } else {
+        format!(".[{}]", features)
+    }
+}
 
 #[derive(Clone, Debug)]
 pub enum VersionInfoWindowMessage {
@@ -57,11 +64,7 @@ impl VersionInfoWindow {
                             app_version_info(),
                             app_build_profile(),
                             app_build_target(),
-                            if app_build_features().is_empty() {
-                                "".to_string()
-                            } else {
-                                format!(".[{}]", app_build_features())
-                            }
+                            feature_decoration(app_build_features())
                         ))
                         .wrapping(Wrapping::None)
                     )
@@ -89,14 +92,16 @@ impl Window for VersionInfoWindow {
 
     fn update(&mut self, message: WindowMessage) -> Task<WindowMessage> {
         if let WindowMessage::VersionInfoWindowMessage(msg) = message {
-            self.update_impl(msg).map(WindowMessage::VersionInfoWindowMessage)
+            self.update_impl(msg)
+                .map(WindowMessage::VersionInfoWindowMessage)
         } else {
             Task::none()
         }
     }
 
     fn view(&'_ self) -> Element<'_, WindowMessage> {
-        self.view_impl().map(WindowMessage::VersionInfoWindowMessage)
+        self.view_impl()
+            .map(WindowMessage::VersionInfoWindowMessage)
     }
 
     fn title(&'_ self) -> String {
