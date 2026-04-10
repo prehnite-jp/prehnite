@@ -75,6 +75,11 @@ thiserror = "2"
 tracing-unwrap = "1"
 strum = { version = "0.28", features = ["derive"] }
 indexmap = { version = "2" }
+syn = { version = "2", features = ["full", "extra-traits"] }
+proc-macro2 = "1"
+quote = "1"
+structmeta = "0.3.0"
+convert_case = "0.11.0"
 
 [build-dependencies]
 prehnite-build-libs = { version = "0.0.1-alpha", path = "build-libs" }

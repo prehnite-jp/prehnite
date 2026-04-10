@@ -1,4 +1,5 @@
 use crate::db::schema::app_global::book_search_result::BookSearchResult;
+use prehnite_core_proc_macros::{CreateRecord, DeleteRecord, ReadRecord, UpdateRecord};
 use reqwest::IntoUrl;
 use rhai::{Dynamic, Engine, EvalAltResult, Scope};
 use sqlx::{Acquire, FromRow};
@@ -14,7 +15,7 @@ pub enum BookSearchApiError {
     #[error("Failed to compile script.")]
     MappingScriptCompileError(#[from] rhai::ParseError),
     #[error("Mapping script was returned invalid type.")]
-    MappingScriptInvalidTypeError(String)
+    MappingScriptInvalidTypeError(String),
 }
 
 impl From<Box<EvalAltResult>> for BookSearchApiError {
@@ -25,7 +26,18 @@ impl From<Box<EvalAltResult>> for BookSearchApiError {
 
 pub type BookSearchApiResult<T> = Result<T, BookSearchApiError>;
 
-#[derive(Default, Debug, Clone, FromRow, Eq, PartialEq)]
+#[derive(
+    Default,
+    Debug,
+    Clone,
+    FromRow,
+    Eq,
+    PartialEq,
+    CreateRecord,
+    ReadRecord,
+    UpdateRecord,
+    DeleteRecord,
+)]
 pub struct BookSearchApi {
     pub id: i64,
     pub name: String,
@@ -33,6 +45,7 @@ pub struct BookSearchApi {
     pub isbn_url: String,
     pub text_url: String,
     pub mapping_script: String,
+    #[prehnite_db(skip)]
     pub is_example: bool,
 }
 
@@ -79,12 +92,15 @@ impl BookSearchApi {
         let engine = engine;
         let ast = engine.compile(self.mapping_script.clone())?;
         let mut scope = Scope::new();
-        Ok(match engine
-            .call_fn::<Dynamic>(&mut scope, &ast, "mapper", (isbn, search_text, response))?
-            .into_typed_array::<BookSearchResult>() {
-            Ok(v) => {v}
-            Err(e) => {return Err(BookSearchApiError::MappingScriptRuntimeError(e.to_string()))}
-        })
+        Ok(
+            match engine
+                .call_fn::<Dynamic>(&mut scope, &ast, "mapper", (isbn, search_text, response))?
+                .into_typed_array::<BookSearchResult>()
+            {
+                Ok(v) => v,
+                Err(e) => return Err(BookSearchApiError::MappingScriptRuntimeError(e.to_string())),
+            },
+        )
     }
 
     pub async fn search_isbn(

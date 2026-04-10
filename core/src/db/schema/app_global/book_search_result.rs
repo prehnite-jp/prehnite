@@ -93,7 +93,7 @@ impl BookSearchResult {
                     .as_ref()
                     .and_then(|v| publishers.get(v).cloned()),
                 publication_date: v.publication_date.clone(),
-                tmp_registration_id: Some(i),
+                tmp_registration_id: Some(i as i64),
                 ..Default::default()
             })
             .collect()
@@ -107,7 +107,7 @@ impl BookSearchResult {
         bibliographies
             .iter()
             .filter_map(|b| {
-                Some(bsr[b.tmp_registration_id?].authors.iter().filter_map(|a| {
+                Some(bsr[b.tmp_registration_id? as usize].authors.iter().filter_map(|a| {
                     Some(RelBibliographyAuthor {
                         id: 0,
                         bibliography_id: b.id,

@@ -44,8 +44,7 @@ impl PrefixedDeserializer {
             created_at: row.try_get(p.prefix("created_at"))?,
             updated_at: row.try_get(p.prefix("updated_at"))?,
             tmp_registration_id: row
-                .try_get::<Option<i64>, _>(p.prefix("tmp_registration_id"))?
-                .map(|v| v as usize),
+                .try_get::<Option<i64>, _>(p.prefix("tmp_registration_id"))?,
         })
     }
 
