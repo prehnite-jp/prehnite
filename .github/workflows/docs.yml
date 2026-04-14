@@ -23,7 +23,7 @@ jobs:
       - name: Run doc
         run: cargo doc --no-deps --workspace
       - name: Deploy
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v5
         with:
           path: target/doc
   deploy:
