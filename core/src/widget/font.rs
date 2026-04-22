@@ -3,7 +3,7 @@ use crate::widget::text::TextBuilder;
 use iced::widget::text::Rich;
 use iced::widget::Text;
 use iced::{widget, Font};
-use std::sync::{LazyLock, OnceLock, RwLock};
+use std::sync::{Arc, LazyLock, OnceLock, RwLock};
 use tracing::error;
 use tracing_unwrap::{OptionExt, ResultExt};
 
@@ -29,7 +29,12 @@ pub fn get_default_font() -> Font {
         .clone()
 }
 
-static CURRENT_FONT_FAMILY: LazyLock<RwLock<Option<Font>>> = LazyLock::new(|| RwLock::new(None));
+static CURRENT_FONT_FAMILY: LazyLock<Arc<RwLock<Option<Font>>>> =
+    LazyLock::new(|| Arc::new(RwLock::new(None)));
+
+fn cloned_font_family() -> Arc<RwLock<Option<Font>>> {
+    CURRENT_FONT_FAMILY.clone()
+}
 
 #[tracing::instrument]
 /// 使用するフォントを設定します。
@@ -37,7 +42,7 @@ static CURRENT_FONT_FAMILY: LazyLock<RwLock<Option<Font>>> = LazyLock::new(|| Rw
 /// # Panics
 /// 現在のフォントファミリーの読み込み時にLockPoisoningが発生した場合
 pub fn set_font(font_family: Option<&'static String>) {
-    *CURRENT_FONT_FAMILY.write().unwrap_or_log() = font_family.map(|v| Font::with_name(v.as_str()));
+    *cloned_font_family().write().unwrap_or_log() = font_family.map(|v| Font::with_name(v.as_str()));
 }
 
 /// 使用するフォントを取得します。
@@ -45,7 +50,7 @@ pub fn set_font(font_family: Option<&'static String>) {
 /// # Panics
 /// 現在のフォントファミリーの読み込み時にLockPoisoningが発生した場合
 pub fn get_font_opt() -> Option<Font> {
-    CURRENT_FONT_FAMILY.read().unwrap_or_log().clone()
+    cloned_font_family().read().unwrap_or_log().clone()
 }
 
 /// 使用するフォントを取得します。設定されていない場合は、デフォルトフォントを使用します。
@@ -53,7 +58,7 @@ pub fn get_font_opt() -> Option<Font> {
 /// # Panics
 /// 現在のフォントファミリーの読み込み時にLockPoisoningが発生した場合
 pub fn get_font() -> Font {
-    CURRENT_FONT_FAMILY
+    cloned_font_family()
         .read()
         .unwrap_or_log()
         .clone()

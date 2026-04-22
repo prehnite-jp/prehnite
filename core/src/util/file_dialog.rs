@@ -1,11 +1,10 @@
 #![doc = "Prehniteブックを開く"]
+
 use crate::db::open_book_or_alert;
 use crate::i18n::i18n;
-use crate::opt_unwrap_or_return;
-use crate::settings::registry::SettingRegistry;
-use crate::settings::value::SettingValueType;
-use crate::settings::GlobalSettingKey;
+use crate::settings::get_global;
 use crate::util::alert::alert_i18n_spawn;
+use crate::{opt_unwrap_or_return, settings};
 use iced::window::raw_window_handle::HasWindowHandle;
 use iced::{window, Task};
 use native_dialog::{FileDialogBuilder, MessageLevel};
@@ -74,42 +73,54 @@ impl OpenPrehniteBookStatus {
     }
 }
 
-async fn prehnite_book_file_process(book_path: PathBuf, ope: FileOpe) -> OpenPrehniteBookStatus {
-    match ope {
-        FileOpe::New => match tokio::fs::remove_file(book_path.clone()).await {
-            Ok(_) => {}
-            Err(e) => {
-                if tokio::fs::try_exists(book_path.clone())
+fn prehnite_book_file_process(
+    book_path: PathBuf,
+    ope: FileOpe,
+) -> impl Future<Output = OpenPrehniteBookStatus> + Send {
+    async move {
+        match ope {
+            FileOpe::New => match tokio::fs::remove_file(book_path.clone()).await {
+                Ok(_) => {}
+                Err(e) => {
+                    if tokio::fs::try_exists(book_path.clone())
+                        .await
+                        .unwrap_or(true)
+                    {
+                        error!("Failed to remove file ({book_path:#?}): {e}");
+                        alert_i18n_spawn(("error", "permission-denied"), MessageLevel::Error).await;
+                        return OpenPrehniteBookStatus::Failed;
+                    }
+                }
+            },
+            FileOpe::Open => {
+                if !tokio::fs::try_exists(book_path.clone())
                     .await
-                    .unwrap_or(true)
+                    .unwrap_or(false)
                 {
-                    error!("Failed to remove file ({book_path:#?}): {e}");
-                    alert_i18n_spawn(("error", "permission-denied"), MessageLevel::Error).await;
+                    error!("File does not exist ({book_path:#?})");
+                    alert_i18n_spawn(("error", "file-notfound"), MessageLevel::Error).await;
+                    let x = settings::get_global();
+                    if let Some(x) = x.write().ok_or_log().as_mut() {
+                        x.get_tmp_registry().set_last_opened_file(None);
+                    };
+
+                    let registry = x.read().ok_or_log().map(|x| x.clone());
+                    if let Some(reg) = registry {
+                        reg.save().await.ok_or_log();
+                    }
                     return OpenPrehniteBookStatus::Failed;
                 }
             }
-        },
-        FileOpe::Open => {
-            if !tokio::fs::try_exists(book_path.clone())
-                .await
-                .unwrap_or(false)
-            {
-                error!("File does not exist ({book_path:#?})");
-                alert_i18n_spawn(("error", "file-notfound"), MessageLevel::Error).await;
-                SettingRegistry::immediate_apply(
-                    GlobalSettingKey::LastOpened.into(),
-                    SettingValueType::String(None),
-                )
-                .await
-                .ok_or_log();
-                return OpenPrehniteBookStatus::Failed;
-            }
         }
-    }
-    if open_book_or_alert(book_path).await {
-        OpenPrehniteBookStatus::Success
-    } else {
-        OpenPrehniteBookStatus::Failed
+        if open_book_or_alert(book_path) {
+            let registry = get_global().read().ok_or_log().map(|x| x.clone());
+            if let Some(reg) = registry {
+                reg.save().await.ok_or_log();
+            }
+            OpenPrehniteBookStatus::Success
+        } else {
+            OpenPrehniteBookStatus::Failed
+        }
     }
 }
 

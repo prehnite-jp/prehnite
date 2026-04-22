@@ -715,7 +715,7 @@ dependencies = [
  "handlebars",
  "home",
  "ignore",
- "krates 0.20.0",
+ "krates",
  "libc",
  "log",
  "mimalloc",
@@ -1447,6 +1447,33 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
 
 [[package]]
+name = "easy-settings"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c10514a3699aa483486357f0773d75a99ce18700264453e463b2ea114225459f"
+dependencies = [
+ "derive_builder",
+ "easy-settings-derive",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tracing",
+ "tracing-unwrap",
+]
+
+[[package]]
+name = "easy-settings-derive"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "caf66b5cba378f1a20424a2caeeec9e71fcfa632fda602d8c4ddfe9a6aff6669"
+dependencies = [
+ "fallible-iterator",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "either"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1618,6 +1645,12 @@ dependencies = [
  "smallvec",
  "zune-inflate",
 ]
+
+[[package]]
+name = "fallible-iterator"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2acce4a10f12dc2fb14a218589d4f1f62ef011b2d0cc4b3cb1bba8e94da14649"
 
 [[package]]
 name = "fastrand"
@@ -3031,20 +3064,6 @@ name = "krates"
 version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c432bb7d7a968a338f6c7cbd8782f38ffd87a793ff06c3a20257f45e1d003f6d"
-dependencies = [
- "camino",
- "cfg-expr",
- "petgraph",
- "semver",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "krates"
-version = "0.21.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cca2a52229bf275e08b7ebfa7d1339668d5f9ec33e27ceb3a762bc9edd437418"
 dependencies = [
  "camino",
  "cfg-expr",
@@ -4487,7 +4506,7 @@ dependencies = [
  "anyhow",
  "cargo-about",
  "embed-resource",
- "krates 0.21.1",
+ "krates",
  "prehnite-core",
  "reqwest 0.12.28",
  "serde_json",
@@ -4500,6 +4519,7 @@ version = "0.0.1-alpha"
 dependencies = [
  "chrono",
  "derive_more",
+ "easy-settings",
  "fluent-bundle",
  "fluent-syntax",
  "iced",

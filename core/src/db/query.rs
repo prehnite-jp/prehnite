@@ -2,45 +2,9 @@ use crate::db::schema::{
     BackgroundInfo, BackgroundReference, BibliographyAuthor, Draft, Headline, HeadlineChildren,
     Item, ItemReference, ItemType, Paragraph, ParagraphSummary, Setting, Tag, Task,
 };
-use crate::settings::SettingKey;
 use crate::{opt_unwrap_or_continue, opt_unwrap_or_return, to_hash_map_key_id};
 use indexmap::IndexMap;
 use sqlx::SqliteConnection;
-
-const UPDATE_SETTING_SQL: &str = include_str!("../../../assets/query/update_settings.sql");
-#[tracing::instrument]
-/// 設定を更新します。
-/// ```sql
-#[doc = include_str!("../../../assets/query/update_settings.sql")]
-/// ```
-pub async fn update_setting(
-    conn: &mut SqliteConnection,
-    setting_key: SettingKey,
-    setting_value: Option<String>,
-) -> Result<(), sqlx::Error> {
-    let v = sqlx::query(UPDATE_SETTING_SQL)
-        .bind(setting_key.to_string())
-        .bind(setting_value)
-        .execute(conn)
-        .await?;
-    Ok(())
-}
-
-const FETCH_SETTING_SQL: &str = include_str!("../../../assets/query/fetch_settings.sql");
-#[tracing::instrument]
-/// 設定を取得します。
-/// ```sql
-#[doc = include_str!("../../../assets/query/fetch_settings.sql")]
-/// ```
-pub async fn fetch_setting(
-    conn: &mut SqliteConnection,
-    setting_key: SettingKey,
-) -> Result<Option<Setting>, sqlx::Error> {
-    sqlx::query_as::<_, Setting>(FETCH_SETTING_SQL)
-        .bind(setting_key.to_string())
-        .fetch_optional(conn)
-        .await
-}
 
 const FETCH_BACKGROUND_INFO_FROM_ITEM_ID_SQL: &str =
     include_str!("../../../assets/query/fetch_background_info_from_item_id.sql");

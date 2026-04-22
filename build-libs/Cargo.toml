@@ -16,9 +16,9 @@ bundle_license = ["cargo-about", "krates"]
 
 [dependencies]
 cargo-about = { version = "0.8", optional = true }
-krates = { version = "0.21", optional = true }
+krates = { version = "=0.20.0", optional = true }
 serde_json.workspace = true
-reqwest = { version = "0.12", features = ["blocking"] }
+reqwest = { version = "=0.12.28", features = ["blocking"] }
 zip.workspace = true
 anyhow.workspace = true
 prehnite-core.workspace = true

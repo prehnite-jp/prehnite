@@ -271,7 +271,7 @@ pub fn fatal_init_db_error() -> MessageAlert {
 const FATAL_INIT_APP_ERROR_MESSAGE_JA: &str = "アプリケーションの初期化に失敗しました。";
 const FATAL_INIT_APP_ERROR_MESSAGE_EN: &str = "Application initialization failed.";
 /// アプリの致命的な初期化エラーを表すダイアログ
-pub fn fatal_initialize_app_error_db(e: impl Debug) -> MessageAlert {
+pub fn fatal_initialize_app_error(e: impl Debug) -> MessageAlert {
     let (title, err_msg) = match get_locale_language().as_str() {
         "ja" => (FATAL_JA, FATAL_INIT_APP_ERROR_MESSAGE_JA),
         &_ => (FATAL_EN, FATAL_INIT_APP_ERROR_MESSAGE_EN),

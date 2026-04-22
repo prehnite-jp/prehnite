@@ -5,12 +5,13 @@ pub mod schema;
 mod util;
 
 use crate::db::migrate::migrate;
-use crate::settings::registry::SettingRegistry;
-use crate::settings::{GlobalSettingKey, SettingKey};
+use crate::settings;
+use crate::settings::GlobalSettings;
 use crate::util::alert::{alert_i18n_show, alert_i18n_spawn, UnwrapOrErrorAlert};
 use crate::util::app_global::global_dir;
 use crate::util::file_dialog::OpenPrehniteBookStatus;
 use chrono::Duration;
+use easy_settings::sqlite::SettingManager;
 use log::LevelFilter;
 use native_dialog::MessageLevel;
 use sqlx::pool::PoolConnection;
@@ -18,7 +19,7 @@ use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use sqlx::{ConnectOptions, Sqlite, SqlitePool};
 use std::fmt::{Debug, Display, Formatter};
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, LazyLock, LockResult, OnceLock};
+use std::sync::{Arc, LazyLock, LockResult, OnceLock, RwLockWriteGuard};
 use strum::{EnumString, IntoStaticStr};
 use thiserror::Error;
 use tokio::sync::RwLock;
@@ -84,46 +85,53 @@ pub mod migrate {
 
 #[derive(Debug)]
 struct Pool {
-    pool: Option<SqlitePool>,
+    pool: Option<Arc<SqlitePool>>,
 }
 
 impl Pool {
     fn new(pool: Option<SqlitePool>) -> Self {
-        Self { pool }
+        Self {
+            pool: pool.map(Arc::new),
+        }
     }
 
     fn set_pool(&mut self, pool: Option<SqlitePool>) {
-        self.pool = pool;
+        self.pool = pool.map(Arc::new);
     }
 
-    fn get_pool(&self) -> &Option<SqlitePool> {
-        &self.pool
+    fn get_pool(&self) -> Option<Arc<SqlitePool>> {
+        self.pool.clone()
     }
 }
 
 /// グローバルデータベース接続を初期化します。
 pub async fn initialize_db() -> Result<(), DatabaseError> {
     let v = Database::initialize().await?;
-    DATABASE.set(RwLock::new(v));
+    DATABASE.set(Arc::new(RwLock::new(v)));
     Ok(())
 }
 
-static DATABASE: OnceLock<RwLock<Database>> = OnceLock::new();
+static DATABASE: OnceLock<Arc<RwLock<Database>>> = OnceLock::new();
 
 #[tracing::instrument]
-fn get_database() -> &'static RwLock<Database> {
+fn get_database() -> Arc<RwLock<Database>> {
     match DATABASE.get() {
         None => {
             error!("Failed to get database. The database may not be initialized.");
             panic!();
         }
-        Some(v) => v,
+        Some(v) => v.clone(),
     }
 }
 
 /// グローバルデータベース接続を取得します。
 pub async fn acquire_conn(mode: DBType) -> Result<Option<PoolConnection<Sqlite>>, DatabaseError> {
     get_database().read().await.acquire(mode.clone()).await
+}
+
+/// グローバルデータベースプールを取得します。
+pub async fn get_pool(mode: DBType) -> Option<Arc<SqlitePool>> {
+    get_database().read().await.get_pool(mode).await
 }
 
 #[tracing::instrument]
@@ -145,28 +153,19 @@ pub async fn acquire_book_or_alert() -> PoolConnection<Sqlite> {
 
 #[tracing::instrument]
 /// Prehniteブックファイルを開きます。エラーが発生した場合はログに出力し、アラートを表示します。
-pub async fn open_book_or_alert(book_path: PathBuf) -> bool {
-    let r = get_database()
-        .write()
-        .await
-        .open_book(book_path.clone())
-        .await
-        .ok_or_log();
-    match r {
-        Some(_) => {
-            SettingRegistry::immediate_apply(
-                GlobalSettingKey::LastOpened.into(),
-                book_path.to_str().into(),
-            )
-            .await
-            .ok_or_log();
-            true
+pub fn open_book_or_alert(book_path: PathBuf) -> bool {
+    let x = settings::get_global();
+    match x.write().ok_or_log().as_mut() {
+        Some(x) => {
+            x.get_tmp_registry()
+                .set_last_opened_file(book_path.to_str().map(|x| x.to_string()));
         }
         None => {
-            alert_i18n_spawn(("error", "book-open-error"), MessageLevel::Error).await;
-            false
+            alert_i18n_show(("error", "book-open-error"), MessageLevel::Error);
+            return false;
         }
     }
+    true
 }
 
 /// Prehniteブックファイルを閉じます。エラーが発生した場合はログに出力します。
@@ -178,12 +177,10 @@ pub async fn close_book_or_log() {
         .write()
         .await
         .set_pool(None);
-    SettingRegistry::immediate_apply(
-        GlobalSettingKey::LastOpened.into(),
-        Option::<String>::from(None).into(),
-    )
-    .await
-    .ok_or_log();
+    if let Some(x) = settings::get_global().write().ok_or_log().as_mut() {
+        x.get_tmp_registry().set_last_opened_file(None);
+        x.save_and_apply().await;
+    };
 }
 
 static IS_PREHNITE_BOOK_OPENED: LazyLock<Arc<std::sync::RwLock<DbOpenedStatus>>> =
@@ -206,8 +203,8 @@ impl DbOpenedStatus {
 #[derive(Debug)]
 /// グローバルデータベース接続の構造体
 pub struct Database {
-    app_global_db_pool: Arc<RwLock<Pool>>,
-    prehnite_book_db_pool: Arc<RwLock<Pool>>,
+    app_global_db_pool: RwLock<Pool>,
+    prehnite_book_db_pool: RwLock<Pool>,
 }
 
 #[derive(Error, Debug)]
@@ -250,8 +247,8 @@ impl Database {
         migrate(&mut pool, DBType::AppGlobal).await?;
 
         Ok(Self {
-            app_global_db_pool: Arc::new(RwLock::new(Pool::new(Some(pool)))),
-            prehnite_book_db_pool: Arc::new(RwLock::new(Pool::new(None))),
+            app_global_db_pool: RwLock::new(Pool::new(Some(pool))),
+            prehnite_book_db_pool: RwLock::new(Pool::new(None)),
         })
     }
 
@@ -280,13 +277,11 @@ impl Database {
         mode: DBType,
     ) -> Result<Option<PoolConnection<Sqlite>>, DatabaseError> {
         Ok(match mode {
-            DBType::PrehniteBook => {
-                match self.prehnite_book_db_pool.clone().read().await.get_pool() {
-                    None => None,
-                    Some(v) => Some(v.acquire().await?),
-                }
-            }
-            DBType::AppGlobal => match self.app_global_db_pool.clone().read().await.get_pool() {
+            DBType::PrehniteBook => match self.prehnite_book_db_pool.read().await.get_pool() {
+                None => None,
+                Some(v) => Some(v.acquire().await?),
+            },
+            DBType::AppGlobal => match self.app_global_db_pool.read().await.get_pool() {
                 None => None,
                 Some(v) => Some(v.acquire().await?),
             },
@@ -296,9 +291,15 @@ impl Database {
     /// Prehniteブックが開かれているか否か。
     pub fn is_book_opened() -> bool {
         IS_PREHNITE_BOOK_OPENED
-            .clone()
             .read()
             .map(|v| v.0)
             .unwrap_or_default()
+    }
+
+    pub async fn get_pool(&self, mode: DBType) -> Option<Arc<SqlitePool>> {
+        match mode {
+            DBType::PrehniteBook => self.prehnite_book_db_pool.read().await.get_pool(),
+            DBType::AppGlobal => self.app_global_db_pool.read().await.get_pool(),
+        }
     }
 }

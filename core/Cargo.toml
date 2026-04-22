@@ -41,6 +41,7 @@ strum.workspace = true
 iced_graphics.workspace = true
 indexmap.workspace = true
 prehnite-core-proc-macros = { version = "0.0.1-alpha", path = "proc-macros" }
+easy-settings = { version = "0.2.0", features = ["sqlite", "tokio"] }
 
 [dev-dependencies]
 rand = "0.10"
