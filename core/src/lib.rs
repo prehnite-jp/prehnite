@@ -1,15 +1,13 @@
+pub mod constants;
+#[cfg(feature = "backend")]
 pub mod db;
+#[cfg(feature = "backend")]
 mod env;
-pub mod i18n;
-pub mod license;
+#[cfg(feature = "frontend")]
+pub mod license_bundle;
+#[cfg(feature = "backend")]
 pub mod log;
 #[cfg(test)]
 pub(crate) mod test_util;
-pub mod util;
-pub mod license_bundle;
-pub mod font;
-pub mod settings;
 
 pub use native_dialog::MessageLevel;
-pub use easy_settings::sqlite::SettingManager;
-pub use easy_settings::sqlite::SettingManagerBuilder;

@@ -24,10 +24,10 @@ rust-version = "1.92"
 publish = false
 
 [features]
-release = ["icon", "bundle_license"]
-debug = ["prehnite-core/debug"]
-icon = ["prehnite-build-libs/icon"]
+release = ["bundle_license"]
 bundle_license = ["prehnite-build-libs/bundle_license"]
+desktop = ["dioxus/desktop"]
+server = ["dioxus/server"]
 
 [dependencies]
 prehnite-core.workspace = true
@@ -44,6 +44,7 @@ dioxus = { version = "0.7", features = ["router", "fullstack"] }
 dioxus-router = "0.7"
 dioxus-fullstack = "0.7"
 dioxus-liveview = "0.7"
+easy-settings = { version = "0.2.1", features = ["sqlite", "tokio"] }
 
 [workspace.dependencies]
 prehnite-core = { version = "0.0.1-alpha", path = "core" }
@@ -65,7 +66,6 @@ fluent-syntax = "0.12"
 tracing = { version = "0.1", features = ["log"] }
 tracing-appender = "0.2"
 serde_json = "1"
-iced_graphics = "0.14"
 zip = "8"
 opener = "0.8"
 anyhow = "1"

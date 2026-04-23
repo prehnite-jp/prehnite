@@ -13,6 +13,8 @@ publish.workspace = true
 [features]
 
 debug = []
+frontend = []
+backend = []
 
 [dependencies]
 chrono.workspace = true
@@ -39,7 +41,6 @@ tracing-unwrap.workspace = true
 strum.workspace = true
 indexmap.workspace = true
 prehnite-core-proc-macros = { version = "0.0.1-alpha", path = "proc-macros" }
-easy-settings = { version = "0.2.1", features = ["sqlite", "tokio"] }
 
 [dev-dependencies]
 rand = "0.10"

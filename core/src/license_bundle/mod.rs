@@ -4,8 +4,16 @@ mod font;
 use crate::license_bundle::font::font;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
+use std::io::Cursor;
+use zip::ZipArchive;
 
 pub type LicenseBundle = Vec<Package>;
+
+/// zipファイルから[`LicenseBundle`]を読み取ります。
+pub fn read_license_bundle_from_zip(data: &[u8]) -> LicenseBundle {
+    let mut zip = ZipArchive::new(Cursor::new(data)).unwrap();
+    serde_json::from_reader(zip.by_name("content").unwrap()).unwrap()
+}
 
 /// デフォルトのライセンスバンドルを取得します。
 ///

@@ -1,6 +1,6 @@
 #![doc = "ロギングの実装"]
 use crate::env::ENV_KEY_LOG;
-use crate::util::app_global::global_dir;
+use crate::constants::global_dir;
 use std::path::{Path, PathBuf};
 use tracing::Level;
 use tracing_appender::rolling;

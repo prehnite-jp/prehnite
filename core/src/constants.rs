@@ -1,12 +1,9 @@
 #![doc = "アプリのグローバルな定数等"]
-use crate::env::ENV_KEY_GLOBAL_DIR_PATH;
-use crate::util::alert::fatal_init_db_error;
-use std::path::PathBuf;
-use tracing::error;
-use tracing_unwrap::ResultExt;
 
+#[cfg(feature = "backend")]
 const DEFAULT_APP_DIR_NAME: &str = ".jp.prehnite.prehnite";
 
+#[cfg(feature = "backend")]
 #[tracing::instrument]
 /// アプリディレクトリのパスを取得します。
 pub fn global_dir() -> PathBuf {
@@ -18,7 +15,7 @@ pub fn global_dir() -> PathBuf {
             } else {
                 let mut path = std::env::home_dir().unwrap_or_else(|| {
                     error!("Failed to get home_dir. The home directory may not be set.");
-                    fatal_init_db_error().show().unwrap_or_log();
+                    // TODO: エラーダイアログを表示する。
                     panic!();
                 });
                 path.push(DEFAULT_APP_DIR_NAME);

@@ -10,6 +10,7 @@ mod tests;
 use chrono::{DateTime, Utc};
 use indexmap::IndexMap;
 use prehnite_core_proc_macros::{CreateRecord, DeleteRecord, ReadRecord, UpdateRecord};
+use serde::{Deserialize, Serialize};
 use sqlx::{Acquire, Database, FromRow, Row};
 use std::fmt::{Display, Formatter};
 
@@ -17,7 +18,7 @@ use std::fmt::{Display, Formatter};
 /// sqlite 3.32.0 以降では32766が最大ですが、マージンを取って30000にしています。
 pub const MAX_BIND_COUNT: usize = 30000;
 
-#[derive(Default, Clone, Debug, FromRow, Eq, PartialEq)]
+#[derive(Default, Clone, Debug, FromRow, Eq, PartialEq, Deserialize, Serialize)]
 /// 汎用のId取得クエリ用構造体
 pub struct ReturningId {
     pub id: i64,
@@ -36,6 +37,8 @@ pub struct ReturningId {
     CreateRecord,
     UpdateRecord,
     DeleteRecord,
+    Deserialize,
+    Serialize,
 )]
 /// 背景情報
 pub struct BackgroundInfo {
@@ -64,6 +67,8 @@ pub struct BackgroundInfo {
     CreateRecord,
     UpdateRecord,
     DeleteRecord,
+    Deserialize,
+    Serialize,
 )]
 #[prehnite_db(table_name = "tags")]
 /// タグ
@@ -74,7 +79,17 @@ pub struct Tag {
 }
 
 #[derive(
-    Default, Clone, Debug, Eq, PartialEq, ReadRecord, CreateRecord, UpdateRecord, DeleteRecord,
+    Default,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    ReadRecord,
+    CreateRecord,
+    UpdateRecord,
+    DeleteRecord,
+    Deserialize,
+    Serialize,
 )]
 #[prehnite_db(table_name = "publishers")]
 /// 出版社
@@ -96,6 +111,8 @@ pub struct Publisher {
     ReadRecord,
     UpdateRecord,
     DeleteRecord,
+    Deserialize,
+    Serialize,
 )]
 #[prehnite_db(
     table_name = "bibliographies",
@@ -135,6 +152,8 @@ pub struct Bibliography {
     ReadRecord,
     UpdateRecord,
     DeleteRecord,
+    Deserialize,
+    Serialize,
 )]
 #[prehnite_db(table_name = "bibliography_authors")]
 /// 参考文献の著者
@@ -144,7 +163,7 @@ pub struct BibliographyAuthor {
     pub memo: Option<String>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
 /// アイテムの種類
 pub enum ItemType {
     /// 見出し
@@ -210,6 +229,8 @@ impl Display for ItemType {
     ReadRecord,
     UpdateRecord,
     DeleteRecord,
+    Deserialize,
+    Serialize,
 )]
 #[prehnite_db(table_name = "items", view_name = "view_deserializable_item")]
 /// アイテム（見出しと段落のスーパータイプ）
@@ -247,6 +268,8 @@ pub struct Item {
     CreateRecord,
     ReadRecord,
     UpdateRecord,
+    Deserialize,
+    Serialize,
 )]
 #[prehnite_db(table_name = "headlines")]
 /// 見出しに固有の情報
@@ -262,7 +285,7 @@ pub struct Headline {
     pub paragraph: Option<Vec<Paragraph>>,
 }
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
 /// 特定の見出しに紐づいている子見出し
 pub struct HeadlineChildren {
     pub parent: Headline,
@@ -282,6 +305,8 @@ pub struct HeadlineChildren {
     ReadRecord,
     UpdateRecord,
     DeleteRecord,
+    Deserialize,
+    Serialize,
 )]
 /// 下書き
 pub struct Draft {
@@ -309,6 +334,8 @@ pub struct Draft {
     CreateRecord,
     ReadRecord,
     UpdateRecord,
+    Deserialize,
+    Serialize,
 )]
 #[prehnite_db(view_name = "view_deserializable_paragraph")]
 /// 段落に固有の情報
@@ -342,6 +369,8 @@ pub struct Paragraph {
     ReadRecord,
     UpdateRecord,
     DeleteRecord,
+    Deserialize,
+    Serialize,
 )]
 #[prehnite_db(table_name = "paragraph_summaries")]
 /// 要約した段落の内容
@@ -360,7 +389,17 @@ pub struct ParagraphSummary {
 }
 
 #[derive(
-    Default, Clone, Debug, Eq, PartialEq, CreateRecord, ReadRecord, UpdateRecord, DeleteRecord,
+    Default,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    CreateRecord,
+    ReadRecord,
+    UpdateRecord,
+    DeleteRecord,
+    Deserialize,
+    Serialize,
 )]
 #[prehnite_db(
     table_name = "background_references",
@@ -376,7 +415,17 @@ pub struct BackgroundReference {
 }
 
 #[derive(
-    Default, Clone, Debug, Eq, PartialEq, CreateRecord, ReadRecord, UpdateRecord, DeleteRecord,
+    Default,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    CreateRecord,
+    ReadRecord,
+    UpdateRecord,
+    DeleteRecord,
+    Deserialize,
+    Serialize,
 )]
 #[prehnite_db(
     table_name = "item_references",
@@ -402,6 +451,8 @@ pub struct ItemReference {
     ReadRecord,
     UpdateRecord,
     DeleteRecord,
+    Deserialize,
+    Serialize,
 )]
 #[prehnite_db(table_name = "task_categories")]
 /// タスクのカテゴリ
@@ -412,7 +463,17 @@ pub struct TaskCategory {
 }
 
 #[derive(
-    Default, Clone, Debug, Eq, PartialEq, CreateRecord, ReadRecord, UpdateRecord, DeleteRecord,
+    Default,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    CreateRecord,
+    ReadRecord,
+    UpdateRecord,
+    DeleteRecord,
+    Deserialize,
+    Serialize,
 )]
 #[prehnite_db(
     table_name = "task_templates",
@@ -428,7 +489,17 @@ pub struct TaskTemplate {
 }
 
 #[derive(
-    Default, Clone, Debug, Eq, PartialEq, CreateRecord, ReadRecord, UpdateRecord, DeleteRecord,
+    Default,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    CreateRecord,
+    ReadRecord,
+    UpdateRecord,
+    DeleteRecord,
+    Deserialize,
+    Serialize,
 )]
 #[prehnite_db(table_name = "tasks", view_name = "view_deserializable_task")]
 /// タスク
@@ -444,7 +515,17 @@ pub struct Task {
 }
 
 #[derive(
-    Default, Clone, Debug, Eq, PartialEq, CreateRecord, ReadRecord, UpdateRecord, DeleteRecord,
+    Default,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    CreateRecord,
+    ReadRecord,
+    UpdateRecord,
+    DeleteRecord,
+    Deserialize,
+    Serialize,
 )]
 #[prehnite_db(view_name = "view_deserializable_paragraph_link")]
 /// 段落間のリンク
@@ -470,6 +551,8 @@ pub struct ParagraphLink {
     ReadRecord,
     UpdateRecord,
     DeleteRecord,
+    Deserialize,
+    Serialize,
 )]
 #[prehnite_db(table_name = "settings")]
 /// 設定値
@@ -491,6 +574,8 @@ pub struct Setting {
     ReadRecord,
     UpdateRecord,
     DeleteRecord,
+    Deserialize,
+    Serialize,
 )]
 #[prehnite_db(table_name = "rel_bibliography_authors")]
 /// 参考文献と著者の関連付け
@@ -511,6 +596,8 @@ pub struct RelBibliographyAuthor {
     ReadRecord,
     UpdateRecord,
     DeleteRecord,
+    Deserialize,
+    Serialize,
 )]
 /// タグとアイテムの関連付け
 pub struct RelTagAndItem {
@@ -530,6 +617,8 @@ pub struct RelTagAndItem {
     ReadRecord,
     UpdateRecord,
     DeleteRecord,
+    Deserialize,
+    Serialize,
 )]
 /// 背景情報とアイテムの関連付け
 pub struct RelBackgroundAndItem {

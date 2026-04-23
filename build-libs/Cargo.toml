@@ -10,7 +10,7 @@ rust-version.workspace = true
 publish.workspace = true
 
 [features]
-
+default = ["prehnite-core/frontend"]
 bundle_license = ["cargo-about", "krates"]
 
 [dependencies]
