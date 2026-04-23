@@ -1,8 +1,6 @@
 use crate::bundle_license::BundleLicense;
-use crate::set_icon::SetIcon;
 
 mod bundle_license;
-mod set_icon;
 pub mod util;
 
 #[macro_export]
@@ -34,7 +32,7 @@ pub trait BuildProcess {
 }
 
 fn process() -> Vec<Box<dyn BuildProcess>> {
-    vec![BundleLicense::new(), SetIcon::new()]
+    vec![BundleLicense::new()]
 }
 
 pub fn execute_all_build_process() -> anyhow::Result<()> {

@@ -1,0 +1,12 @@
+[application]
+
+[bundle]
+
+identifier = "jp.prehnite.prehnite"
+publisher = "saku shirakura<saku@sakushira.com>"
+icon = ["icon/icon.png"]
+copyright = "Copyright (c) 2025 saku shirakura<saku@sakushira.com> All Rights Reserved."
+
+[bundle.windows]
+
+icon_path = "./assets/platform/win/icon.ico"

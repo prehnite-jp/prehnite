@@ -11,7 +11,6 @@ publish.workspace = true
 
 [features]
 
-icon = []
 bundle_license = ["cargo-about", "krates"]
 
 [dependencies]
@@ -22,6 +21,3 @@ reqwest = { version = "=0.12.28", features = ["blocking"] }
 zip.workspace = true
 anyhow.workspace = true
 prehnite-core.workspace = true
-
-[target.'cfg(windows)'.dependencies]
-embed-resource = "3.0"
