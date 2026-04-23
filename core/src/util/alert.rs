@@ -1,6 +1,5 @@
 #![doc = "メッセージダイアログ及び確認ダイアログ"]
 use crate::i18n::get_locale_language;
-use iced::{window, Task};
 use native_dialog::{MessageAlert, MessageLevel};
 use std::fmt::Debug;
 use tracing_unwrap::ResultExt;
@@ -13,134 +12,46 @@ pub trait UnwrapOrErrorAlert<T> {
 
 mod builder {
     use crate::i18n::i18n;
-    use iced::wgpu::rwh::HasWindowHandle;
     use native_dialog::{MessageAlert, MessageConfirm, MessageDialogBuilder, MessageLevel};
 
     fn msg_dialog_builder(
-        owner: &Option<&dyn HasWindowHandle>,
         (title, msg): (impl ToString, impl ToString),
         level: MessageLevel,
     ) -> MessageDialogBuilder {
-        let v = MessageDialogBuilder::default()
+        MessageDialogBuilder::default()
             .set_level(level)
             .set_title(title)
-            .set_text(msg);
-        match owner {
-            None => v,
-            Some(w) => v.set_owner(w),
-        }
+            .set_text(msg)
     }
 
     fn msg_dialog_builder_i18n(
-        owner: &Option<&dyn HasWindowHandle>,
         (title, msg): (&'static str, &'static str),
         level: MessageLevel,
     ) -> MessageDialogBuilder {
-        msg_dialog_builder(owner, (i18n(title), i18n(msg)), level)
+        msg_dialog_builder((i18n(title), i18n(msg)), level)
     }
 
-    pub fn alert_(
-        owner: &Option<&dyn HasWindowHandle>,
-        content: (impl ToString, impl ToString),
-        level: MessageLevel,
-    ) -> MessageAlert {
-        msg_dialog_builder(owner, content, level).alert()
+    pub fn alert_(content: (impl ToString, impl ToString), level: MessageLevel) -> MessageAlert {
+        msg_dialog_builder(content, level).alert()
     }
 
-    pub fn alert_i18n_(
-        owner: &Option<&dyn HasWindowHandle>,
-        content: (&'static str, &'static str),
-        level: MessageLevel,
-    ) -> MessageAlert {
-        msg_dialog_builder_i18n(owner, content, level).alert()
+    pub fn alert_i18n_(content: (&'static str, &'static str), level: MessageLevel) -> MessageAlert {
+        msg_dialog_builder_i18n(content, level).alert()
     }
 
     pub fn confirm_(
-        owner: &Option<&dyn HasWindowHandle>,
         content: (impl ToString, impl ToString),
         level: MessageLevel,
     ) -> MessageConfirm {
-        msg_dialog_builder(owner, content, level).confirm()
+        msg_dialog_builder(content, level).confirm()
     }
 
     pub fn confirm_i18n_(
-        owner: &Option<&dyn HasWindowHandle>,
         content: (&'static str, &'static str),
         level: MessageLevel,
     ) -> MessageConfirm {
-        msg_dialog_builder_i18n(owner, content, level).confirm()
+        msg_dialog_builder_i18n(content, level).confirm()
     }
-}
-
-trait DialogResult {
-    fn result(self) -> bool;
-}
-
-impl DialogResult for () {
-    fn result(self) -> bool {
-        false
-    }
-}
-
-impl DialogResult for bool {
-    fn result(self) -> bool {
-        self
-    }
-}
-
-macro_rules! dialog_spawner {
-    ($dialog_body:ident) => {
-        Task::future(async {
-            $dialog_body
-                .spawn()
-                .await
-                .map(DialogResult::result)
-                .ok_or_log()
-                .unwrap_or(false)
-        })
-    };
-}
-
-macro_rules! show_dialog {
-    ($owner_window_id:ident, $content:ident, $level:ident, $builder_method:path) => {
-        match $owner_window_id {
-            None => {
-                let v = $builder_method(&None, $content, $level);
-                dialog_spawner!(v)
-            }
-            Some(owner_window_id) => window::run(owner_window_id, move |w| {
-                $builder_method(&Some(w), $content, $level)
-            })
-            .then(|v| dialog_spawner!(v)),
-        }
-    };
-}
-
-#[tracing::instrument]
-/// [`Task`]として非同期にメッセージダイアログを表示します。エラーが発生した場合は、ログを出力します。
-pub fn alert<T>(
-    owner_window_id: Option<window::Id>,
-    (title, msg): (impl ToString + Debug, impl ToString + Debug),
-    level: MessageLevel,
-) -> Task<T>
-where
-    T: 'static + Send,
-{
-    let content = (title.to_string(), msg.to_string());
-    show_dialog!(owner_window_id, content, level, builder::alert_).discard()
-}
-
-#[tracing::instrument]
-/// [`Task`]として非同期にメッセージダイアログを表示します。`content` をi18nキーで指定します。エラーが発生した場合は、ログを出力します。
-pub fn alert_i18n<T>(
-    owner_window_id: Option<window::Id>,
-    content: (&'static str, &'static str),
-    level: MessageLevel,
-) -> Task<T>
-where
-    T: 'static + Send,
-{
-    show_dialog!(owner_window_id, content, level, builder::alert_i18n_).discard()
 }
 
 #[tracing::instrument]
@@ -150,7 +61,7 @@ pub fn alert_show(
     level: MessageLevel,
 ) {
     let content = (title.to_string(), msg.to_string());
-    builder::alert_(&None, content, level).show().ok_or_log();
+    builder::alert_(content, level).show().ok_or_log();
 }
 
 #[tracing::instrument]
@@ -160,48 +71,22 @@ pub async fn alert_spawn(
     level: MessageLevel,
 ) {
     let content = (title.to_string(), msg.to_string());
-    builder::alert_(&None, content, level)
-        .spawn()
-        .await
-        .ok_or_log();
+    builder::alert_(content, level).spawn().await.ok_or_log();
 }
 
 #[tracing::instrument]
 /// 即座にメッセージダイアログを表示します。`content`をi18nキーで指定します。エラーが発生した場合は、ログを出力します。
 pub fn alert_i18n_show(content: (&'static str, &'static str), level: MessageLevel) {
-    builder::alert_i18n_(&None, content, level)
-        .show()
-        .ok_or_log();
+    builder::alert_i18n_(content, level).show().ok_or_log();
 }
 
 #[tracing::instrument]
 /// 非同期にメッセージダイアログを表示します。`content`をi18nキーで指定します。エラーが発生した場合は、ログを出力します。
 pub async fn alert_i18n_spawn(content: (&'static str, &'static str), level: MessageLevel) {
-    builder::alert_i18n_(&None, content, level)
+    builder::alert_i18n_(content, level)
         .spawn()
         .await
         .ok_or_log();
-}
-
-#[tracing::instrument]
-/// [`Task`]として非同期に確認ダイアログを表示します。エラーが発生した場合は、ログを出力します。
-pub fn confirm(
-    owner_window_id: Option<window::Id>,
-    (title, msg): (impl ToString + Debug, impl ToString + Debug),
-    level: MessageLevel,
-) -> Task<bool> {
-    let content = (title.to_string(), msg.to_string());
-    show_dialog!(owner_window_id, content, level, builder::confirm_)
-}
-
-#[tracing::instrument]
-/// [`Task`]として非同期に確認ダイアログを表示します。`content` をi18nキーで指定します。エラーが発生した場合は、ログを出力します。
-pub fn confirm_i18n(
-    owner_window_id: Option<window::Id>,
-    content: (&'static str, &'static str),
-    level: MessageLevel,
-) -> Task<bool> {
-    show_dialog!(owner_window_id, content, level, builder::confirm_i18n_)
 }
 
 #[tracing::instrument]
@@ -211,7 +96,7 @@ pub fn confirm_show(
     level: MessageLevel,
 ) {
     let content = (title.to_string(), msg.to_string());
-    builder::confirm_(&None, content, level).show().ok_or_log();
+    builder::confirm_(content, level).show().ok_or_log();
 }
 
 #[tracing::instrument]
@@ -221,24 +106,19 @@ pub async fn confirm_spawn(
     level: MessageLevel,
 ) {
     let content = (title.to_string(), msg.to_string());
-    builder::confirm_(&None, content, level)
-        .spawn()
-        .await
-        .ok_or_log();
+    builder::confirm_(content, level).spawn().await.ok_or_log();
 }
 
 #[tracing::instrument]
 /// 即座に確認ダイアログを表示します。`content` をi18nキーで指定します。エラーが発生した場合は、ログを出力します。
 pub fn confirm_i18n_show(content: (&'static str, &'static str), level: MessageLevel) {
-    builder::confirm_i18n_(&None, content, level)
-        .show()
-        .ok_or_log();
+    builder::confirm_i18n_(content, level).show().ok_or_log();
 }
 
 #[tracing::instrument]
 /// 非同期に確認ダイアログを表示します。`content` をi18nキーで指定します。エラーが発生した場合は、ログを出力します。
 pub async fn confirm_i18n_spawn(content: (&'static str, &'static str), level: MessageLevel) {
-    builder::confirm_i18n_(&None, content, level)
+    builder::confirm_i18n_(content, level)
         .spawn()
         .await
         .ok_or_log();
@@ -259,7 +139,6 @@ Example (created in the runtime directory): PREHNITE_GLOBAL_DIR_PATH = \".\"";
 /// データベースの初期化エラーを表すダイアログ
 pub fn fatal_init_db_error() -> MessageAlert {
     builder::alert_(
-        &None,
         match get_locale_language().as_str() {
             "ja" => (FATAL_JA, FATAL_INIT_DB_ERROR_MESSAGE_JA),
             &_ => (FATAL_EN, FATAL_INIT_DB_ERROR_MESSAGE_EN),
@@ -277,7 +156,6 @@ pub fn fatal_initialize_app_error(e: impl Debug) -> MessageAlert {
         &_ => (FATAL_EN, FATAL_INIT_APP_ERROR_MESSAGE_EN),
     };
     builder::alert_(
-        &None,
         (title, format!("{err_msg}\nError:\n{:#?}", e).as_str()),
         MessageLevel::Error,
     )
@@ -292,5 +170,5 @@ pub fn fatal_initialize_setting_registry_error() -> MessageAlert {
         "ja" => (FATAL_JA, FATAL_INIT_SETTING_REGISTRY_ERROR_MESSAGE_JA),
         &_ => (FATAL_EN, FATAL_INIT_SETTING_REGISTRY_ERROR_MESSAGE_EN),
     };
-    builder::alert_(&None, (title, err_msg), MessageLevel::Error)
+    builder::alert_((title, err_msg), MessageLevel::Error)
 }

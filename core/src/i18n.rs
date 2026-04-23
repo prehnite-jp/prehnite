@@ -2,11 +2,9 @@
 #![doc = "多言語対応"]
 use crate::settings;
 use crate::settings::GlobalSettings;
-use crate::widget::font::ftext;
 use easy_settings::sqlite::SettingManager;
 use fluent_bundle::concurrent::FluentBundle;
 use fluent_bundle::{FluentArgs, FluentError, FluentResource};
-use iced::widget::Text;
 use serde::{Deserialize, Serialize};
 use sqlx::SqliteConnection;
 use std::sync::{Arc, LazyLock, LockResult, RwLock, RwLockWriteGuard};
@@ -223,16 +221,6 @@ pub fn get_lang_bundle() -> Arc<RwLock<CurrentI18nBundle>> {
 /// i18nキーから表示内容を取得します。
 pub fn i18n(id: &str) -> String {
     i18n_fmt(id, None)
-}
-
-/// i18nキーから表示内容を[`Text`]として取得します。
-pub fn i18n_w(id: &str) -> Text<'_> {
-    ftext(i18n_fmt(id, None))
-}
-
-/// i18nキーとフォーマットを使用し表示内容を[`Text`]として取得します。
-pub fn i18n_fmt_w<'a>(id: &str, args: Option<&FluentArgs<'_>>) -> Text<'a> {
-    ftext(i18n_fmt(id, args))
 }
 
 #[tracing::instrument]

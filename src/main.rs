@@ -1,19 +1,17 @@
 #![cfg_attr(feature = "release", windows_subsystem = "windows")]
-mod app;
-mod util;
-pub mod widget;
+pub mod backend;
+pub mod frontend;
 
-use crate::app::PrehniteApp;
 use prehnite_core::db::{initialize_db, DBType, DatabaseError};
 use prehnite_core::font::get_default_font_family;
-use prehnite_core::i18n::initialize_i18n_from_db;
+use prehnite_core::i18n::initialize_i18n_from_settings;
 use prehnite_core::log::initialize_logger;
-use prehnite_core::settings::registry::SettingRegistry;
-use prehnite_core::settings::GlobalSettingKey;
+use prehnite_core::settings;
 use prehnite_core::util::alert::{
-    fatal_initialize_app_error_db, fatal_initialize_setting_registry_error,
+    fatal_initialize_app_error, fatal_initialize_setting_registry_error,
 };
 use std::fmt::Debug;
+use std::sync::LockResult;
 use thiserror::Error;
 use tracing::error;
 use tracing_unwrap::ResultExt;
@@ -40,19 +38,22 @@ async fn initializer() {
     async fn func() -> Result<(), InitializeError> {
         initialize_logger()?;
         initialize_db().await?;
-        if !SettingRegistry::load(DBType::AppGlobal).await {
-            return Err(InitializeError::LoadSettingRegistry);
+        match settings::get_global().write().ok_or_log().as_mut() {
+            Some(x) => {
+                x.load_all().await?;
+            }
+            None => return Err(InitializeError::LoadSettingRegistry),
         };
-        initialize_i18n_from_db().await?;
-        if let None =
-            SettingRegistry::get(&GlobalSettingKey::Font.into()).and_then(|v| v.get::<String>())
-        {
-            SettingRegistry::immediate_apply(
-                GlobalSettingKey::Font.into(),
-                get_default_font_family().into(),
-            )
-            .await?;
-        }
+        initialize_i18n_from_settings().await?;
+        // if let None =
+        //     SettingRegistry::get(&GlobalSettingKey::Font.into()).and_then(|v| v.get::<String>())
+        // {
+        //     SettingRegistry::immediate_apply(
+        //         GlobalSettingKey::Font.into(),
+        //         get_default_font_family().into(),
+        //     )
+        //     .await?;
+        // }
         Ok(())
     }
 
@@ -61,7 +62,7 @@ async fn initializer() {
         error!("{}", err_msg);
         match e {
             InitializeError::DatabaseError(_) | InitializeError::InitializeLogRotateConfig(_) => {
-                fatal_initialize_app_error_db(e).show().unwrap_or_log();
+                fatal_initialize_app_error(e).show().unwrap_or_log();
             }
             InitializeError::LoadSettingRegistry => {
                 fatal_initialize_setting_registry_error()
@@ -73,7 +74,8 @@ async fn initializer() {
     });
 }
 
-fn main() -> Result<(), iced::Error> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     initializer();
-    PrehniteApp::run()
+
+    Ok(())
 }

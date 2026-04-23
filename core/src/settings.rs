@@ -1,5 +1,4 @@
 use crate::db::{get_pool, DBType, DatabaseError};
-use crate::font::get_default_font_family;
 use crate::i18n::SupportedLanguages;
 use crate::i18n::DEFAULT_LANG_ID;
 use crate::util::alert::fatal_initialize_app_error;
@@ -56,7 +55,7 @@ pub struct GlobalSettings {
     #[easy_settings(default = DEFAULT_LANG_ID.into())]
     #[easy_settings(categories("settings_category_general"))]
     locale: Option<SupportedLanguages>,
-    #[easy_settings(default = get_default_font_family().into())]
+    // #[easy_settings(default = get_default_font_family().into())]
     #[easy_settings(categories("settings_category_general"))]
     font: Option<String>,
     #[easy_settings(categories("settings_category_general"))]

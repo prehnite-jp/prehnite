@@ -25,19 +25,16 @@ publish = false
 
 [features]
 release = ["icon", "bundle_license"]
-debug = ["iced/debug", "prehnite-core/debug"]
+debug = ["prehnite-core/debug"]
 icon = ["prehnite-build-libs/icon"]
 bundle_license = ["prehnite-build-libs/bundle_license"]
 
 [dependencies]
 prehnite-core.workspace = true
-iced.workspace = true
 tracing.workspace = true
 tokio.workspace = true
 sqlx.workspace = true
-iced_aw.workspace = true
 fluent-bundle.workspace = true
-image.workspace = true
 opener.workspace = true
 anyhow.workspace = true
 tracing-unwrap.workspace = true
@@ -47,8 +44,6 @@ indexmap.workspace = true
 [workspace.dependencies]
 prehnite-core = { version = "0.0.1-alpha", path = "core" }
 chrono = "0.4"
-iced = { version = "0.14", features = ["tokio", "image"] }
-iced_aw = { version = "0.13", features = ["menu"] }
 sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "chrono", "macros"] }
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "sync"] }
 native-dialog = { version = "0.9", features = ["async"] }
@@ -65,7 +60,6 @@ sys-locale = "0.3"
 fluent-syntax = "0.12"
 tracing = { version = "0.1", features = ["log"] }
 tracing-appender = "0.2"
-image = "0.25"
 serde_json = "1"
 iced_graphics = "0.14"
 zip = "8"

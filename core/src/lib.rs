@@ -6,7 +6,6 @@ pub mod log;
 #[cfg(test)]
 pub(crate) mod test_util;
 pub mod util;
-pub mod widget;
 pub mod license_bundle;
 pub mod font;
 pub mod settings;
