@@ -40,6 +40,10 @@ anyhow.workspace = true
 tracing-unwrap.workspace = true
 thiserror.workspace = true
 indexmap.workspace = true
+dioxus = { version = "0.7", features = ["router", "fullstack"] }
+dioxus-router = "0.7"
+dioxus-fullstack = "0.7"
+dioxus-liveview = "0.7"
 
 [workspace.dependencies]
 prehnite-core = { version = "0.0.1-alpha", path = "core" }
