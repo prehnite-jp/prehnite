@@ -4,6 +4,7 @@ use crate::app::{initializer, PrehniteApp};
 use crate::util::alert::AlertResult;
 
 pub mod app;
+pub mod pages;
 pub mod util;
 
 #[tracing::instrument]
