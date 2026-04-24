@@ -13,8 +13,6 @@ publish.workspace = true
 [features]
 
 debug = []
-frontend = []
-backend = []
 
 [dependencies]
 chrono.workspace = true

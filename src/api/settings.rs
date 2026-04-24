@@ -1,17 +1,16 @@
 use crate::application::settings::GlobalSettings;
-use dioxus::prelude::{get, put};
 use easy_settings::Registry;
 use prehnite_core::db::schema::Setting;
 use std::sync::LazyLock;
 use tokio::sync::RwLock;
+use crate::application::db::acquire_global;
 
-#[cfg(feature = "server")]
 static CACHED_REGISTRY: LazyLock<RwLock<GlobalSettings>> =
     LazyLock::new(|| RwLock::new(Default::default()));
 
-#[get("/api/global/settings")]
+
 pub async fn fetch_all_settings() -> anyhow::Result<GlobalSettings> {
-    let mut conn = crate::backend::db::acquire_global().await?;
+    let mut conn = acquire_global().await?;
     let mut result = GlobalSettings::default();
     result.set_from_row_vec(
         Setting::select_all(&mut *conn)
@@ -24,10 +23,9 @@ pub async fn fetch_all_settings() -> anyhow::Result<GlobalSettings> {
     Ok(result)
 }
 
-#[put("/api/global/settings")]
 pub async fn save_all_settings(settings: GlobalSettings) -> anyhow::Result<()> {
     use sqlx::Acquire;
-    let mut conn = crate::backend::db::acquire_global().await?;
+    let mut conn = acquire_global().await?;
     let mut tx = conn.begin().await?;
     {
         let cached = CACHED_REGISTRY.read().await;

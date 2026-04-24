@@ -24,16 +24,17 @@ rust-version = "1.92"
 publish = false
 
 [features]
+default = ["desktop"]
+
 release = ["bundle_license"]
 bundle_license = ["prehnite-build-libs/bundle_license"]
-desktop = ["dioxus/desktop", "prehnite-core/frontend"]
-server = ["dioxus/server", "prehnite-core/backend", "dep:sqlx"]
+desktop = ["dioxus/desktop"]
 
 [dependencies]
 prehnite-core.workspace = true
 tracing.workspace = true
 tokio.workspace = true
-sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "chrono", "macros"], optional = true }
+sqlx.workspace = true
 fluent-bundle.workspace = true
 opener.workspace = true
 anyhow.workspace = true
@@ -41,8 +42,6 @@ tracing-unwrap.workspace = true
 thiserror.workspace = true
 indexmap.workspace = true
 dioxus.workspace = true
-dioxus-fullstack.workspace = true
-dioxus-server.workspace = true
 dioxus-i18n.workspace = true
 easy-settings.workspace = true
 serde.workspace = true
@@ -84,9 +83,7 @@ structmeta = "0.3.0"
 convert_case = "0.11.0"
 easy-settings = "0.2.2"
 dioxus-i18n = "0.5"
-dioxus = { version = "0.7", features = ["router", "fullstack"] }
-dioxus-fullstack = "0.7"
-dioxus-server = "0.7"
+dioxus = { version = "0.7", features = ["router"] }
 
 [build-dependencies]
 prehnite-build-libs = { version = "0.1.0", path = "build-libs" }

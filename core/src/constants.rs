@@ -1,6 +1,5 @@
 #![doc = "アプリのグローバルな定数等"]
 
-#[cfg(feature = "backend")]
 #[tracing::instrument]
 /// アプリディレクトリのパスを取得します。
 pub fn global_dir() -> Option<std::path::PathBuf> {
@@ -20,7 +19,6 @@ pub fn global_dir() -> Option<std::path::PathBuf> {
         })
 }
 
-#[cfg(feature = "backend")]
 /// グローバル設定データベースのパスを取得します。
 pub fn global_db_file_path() -> Option<std::path::PathBuf> {
     global_dir().map(|x| x.join("global.db"))

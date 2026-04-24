@@ -1,7 +1,8 @@
-use dioxus::prelude::{post, put};
+use crate::application::db::{acquire_book, open_book_db_pool};
 use dioxus_i18n::prelude::i18n;
 use prehnite_core::db::schema::{BookSearchApi, TaskCategory, TaskTemplate};
 use serde::{Deserialize, Serialize};
+use sqlx::Acquire;
 use std::path::PathBuf;
 
 #[derive(thiserror::Error, Debug)]
@@ -17,7 +18,6 @@ pub struct PrehniteBookFixtures {
     book_search_api: Vec<BookSearchApi>,
 }
 
-#[cfg(feature = "desktop")]
 impl Default for PrehniteBookFixtures {
     fn default() -> Self {
         let i18n = i18n();
@@ -82,14 +82,8 @@ impl Default for PrehniteBookFixtures {
     }
 }
 
-#[post("/api/book")]
 /// PrehniteBookを開きます。存在しない場合は作成します。
-pub async fn create_or_open_book(
-    path: PathBuf,
-    fixtures: PrehniteBookFixtures,
-) -> anyhow::Result<()> {
-    use crate::backend::db::{acquire_book, open_book_db_pool};
-    use sqlx::Acquire;
+pub async fn create_or_open_book(path: PathBuf) -> anyhow::Result<()> {
     open_book_db_pool(path).await?;
     let mut conn = acquire_book()
         .await?
@@ -99,7 +93,7 @@ pub async fn create_or_open_book(
         task_category,
         task_template,
         book_search_api,
-    } = fixtures;
+    } = Default::default();
 
     for x in task_category {
         sqlx::query(
@@ -119,9 +113,8 @@ pub async fn create_or_open_book(
     Ok(())
 }
 
-#[put("/api/book")]
 /// 新しいPrehniteBookを開きます。既に存在する場合は上書きされます。
-pub async fn open_new_book(path: PathBuf, fixtures: PrehniteBookFixtures) -> anyhow::Result<()> {
+pub async fn open_new_book(path: PathBuf) -> anyhow::Result<()> {
     tokio::fs::remove_file(&path).await?;
-    create_or_open_book(path, fixtures).await
+    create_or_open_book(path).await
 }

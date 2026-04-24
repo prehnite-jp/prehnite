@@ -5,7 +5,6 @@ use std::str::FromStr;
 use std::sync::{LazyLock, RwLock};
 use tracing_unwrap::ResultExt;
 
-#[cfg(feature = "desktop")]
 pub static APPLIED_REGISTRY: LazyLock<RwLock<GlobalSettings>> =
     LazyLock::new(|| RwLock::new(Default::default()));
 

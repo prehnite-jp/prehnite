@@ -1,12 +1,8 @@
 #![allow(unused)]
 #![doc = "データベースのスキーマ定義"]
-#[cfg(feature = "backend")]
 pub mod app_global;
-#[cfg(feature = "backend")]
 mod from_row;
-#[cfg(feature = "backend")]
 mod load;
-#[cfg(feature = "backend")]
 mod prefixed_deserializer;
 #[cfg(test)]
 mod tests;
