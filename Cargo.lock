@@ -5365,7 +5365,7 @@ checksum = "925383efa346730478fb4838dbe9137d2a47675ad789c546d150a6e1dd4ab31c"
 
 [[package]]
 name = "prehnite"
-version = "0.0.1-alpha"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5391,7 +5391,7 @@ dependencies = [
 
 [[package]]
 name = "prehnite-build-libs"
-version = "0.0.1-alpha"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "cargo-about",
@@ -5404,7 +5404,7 @@ dependencies = [
 
 [[package]]
 name = "prehnite-core"
-version = "0.0.1-alpha"
+version = "0.1.0"
 dependencies = [
  "chrono",
  "derive_more 2.1.1",
@@ -5436,7 +5436,7 @@ dependencies = [
 
 [[package]]
 name = "prehnite-core-proc-macros"
-version = "0.0.1-alpha"
+version = "0.1.0"
 dependencies = [
  "convert_case 0.11.0",
  "proc-macro2",

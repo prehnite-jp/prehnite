@@ -40,7 +40,7 @@ thiserror.workspace = true
 tracing-unwrap.workspace = true
 strum.workspace = true
 indexmap.workspace = true
-prehnite-core-proc-macros = { version = "0.0.1-alpha", path = "proc-macros" }
+prehnite-core-proc-macros = { version = "0.1.0", path = "proc-macros" }
 easy-settings.workspace = true
 
 [dev-dependencies]

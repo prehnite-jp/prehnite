@@ -14,7 +14,7 @@ rust-version.workspace = true
 members = ["build-libs", "core", "core/proc-macros"]
 
 [workspace.package]
-version = "0.0.1-alpha"
+version = "0.1.0"
 edition = "2024"
 license = "Zlib"
 authors = ["saku-shirakura<saku@sakushira.com>"]
@@ -51,7 +51,7 @@ sys-locale.workspace = true
 serde_json.workspace = true
 
 [workspace.dependencies]
-prehnite-core = { version = "0.0.1-alpha", path = "core" }
+prehnite-core = { version = "0.1.0", path = "core" }
 chrono = { version = "0.4", features = ["serde"] }
 sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "chrono", "macros"] }
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "sync", "fs"] }
@@ -89,5 +89,5 @@ dioxus-fullstack = "0.7"
 dioxus-server = "0.7"
 
 [build-dependencies]
-prehnite-build-libs = { version = "0.0.1-alpha", path = "build-libs" }
+prehnite-build-libs = { version = "0.1.0", path = "build-libs" }
 anyhow.workspace = true
