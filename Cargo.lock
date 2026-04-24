@@ -2311,9 +2311,9 @@ checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
 
 [[package]]
 name = "easy-settings"
-version = "0.2.1"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "80e73f4d486096959ff309a8b275571bf44c84de4cafb3fed5c12d453a69b2e9"
+checksum = "7feaabd1144fc749b573f165e58c23b838da16c763187e04fda9ba501bc62534"
 dependencies = [
  "derive_builder",
  "easy-settings-derive",

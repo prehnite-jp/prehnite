@@ -82,7 +82,7 @@ proc-macro2 = "1"
 quote = "1"
 structmeta = "0.3.0"
 convert_case = "0.11.0"
-easy-settings = "0.2.1"
+easy-settings = "0.2.2"
 dioxus-i18n = "0.5"
 dioxus = { version = "0.7", features = ["router", "fullstack"] }
 dioxus-fullstack = "0.7"
