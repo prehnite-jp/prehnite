@@ -1,11 +1,12 @@
 #![cfg_attr(feature = "release", windows_subsystem = "windows")]
 
-use crate::app::{initializer, PrehniteApp};
+use crate::app::initializer;
 use crate::util::alert::AlertResult;
+use crate::windows::main_window::PrehniteApp;
 
 pub mod app;
-pub mod pages;
 pub mod util;
+pub mod windows;
 
 #[tracing::instrument]
 fn initializer() -> anyhow::Result<()> {

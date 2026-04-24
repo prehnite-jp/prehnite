@@ -1,18 +1,21 @@
+use crate::app::db::acquire_global;
 use dioxus_i18n::unic_langid::{langid, LanguageIdentifier};
 use easy_settings::Registry;
+use prehnite_core::db::schema::Setting;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
-use std::sync::{LazyLock, RwLock};
+use std::sync::{Arc, LazyLock, RwLock};
 use tracing_unwrap::ResultExt;
-use prehnite_core::db::schema::Setting;
-use crate::app::db::acquire_global;
 
-pub static APPLIED_REGISTRY: LazyLock<RwLock<GlobalSettings>> =
-    LazyLock::new(|| RwLock::new(Default::default()));
+static APPLIED_REGISTRY: LazyLock<Arc<RwLock<GlobalSettings>>> =
+    LazyLock::new(|| Arc::new(RwLock::new(Default::default())));
+
+pub fn get_applied() -> Arc<RwLock<GlobalSettings>> {
+    APPLIED_REGISTRY.clone()
+}
 
 static CACHED_REGISTRY: LazyLock<tokio::sync::RwLock<GlobalSettings>> =
     LazyLock::new(|| tokio::sync::RwLock::new(Default::default()));
-
 
 pub async fn fetch_all_settings() -> anyhow::Result<GlobalSettings> {
     let mut conn = acquire_global().await?;
@@ -50,7 +53,6 @@ pub async fn save_all_settings(settings: GlobalSettings) -> anyhow::Result<()> {
     *CACHED_REGISTRY.write().await = settings;
     Ok(())
 }
-
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub enum SupportedLanguages {

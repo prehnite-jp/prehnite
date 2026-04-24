@@ -1,16 +1,16 @@
-use crate::app::settings::{fetch_all_settings, SupportedLanguages, APPLIED_REGISTRY};
+use crate::app::settings::{fetch_all_settings, get_applied, SupportedLanguages};
 use dioxus_i18n::prelude::{use_init_i18n, I18nConfig};
 use dioxus_i18n::unic_langid::LanguageIdentifier;
 use tracing_unwrap::ResultExt;
 
 pub async fn load_settings() -> anyhow::Result<()> {
     let registry = fetch_all_settings().await?;
-    *APPLIED_REGISTRY.write().unwrap_or_log() = registry;
+    *get_applied().write().unwrap_or_log() = registry;
     Ok(())
 }
 
 fn get_current_locale() -> LanguageIdentifier {
-    APPLIED_REGISTRY.read().unwrap_or_log().get_locale().into()
+    get_applied().read().unwrap_or_log().get_locale().into()
 }
 
 pub fn initialize_i18n() {
