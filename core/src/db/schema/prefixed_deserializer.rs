@@ -5,9 +5,14 @@ use crate::db::schema::{
 use crate::db::util::prefixer::Prefixer;
 use sqlx::sqlite::SqliteRow;
 use sqlx::Row;
-use crate::db::connection::DatabaseError;
 
 pub struct PrefixedDeserializer;
+
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("invalid value")]
+    ItemTypeDecodeError,
+}
 
 impl PrefixedDeserializer {
     pub fn publisher(
@@ -43,8 +48,7 @@ impl PrefixedDeserializer {
             publication_date: row.try_get(p.prefix("publication_date"))?,
             created_at: row.try_get(p.prefix("created_at"))?,
             updated_at: row.try_get(p.prefix("updated_at"))?,
-            tmp_registration_id: row
-                .try_get::<Option<i64>, _>(p.prefix("tmp_registration_id"))?,
+            tmp_registration_id: row.try_get::<Option<i64>, _>(p.prefix("tmp_registration_id"))?,
         })
     }
 
@@ -65,7 +69,7 @@ impl PrefixedDeserializer {
         } else {
             return Err(sqlx::Error::ColumnDecode {
                 index: "item_type".to_string(),
-                source: Box::new(DatabaseError::ItemTypeDecodeError),
+                source: Box::new(Error::ItemTypeDecodeError),
             });
         };
 

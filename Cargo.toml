@@ -27,25 +27,28 @@ publish = false
 release = ["bundle_license"]
 bundle_license = ["prehnite-build-libs/bundle_license"]
 desktop = ["dioxus/desktop", "prehnite-core/frontend"]
-server = ["dioxus/server", "prehnite-core/backend"]
+server = ["dioxus/server", "prehnite-core/backend", "dep:sqlx"]
 
 [dependencies]
 prehnite-core.workspace = true
 tracing.workspace = true
 tokio.workspace = true
-sqlx.workspace = true
+sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "chrono", "macros"], optional = true }
 fluent-bundle.workspace = true
 opener.workspace = true
 anyhow.workspace = true
 tracing-unwrap.workspace = true
 thiserror.workspace = true
 indexmap.workspace = true
-dioxus = { version = "0.7", features = ["router", "fullstack"] }
-dioxus-router = "0.7"
-dioxus-fullstack = "0.7"
-dioxus-liveview = "0.7"
+dioxus.workspace = true
+dioxus-fullstack.workspace = true
+dioxus-server.workspace = true
+dioxus-i18n.workspace = true
 easy-settings.workspace = true
 serde.workspace = true
+chrono.workspace = true
+sys-locale.workspace = true
+serde_json.workspace = true
 
 [workspace.dependencies]
 prehnite-core = { version = "0.0.1-alpha", path = "core" }
@@ -80,6 +83,10 @@ quote = "1"
 structmeta = "0.3.0"
 convert_case = "0.11.0"
 easy-settings = "0.2.1"
+dioxus-i18n = "0.5"
+dioxus = { version = "0.7", features = ["router", "fullstack"] }
+dioxus-fullstack = "0.7"
+dioxus-server = "0.7"
 
 [build-dependencies]
 prehnite-build-libs = { version = "0.0.1-alpha", path = "build-libs" }

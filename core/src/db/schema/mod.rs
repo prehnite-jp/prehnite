@@ -567,11 +567,11 @@ pub struct Setting {
     pub setting_value: Option<String>,
 }
 
-impl From<Setting> for easy_settings::SettingRow {
-    fn from(value: Setting) -> Self {
+impl Setting {
+    pub fn to_setting_row(self) -> easy_settings::SettingRow {
         easy_settings::SettingRow {
-            setting_key: value.setting_key,
-            value: value.setting_value,
+            setting_key: self.setting_key,
+            value: self.setting_value,
         }
     }
 }

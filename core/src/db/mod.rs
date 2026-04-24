@@ -1,8 +1,6 @@
 #![allow(unused)]
 #![doc = "アプリケーションのデータベース"]
 #[cfg(feature = "backend")]
-pub mod connection;
-#[cfg(feature = "backend")]
 pub mod migrate;
 #[cfg(feature = "backend")]
 pub mod query;

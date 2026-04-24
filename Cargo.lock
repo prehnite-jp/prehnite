@@ -1935,6 +1935,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "dioxus-i18n"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ceebf715471a986307cdfe422d645c0784602003758171102ba9225624be9f55"
+dependencies = [
+ "dioxus",
+ "fluent",
+ "thiserror 2.0.18",
+ "unic-langid",
+ "walkdir",
+]
+
+[[package]]
 name = "dioxus-interpreter-js"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2542,6 +2555,16 @@ dependencies = [
  "crc32fast",
  "miniz_oxide",
  "zlib-rs",
+]
+
+[[package]]
+name = "fluent"
+version = "0.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8137a6d5a2c50d6b0ebfcb9aaa91a28154e0a70605f112d30cb0cd4a78670477"
+dependencies = [
+ "fluent-bundle",
+ "unic-langid",
 ]
 
 [[package]]
@@ -5345,10 +5368,11 @@ name = "prehnite"
 version = "0.0.1-alpha"
 dependencies = [
  "anyhow",
+ "chrono",
  "dioxus",
  "dioxus-fullstack",
- "dioxus-liveview",
- "dioxus-router",
+ "dioxus-i18n",
+ "dioxus-server",
  "easy-settings",
  "fluent-bundle",
  "indexmap",
@@ -5356,7 +5380,9 @@ dependencies = [
  "prehnite-build-libs",
  "prehnite-core",
  "serde",
+ "serde_json",
  "sqlx",
+ "sys-locale",
  "thiserror 2.0.18",
  "tokio",
  "tracing",

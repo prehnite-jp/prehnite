@@ -1,34 +1,35 @@
 #![doc = "データベースのマイグレーション"]
-use sqlx::SqlitePool;
-use crate::db::connection::DBType;
 
 /// ブックファイル
 pub mod prehnite_book {
     use sqlx::migrate::Migrator;
     use sqlx::sqlx_macros::migrate;
+    use sqlx::SqlitePool;
 
     /// マイグレーション定義
     pub static MIGRATOR: Migrator = migrate!("../migrations/prehnite_book");
+
+    /// マイグレーションを実行します。
+    /// # Parameters
+    /// - `pool` マイグレーションを実行するDB接続
+    pub async fn migrate(pool: &SqlitePool) -> Result<(), sqlx::migrate::MigrateError> {
+        crate::db::migrate::app_global::MIGRATOR.run(pool).await
+    }
 }
 
 /// アプリのグローバルデータベース
 pub mod app_global {
     use sqlx::migrate::Migrator;
     use sqlx::sqlx_macros::migrate;
+    use sqlx::SqlitePool;
 
     /// マイグレーション定義
     pub static MIGRATOR: Migrator = migrate!("../migrations/app_global");
-}
 
-/// マイグレーションを実行します。
-/// # Parameters
-/// - `pool` マイグレーションを実行するDB接続
-/// - `mode` 初期化したいデータベースのタイプ
-pub async fn migrate(pool: &SqlitePool, mode: DBType) -> Result<(), sqlx::migrate::MigrateError> {
-    match mode {
-        DBType::PrehniteBook => &prehnite_book::MIGRATOR,
-        DBType::AppGlobal => &app_global::MIGRATOR,
+    /// マイグレーションを実行します。
+    /// # Parameters
+    /// - `pool` マイグレーションを実行するDB接続
+    pub async fn migrate(pool: &SqlitePool) -> Result<(), sqlx::migrate::MigrateError> {
+        MIGRATOR.run(pool).await
     }
-    .run(pool)
-    .await
 }
