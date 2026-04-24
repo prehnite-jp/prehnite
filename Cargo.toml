@@ -48,6 +48,7 @@ serde.workspace = true
 chrono.workspace = true
 sys-locale.workspace = true
 serde_json.workspace = true
+native-dialog.workspace = true
 
 [workspace.dependencies]
 prehnite-core = { version = "0.1.0", path = "core" }

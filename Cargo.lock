@@ -4752,6 +4752,7 @@ dependencies = [
  "easy-settings",
  "fluent-bundle",
  "indexmap",
+ "native-dialog",
  "opener",
  "prehnite-build-libs",
  "prehnite-core",

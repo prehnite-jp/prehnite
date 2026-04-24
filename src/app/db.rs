@@ -56,10 +56,12 @@ async fn connect_pool(path: PathBuf) -> sqlx::Result<SqlitePool> {
 }
 
 pub async fn initialize_global_db_pool() -> anyhow::Result<()> {
-    let pool =
-        connect_pool(global_db_file_path().ok_or(Error::MissingGlobalDatabaseFilePath)?).await?;
-    app_global::migrate(&pool).await?;
-    GLOBAL_DB_POOL.set(pool).ok();
+    if GLOBAL_DB_POOL.get().is_none() {
+        let pool = connect_pool(global_db_file_path().ok_or(Error::MissingGlobalDatabaseFilePath)?)
+            .await?;
+        app_global::migrate(&pool).await?;
+        GLOBAL_DB_POOL.set(pool).ok();
+    }
     Ok(())
 }
 
@@ -73,7 +75,13 @@ pub async fn open_book_db_pool(path: impl Into<PathBuf>) -> sqlx::Result<()> {
 
 pub async fn close_book_db_pool() {
     if is_book_opened() {
-        BOOK_DB_POOL.read().unwrap_or_log().as_ref().unwrap().close().await;
+        BOOK_DB_POOL
+            .read()
+            .unwrap_or_log()
+            .as_ref()
+            .unwrap()
+            .close()
+            .await;
         *BOOK_DB_POOL.write().unwrap_or_log() = None;
     }
 }

@@ -1,4 +1,4 @@
-use crate::application::db::{acquire_book, open_book_db_pool};
+use crate::app::db::{acquire_book, open_book_db_pool};
 use dioxus_i18n::prelude::i18n;
 use prehnite_core::db::schema::{BookSearchApi, TaskCategory, TaskTemplate};
 use serde::{Deserialize, Serialize};
