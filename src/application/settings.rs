@@ -1,13 +1,16 @@
+use dioxus::prelude::put;
 use dioxus_fullstack::get;
 use dioxus_i18n::unic_langid::{langid, LanguageIdentifier};
 use easy_settings::Registry;
 use prehnite_core::db::schema::Setting;
 use serde::{Deserialize, Serialize};
+use sqlx::Acquire;
 use std::str::FromStr;
+use std::sync::{LazyLock, RwLock};
 use tracing_unwrap::ResultExt;
 
-#[get("/api/settings")]
-pub async fn fetch_all_settings() -> Result<GlobalSettings, anyhow::Error> {
+#[get("/api/global/settings")]
+pub async fn fetch_all_settings() -> anyhow::Result<GlobalSettings> {
     let mut conn = crate::backend::db::acquire_global().await?;
     let mut result = GlobalSettings::default();
     result.set_from_row_vec(
@@ -17,13 +20,38 @@ pub async fn fetch_all_settings() -> Result<GlobalSettings, anyhow::Error> {
             .map(|x| x.to_setting_row())
             .collect(),
     );
+    *CACHED_REGISTRY.write().unwrap_or_log() = result.clone();
     Ok(result)
 }
 
-#[cfg(feature = "desktop")]
-thread_local! {
-    pub static APPLIED_REGISTRY: std::cell::RefCell<GlobalSettings> = std::cell::RefCell::new(GlobalSettings::default());
+#[put("/api/global/settings")]
+pub async fn save_all_settings(settings: GlobalSettings) -> anyhow::Result<()> {
+    let mut conn = crate::backend::db::acquire_global().await?;
+    let mut tx = conn.begin().await?;
+    let cached = CACHED_REGISTRY.read().unwrap_or_log();
+    for (key, val) in settings
+        .items()
+        .iter()
+        .filter(|x| cached.get(x.0).unwrap() != x.1)
+    {
+        sqlx::query("INSERT INTO settings(setting_key, setting_value) VALUES (?1, ?2) ON CONFLICT DO UPDATE SET setting_value = ?2")
+            .bind(key.to_string())
+            .bind(val.raw_string())
+            .execute(&mut *tx)
+            .await?;
+    }
+    tx.commit().await?;
+    *CACHED_REGISTRY.write().unwrap_or_log() = settings;
+    Ok(())
 }
+
+#[cfg(feature = "server")]
+static CACHED_REGISTRY: LazyLock<RwLock<GlobalSettings>> =
+    LazyLock::new(|| RwLock::new(Default::default()));
+
+#[cfg(feature = "desktop")]
+pub static APPLIED_REGISTRY: LazyLock<RwLock<GlobalSettings>> =
+    LazyLock::new(|| RwLock::new(Default::default()));
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub enum SupportedLanguages {
