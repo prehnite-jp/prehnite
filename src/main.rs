@@ -5,6 +5,7 @@ use crate::application::PrehniteApp;
 pub mod application;
 pub mod backend;
 pub mod frontend;
+pub mod api;
 
 #[tokio::main]
 #[tracing::instrument]
