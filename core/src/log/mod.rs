@@ -1,6 +1,6 @@
 #![doc = "ロギングの実装"]
-use crate::env::ENV_KEY_LOG;
 use crate::constants::global_dir;
+use crate::env::ENV_KEY_LOG;
 use std::path::{Path, PathBuf};
 use tracing::Level;
 use tracing_appender::rolling;
@@ -38,9 +38,9 @@ const LOG_DIR_NAME: &str = "";
 const LOG_DIR_NAME: &str = "log";
 
 /// ログディレクトリのパスを取得します。
-pub fn log_dir() -> PathBuf {
+pub fn log_dir() -> Option<PathBuf> {
     let mut dir = global_dir();
-    dir.push(LOG_DIR_NAME);
+    dir.as_mut().map(|x| x.push(LOG_DIR_NAME));
     dir
 }
 
@@ -71,8 +71,20 @@ fn add_directive(env_filter: EnvFilter, directive: Directive) -> EnvFilter {
     env_filter.add_directive(directive)
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("Logger initializing failed.")]
+    InitError(#[from] InitError),
+    #[error("Logger dir not set.")]
+    FailedToGetLogDir,
+}
+
 /// ロガーを初期化します。
-pub fn initialize_logger() -> Result<(), InitError> {
+pub fn initialize_logger() -> Result<(), Error> {
+    let log_dir = match log_dir() {
+        None => return Err(Error::FailedToGetLogDir),
+        Some(x) => x,
+    };
     let default_log_filter: EnvFilter = DEFAULT_LOG_FILTER
         .iter()
         .map(|v| v.parse().unwrap())
@@ -80,16 +92,15 @@ pub fn initialize_logger() -> Result<(), InitError> {
 
     let stdout_logger = std::io::stdout.with_max_level(STDOUT_LOG_LEVEL);
     let stderr_logger = std::io::stderr.with_max_level(STDERR_LOG_LEVEL);
-    let error_appender = appender(ROTATION_CYCLE, log_dir(), ERROR_LOG_FILENAME)?
+    let error_appender = appender(ROTATION_CYCLE, &log_dir, ERROR_LOG_FILENAME)?
         .with_max_level(ERROR_LOG_FILE_LEVEL);
     let info_appender =
-        appender(ROTATION_CYCLE, log_dir(), INFO_LOG_FILENAME)?.with_max_level(INFO_LOG_FILE_LEVEL);
+        appender(ROTATION_CYCLE, &log_dir, INFO_LOG_FILENAME)?.with_max_level(INFO_LOG_FILE_LEVEL);
 
     let info_debug_appender = info_appender;
     #[cfg(debug_assertions)]
-    let info_debug_appender = info_debug_appender.or_else(
-        rolling::never(log_dir(), DEBUG_LOG_FILENAME).with_max_level(DEBUG_LOG_FILE_LEVEL),
-    );
+    let info_debug_appender = info_debug_appender
+        .or_else(rolling::never(&log_dir, DEBUG_LOG_FILENAME).with_max_level(DEBUG_LOG_FILE_LEVEL));
 
     let writer = stderr_logger
         .or_else(stdout_logger)

@@ -1,18 +1,19 @@
-use std::fmt::Debug;
-use std::path::{Path, PathBuf};
-use std::sync::{Arc, LazyLock, OnceLock};
+use crate::constants::global_dir;
+use crate::db::migrate::migrate;
 use chrono::Duration;
 use log::LevelFilter;
 use native_dialog::MessageLevel;
-use sqlx::{Sqlite, SqlitePool};
 use sqlx::pool::PoolConnection;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
+use sqlx::{ConnectOptions, Sqlite, SqlitePool};
+use std::fmt::Debug;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, LazyLock, OnceLock};
 use strum::{EnumString, IntoStaticStr};
 use thiserror::Error;
 use tokio::sync::RwLock;
 use tracing::error;
 use tracing_unwrap::ResultExt;
-use crate::db::migrate::migrate;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, EnumString, IntoStaticStr)]
 pub enum DBType {
@@ -21,9 +22,6 @@ pub enum DBType {
     #[strum(serialize = "App global settings")]
     AppGlobal,
 }
-
-
-
 
 #[derive(Debug)]
 struct Pool {
@@ -88,43 +86,6 @@ pub async fn acquire_or_log(mode: DBType) -> Option<PoolConnection<Sqlite>> {
     }
 }
 
-/// グローバルデータベース接続を取得します。エラーが発生した場合はログに出力し、アラートを表示します。
-pub async fn acquire_book_or_alert() -> PoolConnection<Sqlite> {
-    acquire_or_log(DBType::PrehniteBook).await.unwrap_or_alert()
-}
-
-#[tracing::instrument]
-/// Prehniteブックファイルを開きます。エラーが発生した場合はログに出力し、アラートを表示します。
-pub fn open_book_or_alert(book_path: PathBuf) -> bool {
-    let x = settings::get_global();
-    match x.write().ok_or_log().as_mut() {
-        Some(x) => {
-            x.get_tmp_registry()
-                .set_last_opened_file(book_path.to_str().map(|x| x.to_string()));
-        }
-        None => {
-            alert_i18n_show(("error", "book-open-error"), MessageLevel::Error);
-            return false;
-        }
-    }
-    true
-}
-
-/// Prehniteブックファイルを閉じます。エラーが発生した場合はログに出力します。
-pub async fn close_book_or_log() {
-    get_database()
-        .write()
-        .await
-        .prehnite_book_db_pool
-        .write()
-        .await
-        .set_pool(None);
-    if let Some(x) = settings::get_global().write().ok_or_log().as_mut() {
-        x.get_tmp_registry().set_last_opened_file(None);
-        x.save_and_apply().await;
-    };
-}
-
 static IS_PREHNITE_BOOK_OPENED: LazyLock<Arc<std::sync::RwLock<DbOpenedStatus>>> =
     LazyLock::new(|| Arc::new(std::sync::RwLock::new(DbOpenedStatus::default())));
 
@@ -158,12 +119,14 @@ pub enum DatabaseError {
     MigrateError(#[from] sqlx::migrate::MigrateError),
     #[error("Failed to decode item_type.")]
     ItemTypeDecodeError,
+    #[error("Failed to get global directory.")]
+    FailedToGetGlobalDir,
 }
 
 impl Database {
-    fn get_app_global_database_url() -> PathBuf {
+    fn get_app_global_database_url() -> Option<PathBuf> {
         let mut db_file = global_dir();
-        db_file.push("app_global.db");
+        db_file.as_mut().map(|x| x.push("app_global.db"));
         db_file
     }
 
@@ -181,7 +144,8 @@ impl Database {
 
     /// 接続を初期化し、マイグレーションを実行します。
     pub async fn initialize() -> Result<Self, DatabaseError> {
-        let app_global_path = Self::get_app_global_database_url();
+        let app_global_path =
+            Self::get_app_global_database_url().ok_or(DatabaseError::FailedToGetGlobalDir)?;
         let mut pool = SqlitePoolOptions::new()
             .connect_with(Self::connect_option(app_global_path))
             .await?;

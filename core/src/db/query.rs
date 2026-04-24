@@ -1,8 +1,8 @@
 use crate::db::schema::{
     BackgroundInfo, BackgroundReference, BibliographyAuthor, Draft, Headline, HeadlineChildren,
-    Item, ItemReference, ItemType, Paragraph, ParagraphSummary, Setting, Tag, Task,
+    Item, ItemReference, ItemType, Paragraph, ParagraphSummary, Tag, Task,
 };
-use crate::{to_hash_map_key_id};
+use crate::to_hash_map_key_id;
 use indexmap::IndexMap;
 use sqlx::SqliteConnection;
 
@@ -40,11 +40,20 @@ pub async fn fetch_headline_children_recurse(
         .fetch_all(conn)
         .await?;
     let headlines: IndexMap<i64, Headline> = to_hash_map_key_id!(query_result);
-    let parent = opt_unwrap_or_return!(headlines.get(&headline_id).cloned(), Ok(None));
+    let parent = headlines.get(&headline_id).cloned();
+    if parent.is_none() {
+        return Ok(None);
+    }
+    let parent = parent.unwrap();
+
     let mut children: IndexMap<i64, Vec<Headline>> = IndexMap::new();
-    for i in headlines.keys() {
-        let headline = opt_unwrap_or_continue!(headlines.get(i));
-        match children.get_mut(&opt_unwrap_or_continue!(headline.parent_id)) {
+    for headline in headlines.values() {
+        let parent_id = headline.parent_id.as_ref();
+        if parent_id.is_none() {
+            continue;
+        }
+        let parent_id = parent_id.unwrap();
+        match children.get_mut(parent_id) {
             None => {
                 children.insert(headline.parent_id.unwrap(), vec![headline.clone()]);
             }
@@ -233,10 +242,8 @@ pub async fn fetch_root_headline_related_paragraph(
         .into_iter()
         .for_each(|v| {
             let p = match &v.item_type {
-                ItemType::Headline(_) => return,
-                ItemType::Paragraph(v) => {
-                    opt_unwrap_or_return!(v, ())
-                }
+                ItemType::Paragraph(Some(x)) => x,
+                _ => return,
             };
             let headline_itm_id = p.headline.id;
             if result.contains_key(&headline_itm_id) {
