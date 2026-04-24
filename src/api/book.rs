@@ -1,9 +1,7 @@
-use crate::backend::db::{acquire_book, open_book_db_pool};
 use dioxus::prelude::{post, put};
 use dioxus_i18n::prelude::i18n;
 use prehnite_core::db::schema::{BookSearchApi, TaskCategory, TaskTemplate};
 use serde::{Deserialize, Serialize};
-use sqlx::Acquire;
 use std::path::PathBuf;
 
 #[derive(thiserror::Error, Debug)]
@@ -90,6 +88,8 @@ pub async fn create_or_open_book(
     path: PathBuf,
     fixtures: PrehniteBookFixtures,
 ) -> anyhow::Result<()> {
+    use crate::backend::db::{acquire_book, open_book_db_pool};
+    use sqlx::Acquire;
     open_book_db_pool(path).await?;
     let mut conn = acquire_book()
         .await?

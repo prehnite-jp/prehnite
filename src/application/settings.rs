@@ -1,10 +1,6 @@
-use dioxus::prelude::put;
-use dioxus_fullstack::get;
 use dioxus_i18n::unic_langid::{langid, LanguageIdentifier};
 use easy_settings::Registry;
-use prehnite_core::db::schema::Setting;
 use serde::{Deserialize, Serialize};
-use sqlx::Acquire;
 use std::str::FromStr;
 use std::sync::{LazyLock, RwLock};
 use tracing_unwrap::ResultExt;

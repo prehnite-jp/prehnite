@@ -2,10 +2,8 @@ use crate::application::settings::GlobalSettings;
 use dioxus::prelude::{get, put};
 use easy_settings::Registry;
 use prehnite_core::db::schema::Setting;
-use sqlx::Acquire;
 use std::sync::LazyLock;
 use tokio::sync::RwLock;
-use tracing_unwrap::ResultExt;
 
 #[cfg(feature = "server")]
 static CACHED_REGISTRY: LazyLock<RwLock<GlobalSettings>> =
@@ -28,6 +26,7 @@ pub async fn fetch_all_settings() -> anyhow::Result<GlobalSettings> {
 
 #[put("/api/global/settings")]
 pub async fn save_all_settings(settings: GlobalSettings) -> anyhow::Result<()> {
+    use sqlx::Acquire;
     let mut conn = crate::backend::db::acquire_global().await?;
     let mut tx = conn.begin().await?;
     {
