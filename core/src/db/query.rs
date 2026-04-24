@@ -2,7 +2,7 @@ use crate::db::schema::{
     BackgroundInfo, BackgroundReference, BibliographyAuthor, Draft, Headline, HeadlineChildren,
     Item, ItemReference, ItemType, Paragraph, ParagraphSummary, Setting, Tag, Task,
 };
-use crate::{opt_unwrap_or_continue, opt_unwrap_or_return, to_hash_map_key_id};
+use crate::{to_hash_map_key_id};
 use indexmap::IndexMap;
 use sqlx::SqliteConnection;
 

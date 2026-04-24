@@ -26,8 +26,8 @@ publish = false
 [features]
 release = ["bundle_license"]
 bundle_license = ["prehnite-build-libs/bundle_license"]
-desktop = ["dioxus/desktop"]
-server = ["dioxus/server"]
+desktop = ["dioxus/desktop", "prehnite-core/frontend"]
+server = ["dioxus/server", "prehnite-core/backend"]
 
 [dependencies]
 prehnite-core.workspace = true
@@ -44,11 +44,12 @@ dioxus = { version = "0.7", features = ["router", "fullstack"] }
 dioxus-router = "0.7"
 dioxus-fullstack = "0.7"
 dioxus-liveview = "0.7"
-easy-settings = { version = "0.2.1", features = ["sqlite", "tokio"] }
+easy-settings.workspace = true
+serde.workspace = true
 
 [workspace.dependencies]
 prehnite-core = { version = "0.0.1-alpha", path = "core" }
-chrono = "0.4"
+chrono = { version = "0.4", features = ["serde"] }
 sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "chrono", "macros"] }
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "sync"] }
 native-dialog = { version = "0.9", features = ["async"] }
@@ -72,12 +73,13 @@ anyhow = "1"
 thiserror = "2"
 tracing-unwrap = "1"
 strum = { version = "0.28", features = ["derive"] }
-indexmap = { version = "2" }
+indexmap = { version = "2", features = ["serde"] }
 syn = { version = "2", features = ["full", "extra-traits"] }
 proc-macro2 = "1"
 quote = "1"
 structmeta = "0.3.0"
 convert_case = "0.11.0"
+easy-settings = "0.2.1"
 
 [build-dependencies]
 prehnite-build-libs = { version = "0.0.1-alpha", path = "build-libs" }

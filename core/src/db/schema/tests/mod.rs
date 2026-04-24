@@ -1,6 +1,6 @@
 mod crud;
 
-use crate::db::schema::app_global::book_search_api::BookSearchApi;
+use crate::db::schema::BookSearchApi;
 use crate::db::schema::*;
 use crate::test_util::{RandomValue, RandomValueVec};
 use rand::Rng;

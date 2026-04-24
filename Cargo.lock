@@ -809,6 +809,7 @@ dependencies = [
  "iana-time-zone",
  "js-sys",
  "num-traits",
+ "serde",
  "wasm-bindgen",
  "windows-link 0.2.1",
 ]
@@ -5354,6 +5355,7 @@ dependencies = [
  "opener",
  "prehnite-build-libs",
  "prehnite-core",
+ "serde",
  "sqlx",
  "thiserror 2.0.18",
  "tokio",
@@ -5380,6 +5382,7 @@ version = "0.0.1-alpha"
 dependencies = [
  "chrono",
  "derive_more 2.1.1",
+ "easy-settings",
  "fluent-bundle",
  "fluent-syntax",
  "indexmap",

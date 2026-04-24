@@ -1,5 +1,4 @@
 pub mod constants;
-#[cfg(feature = "backend")]
 pub mod db;
 #[cfg(feature = "backend")]
 mod env;

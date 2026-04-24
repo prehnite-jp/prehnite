@@ -3,9 +3,9 @@ use crate::db::schema::{
     ParagraphLink, Publisher, Task, TaskCategory, TaskTemplate,
 };
 use crate::db::util::prefixer::Prefixer;
-use crate::db::DatabaseError;
 use sqlx::sqlite::SqliteRow;
 use sqlx::Row;
+use crate::db::connection::DatabaseError;
 
 pub struct PrefixedDeserializer;
 

@@ -157,6 +157,7 @@ pub fn derive_c(input: TokenStream) -> TokenStream {
             .collect::<Vec<String>>()
             .join(",");
         quote::quote! {
+            #[cfg(feature = "backend")]
             impl #struct_ident {
                 /// 値がSomeの場合に登録を実行する、[`Self::register()`]の糖衣関数
                 pub async fn register_optional(val: std::option::Option<Self>, conn: &mut sqlx::SqliteConnection, is_on_conflict_do_nothing: bool) -> sqlx::Result<std::option::Option<Self>> {
@@ -245,6 +246,7 @@ pub fn derive_r(input: TokenStream) -> TokenStream {
 
     if let Data::Struct(_) = input.data {
         quote::quote! {
+            #[cfg(feature = "backend")]
             impl #struct_ident {
                 #[doc=std::concat!(#view_name, "からすべてのレコードを取得します。")]
                 #[doc="# SQL"]
@@ -324,6 +326,7 @@ pub fn derive_u(input: TokenStream) -> TokenStream {
             .join(",");
 
         quote::quote! {
+            #[cfg(feature = "backend")]
             impl #struct_ident {
                 #[doc=std::concat!("[`Self::id`]に対応するレコードの値を更新します。")]
                 #[doc="# Panics"]
@@ -381,6 +384,7 @@ pub fn derive_d(input: TokenStream) -> TokenStream {
 
     if let Data::Struct(_) = input.data {
         quote::quote! {
+            #[cfg(feature = "backend")]
             impl #struct_ident {
                 #[doc=concat!("[`Self::id`]に対応するレコードを削除します。")]
                 #[doc="# Panics"]

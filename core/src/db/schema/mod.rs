@@ -1,8 +1,12 @@
 #![allow(unused)]
 #![doc = "データベースのスキーマ定義"]
+#[cfg(feature = "backend")]
 pub mod app_global;
+#[cfg(feature = "backend")]
 mod from_row;
+#[cfg(feature = "backend")]
 mod load;
+#[cfg(feature = "backend")]
 mod prefixed_deserializer;
 #[cfg(test)]
 mod tests;
@@ -625,4 +629,29 @@ pub struct RelBackgroundAndItem {
     pub id: i64,
     pub item_id: i64,
     pub background_info_id: i64,
+}
+
+#[derive(
+    Default,
+    Debug,
+    Clone,
+    FromRow,
+    Eq,
+    PartialEq,
+    CreateRecord,
+    ReadRecord,
+    UpdateRecord,
+    DeleteRecord,
+    Deserialize,
+    Serialize,
+)]
+pub struct BookSearchApi {
+    pub id: i64,
+    pub name: String,
+    pub detail: String,
+    pub isbn_url: String,
+    pub text_url: String,
+    pub mapping_script: String,
+    #[prehnite_db(skip)]
+    pub is_example: bool,
 }

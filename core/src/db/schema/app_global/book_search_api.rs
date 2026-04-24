@@ -2,9 +2,11 @@ use crate::db::schema::app_global::book_search_result::BookSearchResult;
 use prehnite_core_proc_macros::{CreateRecord, DeleteRecord, ReadRecord, UpdateRecord};
 use reqwest::IntoUrl;
 use rhai::{Dynamic, Engine, EvalAltResult, Scope};
+use serde::{Deserialize, Serialize};
 use sqlx::{Acquire, FromRow};
 use std::fmt::{Display, Pointer};
 use thiserror::Error;
+use crate::db::schema::BookSearchApi;
 
 #[derive(Error, Debug)]
 pub enum BookSearchApiError {
@@ -25,29 +27,6 @@ impl From<Box<EvalAltResult>> for BookSearchApiError {
 }
 
 pub type BookSearchApiResult<T> = Result<T, BookSearchApiError>;
-
-#[derive(
-    Default,
-    Debug,
-    Clone,
-    FromRow,
-    Eq,
-    PartialEq,
-    CreateRecord,
-    ReadRecord,
-    UpdateRecord,
-    DeleteRecord,
-)]
-pub struct BookSearchApi {
-    pub id: i64,
-    pub name: String,
-    pub detail: String,
-    pub isbn_url: String,
-    pub text_url: String,
-    pub mapping_script: String,
-    #[prehnite_db(skip)]
-    pub is_example: bool,
-}
 
 fn option_str_to_dynamic(value: Option<String>) -> Dynamic {
     match value {
