@@ -1,6 +1,6 @@
 use crate::app::initializer::initialize_i18n;
 use dioxus::core::{Element, VirtualDom};
-use dioxus::desktop::{window, WindowBuilder};
+use dioxus::desktop::{WindowBuilder, window};
 use dioxus::prelude::consume_context;
 use dioxus_desktop::{Config, DesktopContext, WindowEvent};
 use dioxus_i18n::prelude::I18n;

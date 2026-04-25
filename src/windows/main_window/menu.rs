@@ -1,4 +1,9 @@
+use crate::windows::license_info::show_license_info_window;
+use crate::windows::settings::show_settings_window;
+use crate::windows::version_info::show_version_info_window;
 use dioxus::desktop::muda::{Menu, MenuItem, Submenu};
+use dioxus::hooks::use_future;
+use dioxus_desktop::{use_muda_event_handler, window};
 use dioxus_i18n::t;
 use std::rc::Rc;
 
@@ -11,14 +16,10 @@ impl I18nSubmenu {
     fn apply_i18n(&self) {
         self.itm.set_text(t!(self.key));
     }
-
-    fn apply_i18n_vec(items: &Vec<Self>) {
-        items.iter().for_each(|x| x.apply_i18n());
-    }
 }
 
-impl From<(&'static str, Submenu)> for I18nSubmenu {
-    fn from((key, itm): (&'static str, Submenu)) -> Self {
+impl From<(&'static str, bool, Submenu)> for I18nSubmenu {
+    fn from((key, _, itm): (&'static str, bool, Submenu)) -> Self {
         Self { key, itm }
     }
 }
@@ -38,29 +39,29 @@ impl I18nMenuItem {
     }
 }
 
-impl From<(&'static str, MenuItem)> for I18nMenuItem {
-    fn from((key, itm): (&'static str, MenuItem)) -> Self {
+impl From<(&'static str, bool, MenuItem)> for I18nMenuItem {
+    fn from((key, _, itm): (&'static str, bool, MenuItem)) -> Self {
         Self { key, itm }
     }
 }
 
 struct MenuBarBuilder {
-    file: &'static str,
-    file_menu_items: Vec<&'static str>,
-    help: &'static str,
-    help_menu_items: Vec<&'static str>,
+    file: (&'static str, bool),
+    file_menu_items: Vec<(&'static str, bool)>,
+    help: (&'static str, bool),
+    help_menu_items: Vec<(&'static str, bool)>,
 }
 
 impl MenuBarBuilder {
-    fn sub_menu_builder(text: &'static str) -> I18nSubmenu {
-        (text, Submenu::new(text, true)).into()
+    fn sub_menu_builder((text, enabled): (&'static str, bool)) -> I18nSubmenu {
+        (text, enabled, Submenu::with_id(text, text, enabled)).into()
     }
 
-    fn menu_item_builder(text: &'static str) -> I18nMenuItem {
-        (text, MenuItem::new(text, true, None)).into()
+    fn menu_item_builder((text, enabled): (&'static str, bool)) -> I18nMenuItem {
+        (text, enabled, MenuItem::with_id(text, text, enabled, None)).into()
     }
 
-    fn menu_item_builder_vec(list: &Vec<&'static str>) -> Vec<I18nMenuItem> {
+    fn menu_item_builder_vec(list: &Vec<(&'static str, bool)>) -> Vec<I18nMenuItem> {
         list.into_iter()
             .map(|x| *x)
             .map(Self::menu_item_builder)
@@ -72,15 +73,6 @@ impl MenuBarBuilder {
             submenu.append(&m.itm)?;
         }
         Ok(())
-    }
-
-    pub fn new() -> Self {
-        MenuBarBuilder {
-            file: "file",
-            file_menu_items: vec!["open_file", "close_file", "settings", "exit"],
-            help: "help",
-            help_menu_items: vec!["version_info", "license_info"],
-        }
     }
 
     pub fn build(self) -> anyhow::Result<MenuBar> {
@@ -124,10 +116,50 @@ impl MenuBar {
     }
 }
 
+fn default_menubar() -> Option<MenuBar> {
+    MenuBarBuilder {
+        file: ("file", true),
+        file_menu_items: vec![
+            ("new_file", true),
+            ("open_file", true),
+            ("close_file", false),
+            ("settings", true),
+            ("exit", true),
+        ],
+        help: ("help", true),
+        help_menu_items: vec![("version_info", true), ("license_info", true)],
+    }
+    .build()
+    .ok()
+}
+
 thread_local! {
-    static MENU_BAR: Rc<Option<MenuBar>> = Rc::new(MenuBarBuilder::new().build().ok());
+    static MENU_BAR: Rc<Option<MenuBar>> = Rc::new(default_menubar());
 }
 
 pub fn main_window_menu_bar() -> Rc<Option<MenuBar>> {
     MENU_BAR.with(move |x| x.clone())
+}
+
+pub(super) fn menu_handler() {
+    use_muda_event_handler(|e| match e.id().0.as_str() {
+        "new_file" => {}
+        "open_file" => {}
+        "close_file" => {}
+        "settings" => {
+            use_future(show_settings_window);
+        }
+        "exit" => {
+            window().close();
+        }
+        "version_info" => {
+            use_future(show_version_info_window);
+        }
+        "license_info" => {
+            use_future(show_license_info_window);
+        }
+        _ => {
+            println!("x");
+        }
+    });
 }

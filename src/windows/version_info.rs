@@ -29,9 +29,9 @@ fn feature_decoration(features: &'static str) -> String {
     }
 }
 
-pub async fn show_about_window() -> DesktopContext {
+pub async fn show_version_info_window() -> DesktopContext {
     show_modal(
-        AboutWindow,
+        VersionInfoWindow,
         Config::new().with_menu(None),
         WindowBuilder::new()
             .with_title(t!("version_info"))
@@ -45,7 +45,7 @@ pub async fn show_about_window() -> DesktopContext {
 }
 
 #[component]
-pub fn AboutWindow() -> Element {
+pub fn VersionInfoWindow() -> Element {
     rsx! {
         div {
             justify_content: "center",

@@ -5,11 +5,12 @@ use crate::util::alert::AlertResult;
 use crate::windows::main_window::menu::main_window_menu_bar;
 use crate::windows::main_window::PrehniteApp;
 use dioxus::desktop::{Config, WindowBuilder};
+use std::ops::Deref;
 
 pub mod app;
+pub mod assets;
 pub mod util;
 pub mod windows;
-pub mod assets;
 
 #[tracing::instrument]
 fn initializer() -> anyhow::Result<()> {
@@ -30,10 +31,12 @@ fn main() -> anyhow::Result<()> {
     dioxus::LaunchBuilder::new()
         .with_cfg(
             Config::default()
-                .with_menu(match (*main_window_menu_bar()).as_ref() {
-                    None => None,
-                    Some(x) => Some(x.get_menu().clone()),
-                })
+                .with_menu(
+                    main_window_menu_bar()
+                        .deref()
+                        .as_ref()
+                        .map(|x| x.get_menu().clone()),
+                )
                 .with_window(WindowBuilder::new().with_title("Prehnite")),
         )
         .launch(PrehniteApp);
