@@ -1,6 +1,6 @@
 #![cfg_attr(feature = "release", windows_subsystem = "windows")]
 
-use crate::app::{initializer, settings};
+use crate::app::settings;
 use crate::util::alert::AlertResult;
 use crate::windows::main_window::menu::main_window_menu_bar;
 use crate::windows::main_window::PrehniteApp;
@@ -9,6 +9,7 @@ use dioxus::desktop::{Config, WindowBuilder};
 pub mod app;
 pub mod util;
 pub mod windows;
+pub mod assets;
 
 #[tracing::instrument]
 fn initializer() -> anyhow::Result<()> {

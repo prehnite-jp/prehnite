@@ -4748,6 +4748,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "dioxus",
+ "dioxus-desktop",
  "dioxus-i18n",
  "easy-settings",
  "fallible-iterator",

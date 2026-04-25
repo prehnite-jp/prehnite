@@ -42,6 +42,7 @@ tracing-unwrap.workspace = true
 thiserror.workspace = true
 indexmap.workspace = true
 dioxus.workspace = true
+dioxus-desktop.workspace = true
 dioxus-i18n.workspace = true
 easy-settings.workspace = true
 serde.workspace = true
@@ -86,6 +87,7 @@ convert_case = "0.11.0"
 easy-settings = "0.2.2"
 dioxus-i18n = "0.5"
 dioxus = { version = "0.7", features = ["router"] }
+dioxus-desktop = "0.7"
 fallible-iterator = "0.3.0"
 
 [build-dependencies]

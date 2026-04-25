@@ -77,9 +77,9 @@ impl MenuBarBuilder {
     pub fn new() -> Self {
         MenuBarBuilder {
             file: "file",
-            file_menu_items: vec!["open-file", "close-file", "settings", "exit"],
+            file_menu_items: vec!["open_file", "close_file", "settings", "exit"],
             help: "help",
-            help_menu_items: vec!["version-info", "license-info"],
+            help_menu_items: vec!["version_info", "license_info"],
         }
     }
 

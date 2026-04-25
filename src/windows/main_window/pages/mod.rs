@@ -1,5 +1,5 @@
+use crate::windows::about::show_about_window;
 use dioxus::prelude::*;
-use dioxus_i18n::t;
 
 #[derive(Clone, Debug, PartialEq, Routable)]
 pub enum Route {
@@ -9,5 +9,5 @@ pub enum Route {
 
 #[component]
 fn Home() -> Element {
-    rsx! { { t!("wip") } }
+    rsx! { button{ onclick: move |_| async move { show_about_window().await; }, "Click"} }
 }

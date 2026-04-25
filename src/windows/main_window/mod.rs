@@ -1,5 +1,6 @@
 use crate::app::initializer;
 use crate::windows::main_window::pages::Route;
+use crate::windows::utilities::page_initializer;
 use dioxus::prelude::*;
 
 pub mod menu;
@@ -7,7 +8,7 @@ pub mod pages;
 
 #[component]
 pub fn PrehniteApp() -> Element {
-    initializer::initialize_i18n();
+    page_initializer();
     (*menu::main_window_menu_bar())
         .as_ref()
         .map(|x| x.apply_i18n());
