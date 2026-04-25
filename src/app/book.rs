@@ -1,5 +1,5 @@
 use crate::app::db::{acquire_book, open_book_db_pool};
-use dioxus_i18n::prelude::i18n;
+use dioxus_i18n::t;
 use prehnite_core::db::schema::{BookSearchApi, TaskCategory, TaskTemplate};
 use serde::{Deserialize, Serialize};
 use sqlx::Acquire;
@@ -20,17 +20,16 @@ pub struct PrehniteBookFixtures {
 
 impl Default for PrehniteBookFixtures {
     fn default() -> Self {
-        let i18n = i18n();
         Self {
             task_category: vec![
                 TaskCategory {
                     id: 1,
-                    name: i18n.translate("task-category-foreshadowing"),
+                    name: t!("task-category-foreshadowing"),
                     autocomplete_paragraph_link: true,
                 },
                 TaskCategory {
                     id: 2,
-                    name: i18n.translate("task-category-unexplained"),
+                    name: t!("task-category-unexplained"),
                     autocomplete_paragraph_link: true,
                 },
             ],
@@ -41,8 +40,8 @@ impl Default for PrehniteBookFixtures {
                         id: 1,
                         ..Default::default()
                     }),
-                    title: i18n.translate("task-template-recover"),
-                    detail: Some(i18n.translate("task-template-recover-detail")),
+                    title: t!("task-template-recover"),
+                    detail: Some(t!("task-template-recover-detail")),
                 },
                 TaskTemplate {
                     id: 2,
@@ -50,14 +49,14 @@ impl Default for PrehniteBookFixtures {
                         id: 2,
                         ..Default::default()
                     }),
-                    title: i18n.translate("task-template-will-explain"),
-                    detail: Some(i18n.translate("task-template-will-explain-detail")),
+                    title: t!("task-template-will-explain"),
+                    detail: Some(t!("task-template-will-explain-detail")),
                 },
             ],
             book_search_api: vec![BookSearchApi {
                 id: 0,
-                name: i18n.translate("book-search-api-example-name"),
-                detail: i18n.translate("book-search-api-example-detail"),
+                name: t!("book-search-api-example-name"),
+                detail: t!("book-search-api-example-detail"),
                 isbn_url: "https://example.com/api/book?isbn=<isbn>".to_string(),
                 text_url: "https://example.com/api/book?search=<text>".to_string(),
                 mapping_script: r#"fn mapper(isbn, search_text, response){

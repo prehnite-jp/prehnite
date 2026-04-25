@@ -1,17 +1,47 @@
 use crate::app::db::acquire_global;
+use crate::util::alert::AlertResult;
 use dioxus_i18n::unic_langid::{langid, LanguageIdentifier};
 use easy_settings::Registry;
 use prehnite_core::db::schema::Setting;
 use serde::{Deserialize, Serialize};
+use std::ops::AddAssign;
 use std::str::FromStr;
 use std::sync::{Arc, LazyLock, RwLock};
 use tracing_unwrap::ResultExt;
 
-static APPLIED_REGISTRY: LazyLock<Arc<RwLock<GlobalSettings>>> =
-    LazyLock::new(|| Arc::new(RwLock::new(Default::default())));
+static APPLIED_REGISTRY: LazyLock<RwLock<GlobalSettings>> =
+    LazyLock::new(|| RwLock::new(Default::default()));
 
-pub fn get_applied() -> Arc<RwLock<GlobalSettings>> {
-    APPLIED_REGISTRY.clone()
+static APPLIED_REGISTRY_VERSION: LazyLock<RwLock<u64>> = LazyLock::new(|| RwLock::new(0));
+
+fn set_applied(registry: GlobalSettings) {
+    *APPLIED_REGISTRY.write().unwrap_or_alert() = registry;
+    APPLIED_REGISTRY_VERSION
+        .write()
+        .unwrap_or_alert()
+        .add_assign(1);
+}
+
+pub async fn load() -> anyhow::Result<()> {
+    set_applied(fetch_all_settings().await?);
+    Ok(())
+}
+
+pub fn get_settings() -> Arc<GlobalSettings> {
+    static CACHE: LazyLock<RwLock<(u64, Arc<GlobalSettings>)>> =
+        LazyLock::new(|| RwLock::new((0, Arc::new(GlobalSettings::default()))));
+    let (ver, reg) = CACHE.read().unwrap_or_alert().clone();
+    if *APPLIED_REGISTRY_VERSION.read().unwrap_or_alert() == ver {
+        return reg;
+    }
+
+    let reg = Arc::new(APPLIED_REGISTRY.read().unwrap_or_alert().clone());
+    *CACHE.write().unwrap_or_alert() = (
+        *APPLIED_REGISTRY_VERSION.read().unwrap_or_alert(),
+        reg.clone(),
+    );
+
+    reg
 }
 
 static CACHED_REGISTRY: LazyLock<tokio::sync::RwLock<GlobalSettings>> =
@@ -51,6 +81,7 @@ pub async fn save_all_settings(settings: GlobalSettings) -> anyhow::Result<()> {
     }
     tx.commit().await?;
     *CACHED_REGISTRY.write().await = settings;
+    load().await?;
     Ok(())
 }
 
