@@ -24,12 +24,12 @@ impl Default for PrehniteBookFixtures {
             task_category: vec![
                 TaskCategory {
                     id: 1,
-                    name: t!("task-category-foreshadowing"),
+                    name: t!("task_category_foreshadowing"),
                     autocomplete_paragraph_link: true,
                 },
                 TaskCategory {
                     id: 2,
-                    name: t!("task-category-unexplained"),
+                    name: t!("task_category_unexplained"),
                     autocomplete_paragraph_link: true,
                 },
             ],
@@ -40,8 +40,8 @@ impl Default for PrehniteBookFixtures {
                         id: 1,
                         ..Default::default()
                     }),
-                    title: t!("task-template-recover"),
-                    detail: Some(t!("task-template-recover-detail")),
+                    title: t!("task_template_recover"),
+                    detail: Some(t!("task_template_recover_detail")),
                 },
                 TaskTemplate {
                     id: 2,
@@ -49,14 +49,14 @@ impl Default for PrehniteBookFixtures {
                         id: 2,
                         ..Default::default()
                     }),
-                    title: t!("task-template-will-explain"),
-                    detail: Some(t!("task-template-will-explain-detail")),
+                    title: t!("task_template_will_explain"),
+                    detail: Some(t!("task_template_will_explain_detail")),
                 },
             ],
             book_search_api: vec![BookSearchApi {
                 id: 0,
-                name: t!("book-search-api-example-name"),
-                detail: t!("book-search-api-example-detail"),
+                name: t!("book_search_api_example_name"),
+                detail: t!("book_search_api_example_detail"),
                 isbn_url: "https://example.com/api/book?isbn=<isbn>".to_string(),
                 text_url: "https://example.com/api/book?search=<text>".to_string(),
                 mapping_script: r#"fn mapper(isbn, search_text, response){
@@ -82,7 +82,7 @@ impl Default for PrehniteBookFixtures {
 }
 
 /// PrehniteBookを開きます。存在しない場合は作成します。
-pub async fn create_or_open_book(path: PathBuf) -> anyhow::Result<()> {
+pub async fn create_or_open_book(path: impl Into<PathBuf>) -> anyhow::Result<()> {
     open_book_db_pool(path).await?;
     let mut conn = acquire_book()
         .await?
@@ -113,7 +113,8 @@ pub async fn create_or_open_book(path: PathBuf) -> anyhow::Result<()> {
 }
 
 /// 新しいPrehniteBookを開きます。既に存在する場合は上書きされます。
-pub async fn open_new_book(path: PathBuf) -> anyhow::Result<()> {
-    tokio::fs::remove_file(&path).await?;
+pub async fn open_new_book(path: impl Into<PathBuf>) -> anyhow::Result<()> {
+    let path = path.into();
+    tokio::fs::remove_file(path.clone()).await?;
     create_or_open_book(path).await
 }

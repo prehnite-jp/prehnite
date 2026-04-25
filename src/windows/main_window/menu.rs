@@ -1,11 +1,16 @@
+use crate::app::db::is_book_opened;
+use crate::util::alert::file_dialog_builder;
 use crate::windows::license_info::show_license_info_window;
+use crate::windows::main_window::{close_book, new_book, open_book};
 use crate::windows::settings::show_settings_window;
 use crate::windows::version_info::show_version_info_window;
 use dioxus::desktop::muda::{Menu, MenuItem, Submenu};
 use dioxus::hooks::use_future;
 use dioxus_desktop::{use_muda_event_handler, window};
 use dioxus_i18n::t;
+use std::ops::Deref;
 use std::rc::Rc;
+use tracing_unwrap::ResultExt;
 
 struct I18nSubmenu {
     key: &'static str,
@@ -141,11 +146,50 @@ pub fn main_window_menu_bar() -> Rc<Option<MenuBar>> {
     MENU_BAR.with(move |x| x.clone())
 }
 
+pub fn update_menu_status() {
+    main_window_menu_bar()
+        .deref()
+        .as_ref()
+        .unwrap()
+        .file_menu_items
+        .iter()
+        .for_each(|x| match x.key {
+            "close_file" => x.itm.set_enabled(is_book_opened()),
+            _ => {}
+        });
+}
+
 pub(super) fn menu_handler() {
     use_muda_event_handler(|e| match e.id().0.as_str() {
-        "new_file" => {}
-        "open_file" => {}
-        "close_file" => {}
+        "new_file" => {
+            use_future(|| async {
+                let file = file_dialog_builder()
+                    .set_title(t!("new_file"))
+                    .add_filter("prehnite book", ["prehnite"])
+                    .save_single_file()
+                    .spawn()
+                    .await;
+                if let Some(file) = file.ok_or_log().and_then(|x| x) {
+                    new_book(file).await;
+                }
+            });
+        }
+        "open_file" => {
+            use_future(|| async {
+                let file = file_dialog_builder()
+                    .set_title(t!("open_file"))
+                    .add_filter("prehnite book", ["prehnite"])
+                    .open_single_file()
+                    .spawn()
+                    .await;
+                if let Some(file) = file.ok_or_log().and_then(|x| x) {
+                    open_book(file).await;
+                }
+            });
+        }
+        "close_file" => {
+            use_future(close_book);
+        }
         "settings" => {
             use_future(show_settings_window);
         }
