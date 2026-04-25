@@ -74,15 +74,13 @@ ignore = [
     #{ id = "RUSTSEC-0000-0000", reason = "you can specify a reason the advisory is ignored" },
     #"a-crate-that-is-yanked@0.1.1", # you can also ignore yanked crate versions if you wish
     #{ crate = "a-crate-that-is-yanked@0.1.1", reason = "you can specify why you are ignoring the yanked crate" },
-    { id = "RUSTSEC-2024-0436", reason = "It is not maintained but is complete. (paste)" },
-    { id = "RUSTSEC-2025-0141", reason = "It is not maintained but is complete. (bincode)" }
 ]
 # If this is true, then cargo deny will use the git executable to fetch advisory database.
 # If this is false, then it uses a built-in git library.
 # Setting this to true can be helpful if you have special authentication requirements that cargo-deny does not support.
 # See Git Authentication for more information about setting up git authentication.
 #git-fetch-with-cli = true
-
+unmaintained = "none"
 # This section is considered when running `cargo deny check licenses`
 # More documentation for the licenses section can be found here:
 # https://embarkstudios.github.io/cargo-deny/checks/licenses/cfg.html
@@ -103,6 +101,7 @@ allow = [
     "MPL-2.0",
     "BSL-1.0",
     "bzip2-1.0.6",
+    "Apache-2.0 WITH LLVM-exception"
 ]
 # The confidence threshold for detecting a license from license text.
 # The higher the value, the more closely the license text must be to the
