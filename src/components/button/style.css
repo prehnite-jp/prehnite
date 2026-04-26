@@ -39,16 +39,34 @@
   color: var(--secondary-color-1);
 }
 
+/********************************************************************************************************************************************/
+/* BEGIN EDITED                                                                                                                             */
+/* EDIT BY: saku shirakura<saku@sakushira.com>                                                                                              */
+/* DATE: 2026/04/27                                                                                                                         */
+/* LICENSE: MIT OR Apache-2.0                                                                                                               */
+/*                                                                                                                                          */
+/* The changes here are subject to the conditions set out in https://github.com/saku-shirakura/prehnite/blob/main/src/components/README.md. */
+/*                                                                                                                                          */
+/* Please check the git logs for the edits you have made.                                                                                   */
+/********************************************************************************************************************************************/
 .dx-button[data-style="outline"] {
   border: 1px solid var(--primary-color-6);
-  background-color: var(--light, var(--primary-color))
-    var(--dark, var(--primary-color-3));
+  background-color: var(--light, var(--primary-color)) var(--dark, var(--primary-color-3));
   color: var(--secondary-color-4);
+  &:disabled {
+    background-color: var(--primary-color-5);
+    color: var(--secondary-color-5);
+    cursor: default;
+  }
+  &:hover {
+    &:not([disabled]) {
+      background-color: var(--primary-color-4);
+    }
+  }
 }
-
-.dx-button[data-style="outline"]:hover {
-  background-color: var(--primary-color-4);
-}
+/********************************************************************************************************************************************/
+/* END EDITED                                                                                                                               */
+/********************************************************************************************************************************************/
 
 .dx-button[data-style="destructive"] {
   background-color: var(--primary-error-color);
