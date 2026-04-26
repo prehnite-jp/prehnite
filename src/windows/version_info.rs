@@ -4,6 +4,7 @@ use dioxus::desktop::{Config, DesktopContext, WindowBuilder};
 use dioxus::prelude::*;
 use dioxus_desktop::LogicalSize;
 use dioxus_i18n::t;
+use crate::style::GlobalStyle;
 
 fn app_version_info() -> String {
     t!("version_info_detail", app_name: {env!("CARGO_PKG_NAME")}, version: {env!("CARGO_PKG_VERSION")})
@@ -47,6 +48,7 @@ pub async fn show_version_info_window() -> DesktopContext {
 #[component]
 pub fn VersionInfoWindow() -> Element {
     rsx! {
+        GlobalStyle {}
         div {
             justify_content: "center",
             align_content: "center",

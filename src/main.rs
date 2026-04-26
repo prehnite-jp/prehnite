@@ -12,6 +12,7 @@ pub mod assets;
 pub mod components;
 pub mod util;
 pub mod windows;
+pub mod style;
 
 #[tracing::instrument]
 fn initializer() -> anyhow::Result<()> {

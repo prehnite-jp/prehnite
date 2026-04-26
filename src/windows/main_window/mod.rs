@@ -1,6 +1,7 @@
 use crate::app::book::open_new_book;
 use crate::app::db::{close_book_db_pool, is_book_opened, open_book_db_pool};
 use crate::app::settings::{get_settings, save_all_settings};
+use crate::style::GlobalStyle;
 use crate::windows::main_window::menu::{menu_handler, update_menu_status};
 use crate::windows::main_window::pages::Route;
 use crate::windows::utilities::page_initializer;
@@ -60,5 +61,8 @@ pub fn PrehniteApp() -> Element {
         .as_ref()
         .unwrap()
         .apply_i18n();
-    rsx! { Router::<Route> {} }
+    rsx! {
+        GlobalStyle {}
+        Router::<Route> {}
+    }
 }

@@ -1,10 +1,10 @@
 use crate::app::settings::{get_settings, save_all_settings, GlobalSettings, SupportedLanguages};
-use crate::assets::DX_COMPONENTS_THEME_CSS;
 use crate::components::button::{Button, ButtonVariant};
 use crate::components::select::{
     Select, SelectGroup, SelectItemIndicator, SelectList, SelectOption, SelectTrigger, SelectValue,
 };
 use crate::components::switch::{Switch, SwitchThumb};
+use crate::style::GlobalStyle;
 use crate::util::alert::message_dialog_builder;
 use crate::windows::utilities::show_modal;
 use dioxus::prelude::*;
@@ -180,7 +180,7 @@ pub fn SettingsWindow() -> Element {
         _ => {}
     });
     rsx! {
-        document::Link { rel: "stylesheet", href: DX_COMPONENTS_THEME_CSS }
-        SettingEditPane {  }
+        GlobalStyle {}
+        SettingEditPane {}
     }
 }
