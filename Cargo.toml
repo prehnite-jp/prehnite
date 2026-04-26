@@ -51,6 +51,7 @@ sys-locale.workspace = true
 serde_json.workspace = true
 native-dialog.workspace = true
 fallible-iterator.workspace = true
+dioxus-primitives = { git = "https://github.com/DioxusLabs/components", version = "0.0.1", default-features = false }
 
 [workspace.dependencies]
 prehnite-core = { version = "0.1.0", path = "core" }
