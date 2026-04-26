@@ -9,9 +9,9 @@ use std::ops::Deref;
 
 pub mod app;
 pub mod assets;
+pub mod components;
 pub mod util;
 pub mod windows;
-pub mod components;
 
 #[tracing::instrument]
 fn initializer() -> anyhow::Result<()> {
