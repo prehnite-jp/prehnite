@@ -86,3 +86,8 @@ new_headline = 子見出し
 new_paragraph = 段落
 no_title = 無題
 not_opened = ブックは開かれていません。
+en-US = English (US)
+ja-JP = 日本語
+confirm = 確認
+confirm_settings_not_applied = 設定は変更されていますが、保存されていません。
+    設定を保存しますか？

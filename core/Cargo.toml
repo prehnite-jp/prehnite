@@ -36,7 +36,6 @@ zip.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 tracing-unwrap.workspace = true
-strum.workspace = true
 indexmap.workspace = true
 prehnite-core-proc-macros = { version = "0.1.0", path = "proc-macros" }
 easy-settings.workspace = true

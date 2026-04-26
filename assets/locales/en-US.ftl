@@ -81,3 +81,8 @@ package_authors=Authors
 package_homepage=Homepage
 package_repository=Repository
 package_license=License
+en-US = English (US)
+ja-JP = 日本語
+confirm = Confirm
+confirm_settings_not_applied = The settings have been changed, but they haven't been saved.
+    Do you want to save the settings?

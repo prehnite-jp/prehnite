@@ -1,4 +1,5 @@
 use crate::app::db::acquire_global;
+use crate::app::i18n::apply_language_from_settings;
 use crate::util::alert::AlertResult;
 use dioxus_i18n::unic_langid::{langid, LanguageIdentifier};
 use easy_settings::Registry;
@@ -7,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::ops::AddAssign;
 use std::str::FromStr;
 use std::sync::{Arc, LazyLock, RwLock};
+use strum::{Display, VariantArray};
 use tracing_unwrap::ResultExt;
 
 static APPLIED_REGISTRY: LazyLock<RwLock<GlobalSettings>> =
@@ -14,12 +16,20 @@ static APPLIED_REGISTRY: LazyLock<RwLock<GlobalSettings>> =
 
 static APPLIED_REGISTRY_VERSION: LazyLock<RwLock<u64>> = LazyLock::new(|| RwLock::new(0));
 
+fn on_change_applied() {
+    if dioxus::core::Runtime::try_current().is_some() {
+        // in dioxus runtime
+        apply_language_from_settings();
+    }
+}
+
 fn set_applied(registry: GlobalSettings) {
     *APPLIED_REGISTRY.write().unwrap_or_alert() = registry;
     APPLIED_REGISTRY_VERSION
         .write()
         .unwrap_or_alert()
         .add_assign(1);
+    on_change_applied();
 }
 
 pub async fn load() -> anyhow::Result<()> {
@@ -85,11 +95,13 @@ pub async fn save_all_settings(settings: GlobalSettings) -> anyhow::Result<()> {
     Ok(())
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize, VariantArray, Display, PartialEq)]
 pub enum SupportedLanguages {
     #[default]
+    #[strum(serialize = "en-US")]
     #[serde(rename = "en-US")]
     EnUS,
+    #[strum(serialize = "ja-JP")]
     #[serde(rename = "ja-JP")]
     JaJP,
 }
@@ -125,15 +137,15 @@ impl From<SupportedLanguages> for LanguageIdentifier {
     }
 }
 
-#[derive(Clone, Registry, Debug, Deserialize, Serialize)]
-#[easy_settings(categories("settings_category_general"))]
+#[derive(Clone, Registry, Debug, Deserialize, Serialize, PartialEq)]
+#[easy_settings(categories("general"))]
 pub struct GlobalSettings {
     #[easy_settings(default = SupportedLanguages::get_locale_default())]
-    #[easy_settings(categories("settings_category_general"))]
+    #[easy_settings(categories("general"))]
     locale: Option<SupportedLanguages>,
-    #[easy_settings(categories("settings_category_general"))]
+    #[easy_settings(categories("general"))]
     last_opened_file: Option<String>,
     #[easy_settings(default = true)]
-    #[easy_settings(categories("settings_category_general"))]
+    #[easy_settings(categories("general"))]
     auto_open_last_opened_file: Option<bool>,
 }
