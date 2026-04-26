@@ -39,11 +39,10 @@ async fn close_book() {
 fn auto_opener() {
     use_future(|| async {
         let s = get_settings();
-        if let Some(path) = if s.get_auto_open_last_opened_file() {
-            s.get_last_opened_file()
-        } else {
-            None
-        } {
+        if let Some(path) = s
+            .get_last_opened_file()
+            .filter(move |_| !s.get_auto_open_last_opened_file())
+        {
             open_book(path.into()).await;
             if !is_book_opened() {
                 close_book().await;
