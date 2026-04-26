@@ -131,9 +131,6 @@ pub struct GlobalSettings {
     #[easy_settings(default = SupportedLanguages::get_locale_default())]
     #[easy_settings(categories("settings_category_general"))]
     locale: Option<SupportedLanguages>,
-    // TODO: デフォルトのフォントファミリーを指定する。
-    #[easy_settings(categories("settings_category_general"))]
-    font: Option<String>,
     #[easy_settings(categories("settings_category_general"))]
     last_opened_file: Option<String>,
     #[easy_settings(default = true)]

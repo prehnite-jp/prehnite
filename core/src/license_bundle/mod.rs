@@ -1,7 +1,5 @@
 #![doc = "ライセンスバンドル"]
-mod font;
 
-use crate::license_bundle::font::font;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 use std::io::Cursor;
@@ -15,20 +13,6 @@ pub fn read_license_bundle_from_zip(data: &[u8]) -> LicenseBundle {
     serde_json::from_reader(zip.by_name("content").unwrap()).unwrap()
 }
 
-/// デフォルトのライセンスバンドルを取得します。
-///
-/// `bundle_license`フラグが有効でない場合はこのライセンスバンドルの内容が使用されます。
-pub fn get_default_license_bundle() -> LicenseBundle {
-    font()
-}
-
-/// デフォルトのライセンスバンドルが依存する第三者ソフトウェアの名前一覧を取得する。
-pub fn get_names_from_default_license_bundle() -> Vec<String> {
-    get_default_license_bundle()
-        .into_iter()
-        .map(|v| v.name)
-        .collect()
-}
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 /// 第三者ソフトウェアの詳細を表す構造体
@@ -105,7 +89,6 @@ impl Package {
         Package::new("prehnite", "Zlib")
             .author("saku shirakura<saku@sakushira.com>")
             .homepage("https://prehnite.jp")
-            .dependencies(get_names_from_default_license_bundle())
             .prehnite_member_license()
     }
 }

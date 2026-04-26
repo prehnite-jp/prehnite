@@ -2,11 +2,9 @@ use crate::util::set_env;
 use crate::{build_process, BuildProcess};
 #[cfg(feature = "bundle_license")]
 use cargo_about::licenses::KrateLicense;
-use prehnite_core::license_bundle::{
-    get_default_license_bundle, get_names_from_default_license_bundle, Package,
-};
 #[cfg(feature = "bundle_license")]
 use prehnite_core::license_bundle::LicenseBundle;
+use prehnite_core::license_bundle::Package;
 #[cfg(feature = "bundle_license")]
 use std::collections::BTreeSet;
 use std::fs::File;
@@ -23,7 +21,6 @@ fn license_zip_path() -> anyhow::Result<PathBuf> {
 
 #[cfg(feature = "bundle_license")]
 fn license_collector() -> anyhow::Result<LicenseBundle> {
-
     const MY_APP_HOMEPAGE: &str = "https://prehnite.jp/";
 
     let license_config = cargo_about::licenses::config::Config {
@@ -57,7 +54,9 @@ fn license_collector() -> anyhow::Result<LicenseBundle> {
 
     let crate_names: BTreeSet<String> = license.iter().map(|v| v.krate.name.clone()).collect();
 
-    fn load_full_text(v: &KrateLicense) -> anyhow::Result<Vec<prehnite_core::license_bundle::License>> {
+    fn load_full_text(
+        v: &KrateLicense,
+    ) -> anyhow::Result<Vec<prehnite_core::license_bundle::License>> {
         v.license_files
             .iter()
             .map(|v| {
@@ -111,14 +110,11 @@ build_process!(BundleLicense);
 impl BuildProcess for BundleLicense {
     fn execute(&self) -> anyhow::Result<()> {
         #[allow(unused_mut)]
-        let mut license = get_default_license_bundle();
+        let mut license: Vec<Package> = vec![];
         #[cfg(feature = "bundle_license")]
         license.extend(license_collector()?);
-        match license.iter_mut().find(|v| v.name == "prehnite") {
-            None => license.push(Package::prehnite()),
-            Some(v) => v
-                .dependencies
-                .extend(get_names_from_default_license_bundle()),
+        if license.iter_mut().find(|v| v.name == "prehnite").is_none() {
+            license.push(Package::prehnite())
         }
 
         let license_list_json = serde_json::to_string(&license)?;
