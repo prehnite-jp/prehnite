@@ -25,10 +25,10 @@ fn initializer() -> anyhow::Result<()> {
     initializer_()
 }
 
+#[cfg(feature = "desktop")]
 fn main() -> anyhow::Result<()> {
     initializer().unwrap_or_alert();
 
-    #[cfg(feature = "desktop")]
     dioxus::LaunchBuilder::new()
         .with_cfg(
             Config::default()
@@ -41,6 +41,13 @@ fn main() -> anyhow::Result<()> {
                 .with_window(WindowBuilder::new().with_title("Prehnite")),
         )
         .launch(PrehniteApp);
+
+    Ok(())
+}
+
+#[cfg(not(feature = "desktop"))]
+fn main() -> anyhow::Result<()> {
+    compile_error!("This application only supported desktop.");
 
     Ok(())
 }
