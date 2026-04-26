@@ -67,7 +67,6 @@ pub fn VersionInfoWindow() -> Element {
             }
             p {
                 font_size: "15px",
-                text_decoration: "underline",
                 overflow_x: "scroll",
                 text_wrap: "nowrap",
                 { format!("{}.{}{}", app_build_profile(), app_build_target(), feature_decoration(app_build_features())) }
