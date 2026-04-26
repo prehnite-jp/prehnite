@@ -1,9 +1,10 @@
 use crate::app::settings::{get_settings, save_all_settings, GlobalSettings, SupportedLanguages};
+use crate::components::button::{Button, ButtonVariant};
 use crate::components::select::{
     Select, SelectGroup, SelectItemIndicator, SelectList, SelectOption, SelectTrigger, SelectValue,
 };
 use crate::components::switch::{Switch, SwitchThumb};
-use crate::style::GlobalStyle;
+use crate::style::{GlobalStyle, Height100};
 use crate::util::alert::message_dialog_builder;
 use crate::windows::utilities::show_modal;
 use dioxus::prelude::*;
@@ -35,9 +36,10 @@ pub async fn show_settings_window() -> DesktopContext {
     .await
 }
 
-// #[component]
-// fn SettingListPane(current_node: Signal<Option<RegistryNode>>) -> Element {}
-//
+#[component]
+fn SettingListPane() -> Element {
+    rsx! {}
+}
 
 #[component]
 fn SettingEditPane() -> Element {
@@ -45,12 +47,21 @@ fn SettingEditPane() -> Element {
         div {
             display: "flex",
             flex_direction: "column",
-            for i in GlobalSettings::child_nodes(CURRENT_CATEGORY.read().cloned()).iter().filter(|x| !HIDDEN_SETTING_KEYS.contains(&x.value())) {
-                div {
-                    display: "flex",
-                    flex_direction: "row",
-                    justify_content: "space-between",
-                    SettingNode { node: i }
+            margin: "1em 2em",
+            p {
+                {CURRENT_CATEGORY.read().as_ref().map(|x| t!(&format!("settings_category_{}", x))).unwrap_or(t!("settings"))}
+            }
+            div {
+                display: "flex",
+                flex_direction: "column",
+                margin: "0 40px",
+                for i in GlobalSettings::child_nodes(CURRENT_CATEGORY.read().cloned()).iter().filter(|x| !HIDDEN_SETTING_KEYS.contains(&x.value())) {
+                    div {
+                        display: "flex",
+                        flex_direction: "row",
+                        justify_content: "space-between",
+                        SettingNode { node: i }
+                    }
                 }
             }
         }
@@ -148,6 +159,12 @@ fn SettingNode(node: &'static RegistryNode) -> Element {
 
 #[component]
 pub fn SettingsWindow() -> Element {
+    let mut settings_changed = use_signal(|| false);
+    let registry_sig = CHANGEABLE_REGISTRY.signal();
+    use_effect(move || {
+        let registry = registry_sig.read();
+        *settings_changed.write() = registry.ne(get_settings().deref())
+    });
     use_effect(|| *CHANGEABLE_REGISTRY.write() = get_settings().deref().clone());
     use_wry_event_handler(move |e, _| match e {
         dioxus_desktop::tao::event::Event::WindowEvent {
@@ -156,7 +173,7 @@ pub fn SettingsWindow() -> Element {
             ..
         } => {
             let window = use_window();
-            if *window_id == window.id() && CHANGEABLE_REGISTRY.read().ne(get_settings().deref()) {
+            if *window_id == window.id() && settings_changed.read().cloned() {
                 if message_dialog_builder()
                     .set_title(t!("confirm"))
                     .set_text(t!("confirm_settings_not_applied"))
@@ -179,6 +196,44 @@ pub fn SettingsWindow() -> Element {
     });
     rsx! {
         GlobalStyle {}
-        SettingEditPane {}
+        Height100 {}
+        div {
+            display: "grid",
+            grid_template_columns: "30% auto",
+            grid_template_rows: "auto 4em",
+            height: "100%",
+            div {
+                grid_column: "1",
+                border_right: "thin solid",
+                border_bottom: "thin solid",
+                border_color: "var(--secondary-color)",
+                SettingListPane {}
+            }
+            div {
+                grid_column: "2",
+                border_bottom: "thin solid",
+                border_color: "var(--secondary-color)",
+                SettingEditPane {}
+            }
+            div {
+                grid_column: "2",
+                margin: "10px",
+                display: "flex",
+                flex_direction: "row",
+                justify_content: "right",
+                align_content: "center",
+                Button {
+                    variant: ButtonVariant::Outline,
+                    disabled: !settings_changed.read().cloned(),
+                    onclick: move |_| async move {
+                        if *settings_changed.read() {
+                            save_all_settings(CHANGEABLE_REGISTRY.read().cloned()).await.ok_or_log();
+                            *settings_changed.write() = false;
+                        }
+                    },
+                    {{t!("apply")}}
+                }
+            }
+        }
     }
 }
