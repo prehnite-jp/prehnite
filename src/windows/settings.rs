@@ -1,5 +1,4 @@
 use crate::app::settings::{get_settings, save_all_settings, GlobalSettings, SupportedLanguages};
-use crate::components::button::{Button, ButtonVariant};
 use crate::components::select::{
     Select, SelectGroup, SelectItemIndicator, SelectList, SelectOption, SelectTrigger, SelectValue,
 };
@@ -107,8 +106,7 @@ fn SettingNode(node: &'static RegistryNode) -> Element {
     match node {
         RegistryNode::Category(_) => {
             rsx! {
-                Button {
-                    variant: ButtonVariant::Ghost,
+                a {
                     onclick: move |_| *CURRENT_CATEGORY.write() = Some(node.value()),
                     { t!(&format!("settings_category_{}", node.value())) }
                 }
