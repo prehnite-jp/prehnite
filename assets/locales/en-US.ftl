@@ -86,3 +86,6 @@ ja-JP = 日本語
 confirm = Confirm
 confirm_settings_not_applied = The settings have been changed, but they haven't been saved.
     Do you want to save the settings?
+settings_entry_theme = Theme
+dark = Dark
+light = Light

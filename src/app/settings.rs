@@ -1,6 +1,12 @@
 use crate::app::db::acquire_global;
 use crate::app::i18n::apply_language_from_settings;
 use crate::util::alert::AlertResult;
+use crate::windows::main_window::menu;
+use dark_light::Mode;
+use dioxus::core::Task;
+use dioxus::prelude::*;
+use dioxus_desktop::window;
+use dioxus_desktop::wry::RGBA;
 use dioxus_i18n::unic_langid::{langid, LanguageIdentifier};
 use easy_settings::Registry;
 use prehnite_core::db::schema::Setting;
@@ -8,19 +14,36 @@ use serde::{Deserialize, Serialize};
 use std::ops::AddAssign;
 use std::str::FromStr;
 use std::sync::{Arc, LazyLock, RwLock};
-use strum::{Display, VariantArray};
+use std::time::Duration;
+use strum::{Display, IntoStaticStr, VariantArray};
 use tracing_unwrap::ResultExt;
+
+pub static THEME: GlobalSignal<Theme> = Signal::global(Theme::get_system_default);
+static SETTING_LOADED: GlobalSignal<u64> = Signal::global(|| 0);
 
 static APPLIED_REGISTRY: LazyLock<RwLock<GlobalSettings>> =
     LazyLock::new(|| RwLock::new(Default::default()));
 
 static APPLIED_REGISTRY_VERSION: LazyLock<RwLock<u64>> = LazyLock::new(|| RwLock::new(0));
 
-fn on_change_applied() {
-    if dioxus::core::Runtime::try_current().is_some() {
-        // in dioxus runtime
+pub fn use_setting_loader() {
+    use_effect(move || {
+        let x = use_context::<GlobalSettings>();
+        let _ = SETTING_LOADED.signal();
+        apply_all_settings();
+    });
+}
+
+pub fn apply_all_settings() -> Task {
+    spawn(async {
         apply_language_from_settings();
-    }
+        menu::main_window_menu_bar().apply_i18n();
+        if !window().is_visible() {
+            tokio::time::sleep(Duration::from_millis(100)).await;
+            window().set_visible(true);
+        }
+        *THEME.write() = get_settings().get_theme();
+    })
 }
 
 fn set_applied(registry: GlobalSettings) {
@@ -29,7 +52,7 @@ fn set_applied(registry: GlobalSettings) {
         .write()
         .unwrap_or_alert()
         .add_assign(1);
-    on_change_applied();
+    apply_all_settings();
 }
 
 pub async fn load() -> anyhow::Result<()> {
@@ -92,10 +115,13 @@ pub async fn save_all_settings(settings: GlobalSettings) -> anyhow::Result<()> {
     tx.commit().await?;
     *CACHED_REGISTRY.write().await = settings;
     load().await?;
+    SETTING_LOADED.write().add_assign(1);
     Ok(())
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize, VariantArray, Display, PartialEq)]
+#[derive(
+    Clone, Debug, Default, Deserialize, Serialize, VariantArray, IntoStaticStr, Display, PartialEq,
+)]
 pub enum SupportedLanguages {
     #[default]
     #[strum(serialize = "en-US")]
@@ -114,26 +140,56 @@ impl SupportedLanguages {
     }
 }
 
-impl From<&SupportedLanguages> for &'static str {
-    fn from(value: &SupportedLanguages) -> Self {
-        match value {
-            SupportedLanguages::EnUS => "en-US",
-            SupportedLanguages::JaJP => "ja-JP",
-        }
-    }
-}
-
-impl From<SupportedLanguages> for &'static str {
-    fn from(value: SupportedLanguages) -> Self {
-        (&value).into()
-    }
-}
-
 impl From<SupportedLanguages> for LanguageIdentifier {
     fn from(value: SupportedLanguages) -> Self {
         LanguageIdentifier::from_str(value.into())
             .ok_or_log()
             .unwrap_or_else(|| langid!("en-US"))
+    }
+}
+
+#[derive(
+    Clone, Deserialize, Serialize, Debug, PartialEq, VariantArray, IntoStaticStr, Display, Default,
+)]
+#[strum(serialize_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
+pub enum Theme {
+    #[default]
+    Light,
+    Dark,
+}
+
+impl From<Mode> for Theme {
+    fn from(value: Mode) -> Self {
+        match value {
+            Mode::Dark => Theme::Dark,
+            _ => Theme::Light,
+        }
+    }
+}
+
+impl From<Theme> for dioxus_desktop::tao::window::Theme {
+    fn from(value: Theme) -> Self {
+        match value {
+            Theme::Light => dioxus_desktop::tao::window::Theme::Light,
+            Theme::Dark => dioxus_desktop::tao::window::Theme::Dark,
+        }
+    }
+}
+
+impl Theme {
+    fn get_system_default() -> Self {
+        dark_light::detect()
+            .ok_or_log()
+            .map(|x| x.into())
+            .unwrap_or_default()
+    }
+
+    pub fn bg_color(&self) -> RGBA {
+        match self {
+            Theme::Light => (0xFF, 0xFF, 0xFF, 0xFF),
+            Theme::Dark => (0x3E, 0x3E, 0x3E, 0xFF),
+        }
     }
 }
 
@@ -148,4 +204,22 @@ pub struct GlobalSettings {
     #[easy_settings(default = true)]
     #[easy_settings(categories("general"))]
     auto_open_last_opened_file: Option<bool>,
+    #[easy_settings(default = Theme::get_system_default())]
+    #[easy_settings(categories("general"))]
+    theme: Option<Theme>,
+}
+
+impl GlobalSettings {
+    pub async fn fetch() -> anyhow::Result<Self> {
+        let mut conn = acquire_global().await?;
+        let mut result = GlobalSettings::default();
+        result.set_from_row_vec(
+            Setting::select_all(&mut *conn)
+                .await?
+                .into_iter()
+                .map(|x| x.to_setting_row())
+                .collect(),
+        );
+        Ok(result)
+    }
 }

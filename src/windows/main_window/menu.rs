@@ -1,11 +1,11 @@
 use crate::app::db::is_book_opened;
-use crate::util::alert::file_dialog_builder;
+use crate::util::alert::{file_dialog_builder, AlertResult};
 use crate::windows::license_info::show_license_info_window;
 use crate::windows::main_window::{close_book, new_book, open_book};
 use crate::windows::settings::show_settings_window;
 use crate::windows::version_info::show_version_info_window;
 use dioxus::desktop::muda::{Menu, MenuItem, Submenu};
-use dioxus::hooks::use_future;
+use dioxus::dioxus_core;
 use dioxus_desktop::{use_muda_event_handler, window};
 use dioxus_i18n::t;
 use std::ops::Deref;
@@ -121,7 +121,7 @@ impl MenuBar {
     }
 }
 
-fn default_menubar() -> Option<MenuBar> {
+fn default_menubar() -> MenuBar {
     MenuBarBuilder {
         file: ("file", true),
         file_menu_items: vec![
@@ -135,22 +135,20 @@ fn default_menubar() -> Option<MenuBar> {
         help_menu_items: vec![("version_info", true), ("license_info", true)],
     }
     .build()
-    .ok()
+    .unwrap_or_alert()
 }
 
 thread_local! {
-    static MENU_BAR: Rc<Option<MenuBar>> = Rc::new(default_menubar());
+    static MENU_BAR: Rc<MenuBar> = Rc::new(default_menubar());
 }
 
-pub fn main_window_menu_bar() -> Rc<Option<MenuBar>> {
+pub fn main_window_menu_bar() -> Rc<MenuBar> {
     MENU_BAR.with(move |x| x.clone())
 }
 
 pub fn update_menu_status() {
     main_window_menu_bar()
         .deref()
-        .as_ref()
-        .unwrap()
         .file_menu_items
         .iter()
         .for_each(|x| match x.key {
@@ -159,10 +157,10 @@ pub fn update_menu_status() {
         });
 }
 
-pub(super) fn menu_handler() {
+pub(super) fn use_menu_handler() {
     use_muda_event_handler(|e| match e.id().0.as_str() {
         "new_file" => {
-            use_future(|| async {
+            let _: _ = dioxus_core::spawn(async {
                 let file = file_dialog_builder()
                     .set_title(t!("new_file"))
                     .add_filter("prehnite book", ["prehnite"])
@@ -175,7 +173,7 @@ pub(super) fn menu_handler() {
             });
         }
         "open_file" => {
-            use_future(|| async {
+            let _: _ = dioxus_core::spawn(async {
                 let file = file_dialog_builder()
                     .set_title(t!("open_file"))
                     .add_filter("prehnite book", ["prehnite"])
@@ -188,19 +186,25 @@ pub(super) fn menu_handler() {
             });
         }
         "close_file" => {
-            use_future(close_book);
+            let _: _ = dioxus_core::spawn(close_book());
         }
         "settings" => {
-            use_future(show_settings_window);
+            let _: _ = dioxus_core::spawn(async {
+                show_settings_window().await;
+            });
         }
         "exit" => {
             window().close();
         }
         "version_info" => {
-            use_future(show_version_info_window);
+            let _: _ = dioxus_core::spawn(async {
+                show_version_info_window().await;
+            });
         }
         "license_info" => {
-            use_future(show_license_info_window);
+            let _: _ = dioxus_core::spawn(async {
+                show_license_info_window().await;
+            });
         }
         _ => {
             println!("x");

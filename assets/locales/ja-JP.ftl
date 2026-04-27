@@ -91,3 +91,6 @@ ja-JP = 日本語
 confirm = 確認
 confirm_settings_not_applied = 設定は変更されていますが、保存されていません。
     設定を保存しますか？
+settings_entry_theme = テーマ
+dark = ダーク
+light = ライト

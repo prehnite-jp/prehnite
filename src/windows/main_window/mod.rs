@@ -1,13 +1,19 @@
 use crate::app::book::open_new_book;
 use crate::app::db::{close_book_db_pool, is_book_opened, open_book_db_pool};
-use crate::app::settings::{get_settings, save_all_settings};
+use crate::app::settings;
+use crate::app::settings::{
+    get_settings, save_all_settings, use_setting_loader, SupportedLanguages,
+};
 use crate::style::GlobalStyle;
-use crate::windows::main_window::menu::{menu_handler, update_menu_status};
+use crate::windows::main_window::menu::{update_menu_status, use_menu_handler};
 use crate::windows::main_window::pages::Route;
-use crate::windows::utilities::page_initializer;
+use dioxus::document::eval;
 use dioxus::prelude::*;
+use dioxus_desktop::{use_wry_event_handler, window, DesktopContext, WindowEvent};
+use dioxus_i18n::prelude::*;
 use std::ops::Deref;
 use std::path::PathBuf;
+use std::sync::OnceLock;
 use tracing_unwrap::ResultExt;
 
 pub mod menu;
@@ -37,7 +43,40 @@ async fn close_book() {
     save_all_settings(settings).await.ok_or_log();
 }
 
-fn auto_opener() {
+thread_local! {
+static MAIN_WINDOW_CONTEXT: OnceLock<DesktopContext> = OnceLock::new();
+}
+
+pub fn get_main_window_context() -> Option<DesktopContext> {
+    MAIN_WINDOW_CONTEXT.with(|x| x.get().cloned())
+}
+
+#[component]
+pub fn PrehniteApp() -> Element {
+    use_future(move || async {
+        settings::load().await.ok_or_log();
+    });
+    use_init_i18n(|| {
+        I18nConfig::new(get_settings().get_locale().into())
+            .with_locale((
+                SupportedLanguages::EnUS.into(),
+                include_str!("../../../assets/locales/en-US.ftl"),
+            ))
+            .with_locale((
+                SupportedLanguages::JaJP.into(),
+                include_str!("../../../assets/locales/ja-JP.ftl"),
+            ))
+    });
+    use_menu_handler();
+    use_wry_event_handler(move |x, _| match x {
+        dioxus_desktop::tao::event::Event::WindowEvent {
+            event: WindowEvent::CloseRequested,
+            ..
+        } => {
+            window().set_visible(false);
+        }
+        _ => {}
+    });
     use_future(|| async {
         let s = get_settings();
         if let Some(path) = s
@@ -50,19 +89,33 @@ fn auto_opener() {
             }
         }
     });
-}
-
-#[component]
-pub fn PrehniteApp() -> Element {
-    page_initializer();
-    menu_handler();
-    auto_opener();
-    (*menu::main_window_menu_bar())
-        .as_ref()
-        .unwrap()
-        .apply_i18n();
+    use_future(move || async {
+        MAIN_WINDOW_CONTEXT.with(|x| {
+            if x.get().is_none() {
+                x.set(window()).ok();
+            }
+        });
+    });
+    use_setting_loader();
+    let theme_sig = settings::THEME.signal();
+    use_effect(move || {
+        let theme = theme_sig.read();
+        let theme1 = theme.cloned();
+        let theme2 = theme1.clone();
+        spawn(async move {
+            eval(&format!(
+                "document.documentElement.setAttribute(\"data-theme\", \"{}\");",
+                theme1.clone()
+            ))
+            .await
+            .ok_or_log();
+        });
+        window().set_theme(Some(theme2.into()));
+    });
     rsx! {
         GlobalStyle {}
-        Router::<Route> {}
+        div {
+            Router::<Route> {}
+        }
     }
 }

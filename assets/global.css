@@ -6,3 +6,12 @@ a:hover {
     text-decoration: underline;
     cursor: pointer
 }
+
+html {
+    background-color: var(--light, var(--primary-color)) var(--dark, var(--primary-color-7));
+    color: var(--secondary-color);
+}
+
+.primary-border-color {
+    border-color: var(--secondary-color-5);
+}

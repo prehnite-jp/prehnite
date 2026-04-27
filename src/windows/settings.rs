@@ -1,4 +1,4 @@
-use crate::app::settings::{get_settings, save_all_settings, GlobalSettings, SupportedLanguages};
+use crate::app::settings::{get_settings, save_all_settings, use_setting_loader, GlobalSettings, SupportedLanguages, Theme};
 use crate::components::button::{Button, ButtonVariant};
 use crate::components::select::{
     Select, SelectGroup, SelectItemIndicator, SelectList, SelectOption, SelectTrigger, SelectValue,
@@ -9,12 +9,13 @@ use crate::util::alert::message_dialog_builder;
 use crate::windows::utilities::show_modal;
 use dioxus::prelude::*;
 use dioxus_desktop::{
-    use_window, use_wry_event_handler, Config, DesktopContext, WindowBuilder, WindowCloseBehaviour,
-    WindowEvent,
+    use_wry_event_handler, window, Config, DesktopContext, WindowBuilder,
+    WindowCloseBehaviour, WindowEvent,
 };
 use dioxus_i18n::t;
 use easy_settings::{Registry, RegistryNode};
 use std::ops::Deref;
+use dioxus::document::eval;
 use strum::VariantArray;
 use tracing_unwrap::ResultExt;
 
@@ -148,6 +149,17 @@ fn SettingNode(node: &'static RegistryNode) -> Element {
                         }
                     }
                 }
+            } else if node.value() == "theme" {
+                rsx! {
+                    ComboSelector::<Theme> {
+                        setting_key: "{node.value()}",
+                        label,
+                        selected: CHANGEABLE_REGISTRY.read().get_theme(),
+                        on_value_change: move |x| {
+                            CHANGEABLE_REGISTRY.write().set_theme(x);
+                        }
+                    }
+                }
             } else {
                 rsx! {
                     label { "invalid node {node.value()}" }
@@ -166,33 +178,50 @@ pub fn SettingsWindow() -> Element {
         *settings_changed.write() = registry.ne(get_settings().deref())
     });
     use_effect(|| *CHANGEABLE_REGISTRY.write() = get_settings().deref().clone());
-    use_wry_event_handler(move |e, _| match e {
-        dioxus_desktop::tao::event::Event::WindowEvent {
-            event: WindowEvent::CloseRequested,
-            window_id,
-            ..
-        } => {
-            let window = use_window();
-            if *window_id == window.id() && settings_changed.read().cloned() {
-                if message_dialog_builder()
-                    .set_title(t!("confirm"))
-                    .set_text(t!("confirm_settings_not_applied"))
-                    .confirm()
-                    .show()
-                    .unwrap_or_default()
-                {
-                    window.set_close_behavior(WindowCloseBehaviour::WindowHides);
-                    use_future(move || async move {
+    use_wry_event_handler(move |e, _| {
+        let x: bool = match e {
+            dioxus_desktop::tao::event::Event::WindowEvent {
+                event: WindowEvent::CloseRequested,
+                ..
+            } => true,
+            _ => false,
+        };
+        let _: _ = spawn(async move {
+            if x {
+                let window = window();
+                if settings_changed.read().cloned() {
+                    if message_dialog_builder()
+                        .set_title(t!("confirm"))
+                        .set_text(t!("confirm_settings_not_applied"))
+                        .confirm()
+                        .show()
+                        .unwrap_or_default()
+                    {
+                        window.set_close_behavior(WindowCloseBehaviour::WindowHides);
                         save_all_settings(CHANGEABLE_REGISTRY.read().cloned())
                             .await
                             .ok_or_log();
-                        use_window().set_close_behavior(WindowCloseBehaviour::WindowCloses);
-                        use_window().close();
-                    });
-                }
+                        window.set_close_behavior(WindowCloseBehaviour::WindowCloses);
+                        window.close();
+                    }
+                };
             }
-        }
-        _ => {}
+        });
+    });
+    use_setting_loader();
+    let theme_sig = crate::app::settings::THEME.signal();
+    use_effect(move || {
+        let theme1 = theme_sig.read().cloned();
+        let theme2 = theme1.clone();
+        spawn(async move {
+            eval(&format!(
+                "document.documentElement.setAttribute(\"data-theme\", \"{}\");",
+                theme1.clone()
+            ))
+            .await
+            .ok_or_log();
+        });
+        window().set_theme(Some(theme2.into()));
     });
     rsx! {
         GlobalStyle {}
@@ -206,13 +235,13 @@ pub fn SettingsWindow() -> Element {
                 grid_column: "1",
                 border_right: "thin solid",
                 border_bottom: "thin solid",
-                border_color: "var(--secondary-color)",
+                class: "primary-border-color",
                 SettingListPane {}
             }
             div {
                 grid_column: "2",
                 border_bottom: "thin solid",
-                border_color: "var(--secondary-color)",
+                class: "primary-border-color",
                 SettingEditPane {}
             }
             div {
