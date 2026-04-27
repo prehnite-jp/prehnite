@@ -13,7 +13,7 @@ publish.workspace = true
 bundle_license = ["cargo-about", "krates"]
 
 [dependencies]
-cargo-about = { version = "0.8", optional = true }
+cargo-about = { version = "0.9", optional = true }
 krates = { version = "=0.21.1", optional = true }
 serde_json.workspace = true
 reqwest = { version = "=0.12.28", features = ["blocking"] }
