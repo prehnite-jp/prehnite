@@ -564,7 +564,7 @@ dependencies = [
  "handlebars",
  "home",
  "ignore",
- "krates",
+ "krates 0.20.0",
  "libc",
  "log",
  "mimalloc",
@@ -3469,6 +3469,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "krates"
+version = "0.21.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cca2a52229bf275e08b7ebfa7d1339668d5f9ec33e27ceb3a762bc9edd437418"
+dependencies = [
+ "camino",
+ "cfg-expr 0.20.6",
+ "petgraph",
+ "semver",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "kuchikiki"
 version = "0.8.8-speedreader"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4842,7 +4856,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "cargo-about",
- "krates",
+ "krates 0.21.1",
  "prehnite-core",
  "reqwest 0.12.28",
  "serde_json",
