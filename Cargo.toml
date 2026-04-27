@@ -35,7 +35,6 @@ prehnite-core.workspace = true
 tracing.workspace = true
 tokio.workspace = true
 sqlx.workspace = true
-opener.workspace = true
 anyhow.workspace = true
 tracing-unwrap.workspace = true
 thiserror.workspace = true
@@ -69,7 +68,6 @@ tracing = { version = "0.1", features = ["log"] }
 tracing-appender = "0.2"
 serde_json = "1"
 zip = "8"
-opener = "0.8"
 anyhow = "1"
 thiserror = "2"
 tracing-unwrap = "1"
