@@ -50,6 +50,7 @@ native-dialog.workspace = true
 fallible-iterator.workspace = true
 dioxus-primitives = { git = "https://github.com/DioxusLabs/components", version = "0.0.1", default-features = false }
 strum.workspace = true
+dark-light = "2.0.0"
 
 [workspace.dependencies]
 prehnite-core = { version = "0.1.0", path = "core" }
