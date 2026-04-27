@@ -1,16 +1,18 @@
+use dioxus::prelude::*;
+use dioxus::signals::{GlobalSignal, Signal};
 use prehnite_core::constants::global_db_file_path;
 use prehnite_core::db::migrate::{app_global, prehnite_book};
 use sqlx::pool::PoolConnection;
 use sqlx::sqlite::SqliteConnectOptions;
 use sqlx::{ConnectOptions, Sqlite, SqlitePool};
 use std::path::PathBuf;
-use std::sync::{LazyLock, OnceLock, RwLock};
+use std::sync::OnceLock;
 use std::time::Duration;
 use tracing::log::LevelFilter;
-use tracing_unwrap::{OptionExt, ResultExt};
+use tracing_unwrap::OptionExt;
 
 static GLOBAL_DB_POOL: OnceLock<SqlitePool> = OnceLock::new();
-static BOOK_DB_POOL: LazyLock<RwLock<Option<SqlitePool>>> = LazyLock::new(|| RwLock::new(None));
+static BOOK_DB_POOL: GlobalSignal<Option<SqlitePool>> = Signal::global(|| None);
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -37,15 +39,7 @@ pub async fn acquire_global() -> anyhow::Result<PoolConnection<Sqlite>> {
 
 pub async fn acquire_book() -> anyhow::Result<Option<PoolConnection<Sqlite>>> {
     if is_book_opened() {
-        Ok(Some(
-            BOOK_DB_POOL
-                .read()
-                .unwrap()
-                .as_ref()
-                .unwrap()
-                .acquire()
-                .await?,
-        ))
+        Ok(Some(BOOK_DB_POOL.read().as_ref().unwrap().acquire().await?))
     } else {
         Ok(None)
     }
@@ -69,23 +63,17 @@ pub async fn open_book_db_pool(path: impl Into<PathBuf>) -> sqlx::Result<()> {
     close_book_db_pool().await;
     let pool = connect_pool(path.into()).await?;
     prehnite_book::migrate(&pool).await?;
-    *BOOK_DB_POOL.write().unwrap() = Some(pool);
+    *BOOK_DB_POOL.write() = Some(pool);
     Ok(())
 }
 
 pub async fn close_book_db_pool() {
     if is_book_opened() {
-        BOOK_DB_POOL
-            .read()
-            .unwrap_or_log()
-            .as_ref()
-            .unwrap()
-            .close()
-            .await;
-        *BOOK_DB_POOL.write().unwrap_or_log() = None;
+        BOOK_DB_POOL.read().as_ref().unwrap().close().await;
+        *BOOK_DB_POOL.write() = None;
     }
 }
 
 pub fn is_book_opened() -> bool {
-    BOOK_DB_POOL.read().unwrap_or_log().is_some()
+    BOOK_DB_POOL.read().is_some()
 }

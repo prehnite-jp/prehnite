@@ -14,7 +14,6 @@ use dioxus_desktop::{
 };
 use dioxus_i18n::t;
 use easy_settings::{Registry, RegistryNode};
-use std::ops::Deref;
 use dioxus::document::eval;
 use strum::VariantArray;
 use tracing_unwrap::ResultExt;
@@ -175,9 +174,9 @@ pub fn SettingsWindow() -> Element {
     let registry_sig = CHANGEABLE_REGISTRY.signal();
     use_effect(move || {
         let registry = registry_sig.read();
-        *settings_changed.write() = registry.ne(get_settings().deref())
+        *settings_changed.write() = registry.ne(&get_settings().read())
     });
-    use_effect(|| *CHANGEABLE_REGISTRY.write() = get_settings().deref().clone());
+    use_effect(|| *CHANGEABLE_REGISTRY.write() = get_settings().cloned());
     use_wry_event_handler(move |e, _| {
         let x: bool = match e {
             dioxus_desktop::tao::event::Event::WindowEvent {
@@ -235,13 +234,13 @@ pub fn SettingsWindow() -> Element {
                 grid_column: "1",
                 border_right: "thin solid",
                 border_bottom: "thin solid",
-                class: "primary-border-color",
+                border_color: "var(--secondary-color-5)",
                 SettingListPane {}
             }
             div {
                 grid_column: "2",
                 border_bottom: "thin solid",
-                class: "primary-border-color",
+                border_color: "var(--secondary-color-5)",
                 SettingEditPane {}
             }
             div {

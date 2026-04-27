@@ -11,7 +11,6 @@ use dioxus::document::eval;
 use dioxus::prelude::*;
 use dioxus_desktop::{use_wry_event_handler, window, DesktopContext, WindowEvent};
 use dioxus_i18n::prelude::*;
-use std::ops::Deref;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 use tracing_unwrap::ResultExt;
@@ -22,7 +21,7 @@ pub mod pages;
 async fn new_book(path: PathBuf) {
     open_new_book(&path).await.ok_or_log();
     update_menu_status();
-    let mut settings = get_settings().deref().clone();
+    let mut settings = get_settings().cloned();
     settings.set_last_opened_file(path.to_str().map(|x| x.into()));
     save_all_settings(settings).await.ok_or_log();
 }
@@ -30,7 +29,7 @@ async fn new_book(path: PathBuf) {
 async fn open_book(path: PathBuf) {
     open_book_db_pool(&path).await.ok_or_log();
     update_menu_status();
-    let mut settings = get_settings().deref().clone();
+    let mut settings = get_settings().cloned();
     settings.set_last_opened_file(path.to_str().map(|x| x.into()));
     save_all_settings(settings).await.ok_or_log();
 }
@@ -38,7 +37,7 @@ async fn open_book(path: PathBuf) {
 async fn close_book() {
     close_book_db_pool().await;
     update_menu_status();
-    let mut settings = get_settings().deref().clone();
+    let mut settings = get_settings().cloned();
     settings.set_last_opened_file(None);
     save_all_settings(settings).await.ok_or_log();
 }
@@ -57,7 +56,7 @@ pub fn PrehniteApp() -> Element {
         settings::load().await.ok_or_log();
     });
     use_init_i18n(|| {
-        I18nConfig::new(get_settings().get_locale().into())
+        I18nConfig::new(get_settings().read().get_locale().into())
             .with_locale((
                 SupportedLanguages::EnUS.into(),
                 include_str!("../../../assets/locales/en-US.ftl"),
@@ -80,8 +79,9 @@ pub fn PrehniteApp() -> Element {
     use_future(|| async {
         let s = get_settings();
         if let Some(path) = s
+            .read()
             .get_last_opened_file()
-            .filter(move |_| !s.get_auto_open_last_opened_file())
+            .filter(move |_| !s.read().get_auto_open_last_opened_file())
         {
             open_book(path.into()).await;
             if !is_book_opened() {

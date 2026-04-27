@@ -2,7 +2,7 @@ use crate::app::settings::get_settings;
 use crate::windows::main_window::get_main_window_context;
 use dioxus::core::{Element, VirtualDom};
 use dioxus::desktop::{window, WindowBuilder};
-use dioxus::prelude::consume_context;
+use dioxus::prelude::*;
 use dioxus_desktop::{Config, DesktopContext, WindowEvent};
 use dioxus_i18n::prelude::I18n;
 
@@ -34,9 +34,9 @@ pub async fn show_window(
             VirtualDom::new(app).with_root_context(consume_context::<I18n>()),
             config.with_window(
                 builder
-                    .with_theme(Some(get_settings().get_theme().into()))
+                    .with_theme(Some(get_settings().read().get_theme().into()))
                     .with_visible(false)
-                    .with_background_color(get_settings().get_theme().bg_color()),
+                    .with_background_color(get_settings().read().get_theme().bg_color()),
             ),
         )
         .await;

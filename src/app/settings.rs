@@ -1,6 +1,5 @@
 use crate::app::db::acquire_global;
 use crate::app::i18n::apply_language_from_settings;
-use crate::util::alert::AlertResult;
 use crate::windows::main_window::menu;
 use dark_light::Mode;
 use dioxus::core::Task;
@@ -11,25 +10,18 @@ use dioxus_i18n::unic_langid::{langid, LanguageIdentifier};
 use easy_settings::Registry;
 use prehnite_core::db::schema::Setting;
 use serde::{Deserialize, Serialize};
-use std::ops::AddAssign;
 use std::str::FromStr;
-use std::sync::{Arc, LazyLock, RwLock};
+use std::sync::LazyLock;
 use std::time::Duration;
 use strum::{Display, IntoStaticStr, VariantArray};
 use tracing_unwrap::ResultExt;
 
 pub static THEME: GlobalSignal<Theme> = Signal::global(Theme::get_system_default);
-static SETTING_LOADED: GlobalSignal<u64> = Signal::global(|| 0);
-
-static APPLIED_REGISTRY: LazyLock<RwLock<GlobalSettings>> =
-    LazyLock::new(|| RwLock::new(Default::default()));
-
-static APPLIED_REGISTRY_VERSION: LazyLock<RwLock<u64>> = LazyLock::new(|| RwLock::new(0));
+static APPLIED_REGISTRY: GlobalSignal<GlobalSettings> = Signal::global(GlobalSettings::default);
 
 pub fn use_setting_loader() {
     use_effect(move || {
-        let x = use_context::<GlobalSettings>();
-        let _ = SETTING_LOADED.signal();
+        let _ = get_settings();
         apply_all_settings();
     });
 }
@@ -42,16 +34,12 @@ pub fn apply_all_settings() -> Task {
             tokio::time::sleep(Duration::from_millis(100)).await;
             window().set_visible(true);
         }
-        *THEME.write() = get_settings().get_theme();
+        *THEME.write() = get_settings().read().get_theme();
     })
 }
 
 fn set_applied(registry: GlobalSettings) {
-    *APPLIED_REGISTRY.write().unwrap_or_alert() = registry;
-    APPLIED_REGISTRY_VERSION
-        .write()
-        .unwrap_or_alert()
-        .add_assign(1);
+    *APPLIED_REGISTRY.write() = registry;
     apply_all_settings();
 }
 
@@ -60,21 +48,8 @@ pub async fn load() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn get_settings() -> Arc<GlobalSettings> {
-    static CACHE: LazyLock<RwLock<(u64, Arc<GlobalSettings>)>> =
-        LazyLock::new(|| RwLock::new((0, Arc::new(GlobalSettings::default()))));
-    let (ver, reg) = CACHE.read().unwrap_or_alert().clone();
-    if *APPLIED_REGISTRY_VERSION.read().unwrap_or_alert() == ver {
-        return reg;
-    }
-
-    let reg = Arc::new(APPLIED_REGISTRY.read().unwrap_or_alert().clone());
-    *CACHE.write().unwrap_or_alert() = (
-        *APPLIED_REGISTRY_VERSION.read().unwrap_or_alert(),
-        reg.clone(),
-    );
-
-    reg
+pub fn get_settings() -> Signal<GlobalSettings> {
+    APPLIED_REGISTRY.signal()
 }
 
 static CACHED_REGISTRY: LazyLock<tokio::sync::RwLock<GlobalSettings>> =
@@ -115,7 +90,6 @@ pub async fn save_all_settings(settings: GlobalSettings) -> anyhow::Result<()> {
     tx.commit().await?;
     *CACHED_REGISTRY.write().await = settings;
     load().await?;
-    SETTING_LOADED.write().add_assign(1);
     Ok(())
 }
 
