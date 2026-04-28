@@ -29,6 +29,12 @@ jobs:
             . -> target
             core -> target
             build-libs -> target
+      - name: Install dioxus-cli
+        uses: taiki-e/install-action@v2
+        with:
+          tool: dioxus-cli@0.7.6
+      - name: Dioxus Check
+        run: dx check
       - name: Build
         run: cargo build --verbose
       - name: Run tests
