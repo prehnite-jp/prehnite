@@ -8,6 +8,7 @@ mod prefixed_deserializer;
 mod tests;
 
 use chrono::{DateTime, Utc};
+use easy_settings::{IntoSettingRow, SettingRow};
 use indexmap::IndexMap;
 use prehnite_core_proc_macros::{CreateRecord, DeleteRecord, ReadRecord, UpdateRecord};
 use serde::{Deserialize, Serialize};
@@ -563,9 +564,9 @@ pub struct Setting {
     pub setting_value: Option<String>,
 }
 
-impl Setting {
-    pub fn to_setting_row(self) -> easy_settings::SettingRow {
-        easy_settings::SettingRow {
+impl IntoSettingRow for Setting {
+    fn into_setting_row(self) -> SettingRow {
+        SettingRow {
             setting_key: self.setting_key,
             value: self.setting_value,
         }
