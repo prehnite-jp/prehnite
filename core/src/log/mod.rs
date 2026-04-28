@@ -15,11 +15,9 @@ const DEFAULT_LOG_LEVEL: &str = "info";
 #[cfg(debug_assertions)]
 const DEFAULT_LOG_FILTER: &[&str] = &[
     "sqlx::query=trace",
-    "iced_wgpu::window::compositor=warn",
-    "iced_winit=warn",
 ];
 #[cfg(not(debug_assertions))]
-const DEFAULT_LOG_FILTER: &[&str] = &["iced_wgpu::window::compositor=warn", "iced_winit=warn"];
+const DEFAULT_LOG_FILTER: &[&str] = &[];
 
 const ERROR_LOG_FILE_LEVEL: Level = Level::ERROR;
 const INFO_LOG_FILE_LEVEL: Level = Level::INFO;
