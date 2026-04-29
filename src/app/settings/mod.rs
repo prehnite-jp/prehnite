@@ -1,13 +1,13 @@
 pub mod apply;
 pub mod fetch;
 pub mod global_registry;
-pub mod global_settings;
 pub mod hooks;
+pub mod setting_schema;
 pub mod supported_languages;
 pub mod theme;
 
 use crate::app::settings::global_registry::GlobalRegistry;
-use global_settings::GlobalSettings;
+use setting_schema::GlobalSettings;
 use std::cell::RefCell;
 use std::ops::Deref;
 use std::rc::Rc;
@@ -23,16 +23,16 @@ macro_rules! applied_impl {
             pub fn [<get_ $registry_type:snake>]() -> Rc<GlobalRegistry<$registry_type>> {
                 $registry_global_variable.with(|x| x.borrow().clone())
             }
-            
+
             pub async fn [<load_ $registry_type:snake>]() {
-                let mut settings = [<get_ $registry_type:snake>]().deref().clone();
+                let settings = [<get_ $registry_type:snake>]().deref().clone();
                 if let Some(load) = settings.load().await.ok_or_log() {
                     $registry_global_variable.with_borrow_mut(|x| *x = Rc::new(load))
                 }
             }
 
             pub async fn [<save_ $registry_type:snake>](registry: $registry_type) {
-                let mut settings = [<get_ $registry_type:snake>]().deref().clone();
+                let settings = [<get_ $registry_type:snake>]().deref().clone();
                 if let Some(saved) = settings.save(registry).await.ok_or_log() {
                     $registry_global_variable.with_borrow_mut(|x| *x = Rc::new(saved))
                 }

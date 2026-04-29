@@ -1,4 +1,4 @@
-use crate::app::settings::global_settings::GlobalSettings;
+use crate::app::settings::setting_schema::GlobalSettings;
 use dioxus::document::eval;
 use dioxus_desktop::window;
 use dioxus_i18n::prelude::i18n;

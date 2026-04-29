@@ -1,6 +1,6 @@
 #![cfg_attr(feature = "release", windows_subsystem = "windows")]
 
-use app::settings::global_settings::GlobalSettings;
+use app::settings::setting_schema::GlobalSettings;
 use crate::util::alert::AlertResult;
 use crate::window::main_window::menu::main_window_menu_bar;
 use crate::window::main_window::PrehniteApp;
