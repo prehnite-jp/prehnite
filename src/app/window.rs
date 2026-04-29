@@ -30,7 +30,7 @@ pub fn owned_window(builder: WindowBuilder) -> WindowBuilder {
     }
     #[cfg(target_os = "macos")]
     {
-        use dioxus::desktop::tao::platform::macos::WindowExtMacOS;
+        use dioxus::desktop::tao::platform::macos::{WindowBuilderExtMacOS, WindowExtMacOS};
         builder.with_parent_window(window().ns_window())
     }
     #[cfg(not(any(target_os = "macos", target_os = "windows")))]
