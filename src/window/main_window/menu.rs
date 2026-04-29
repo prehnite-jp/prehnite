@@ -1,9 +1,9 @@
 use crate::app::db::is_book_opened;
 use crate::util::alert::{file_dialog_builder, AlertResult};
-use crate::windows::license_info::show_license_info_window;
-use crate::windows::main_window::{close_book, new_book, open_book};
-use crate::windows::settings::show_settings_window;
-use crate::windows::version_info::show_version_info_window;
+use crate::window::license_info::show_license_info_window;
+use crate::window::main_window::{close_book, new_book, open_book};
+use crate::window::settings::show_settings_window;
+use crate::window::version_info::show_version_info_window;
 use dioxus::desktop::muda::{Menu, MenuItem, Submenu};
 use dioxus::dioxus_core;
 use dioxus_desktop::{use_muda_event_handler, window};

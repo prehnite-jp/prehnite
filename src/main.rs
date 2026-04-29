@@ -1,17 +1,18 @@
 #![cfg_attr(feature = "release", windows_subsystem = "windows")]
 
-use crate::app::settings::GlobalSettings;
+use app::settings::global_settings::GlobalSettings;
 use crate::util::alert::AlertResult;
-use crate::windows::main_window::menu::main_window_menu_bar;
-use crate::windows::main_window::PrehniteApp;
+use crate::window::main_window::menu::main_window_menu_bar;
+use crate::window::main_window::PrehniteApp;
 use dioxus::desktop::{Config, WindowBuilder};
+use crate::app::settings::fetch::Fetch;
 
 pub mod app;
 pub mod assets;
 pub mod components;
 pub mod style;
 pub mod util;
-pub mod windows;
+pub mod window;
 
 #[tracing::instrument]
 fn initializer() -> anyhow::Result<()> {

@@ -1,4 +1,9 @@
-use crate::app::settings::{get_settings, save_all_settings, use_setting_loader, GlobalSettings, SupportedLanguages, Theme};
+use crate::app::settings::global_settings::GlobalSettings;
+use crate::app::settings::hooks::{use_global_setting, use_setting_updator};
+use crate::app::settings::supported_languages::SupportedLanguages;
+use crate::app::settings::theme::Theme;
+use crate::app::settings::{get_global_settings, save_global_settings};
+use crate::app::window::show_modal;
 use crate::components::button::{Button, ButtonVariant};
 use crate::components::select::{
     Select, SelectGroup, SelectItemIndicator, SelectList, SelectOption, SelectTrigger, SelectValue,
@@ -6,7 +11,7 @@ use crate::components::select::{
 use crate::components::switch::{Switch, SwitchThumb};
 use crate::style::{GlobalStyle, Height100};
 use crate::util::alert::message_dialog_builder;
-use crate::windows::utilities::show_modal;
+use dioxus::document::eval;
 use dioxus::prelude::*;
 use dioxus_desktop::{
     use_wry_event_handler, window, Config, DesktopContext, WindowBuilder,
@@ -14,7 +19,7 @@ use dioxus_desktop::{
 };
 use dioxus_i18n::t;
 use easy_settings::{Registry, RegistryNode};
-use dioxus::document::eval;
+use std::ops::Deref;
 use strum::VariantArray;
 use tracing_unwrap::ResultExt;
 
@@ -170,13 +175,15 @@ fn SettingNode(node: &'static RegistryNode) -> Element {
 
 #[component]
 pub fn SettingsWindow() -> Element {
+    use_setting_updator();
+    use_global_setting();
     let mut settings_changed = use_signal(|| false);
     let registry_sig = CHANGEABLE_REGISTRY.signal();
     use_effect(move || {
         let registry = registry_sig.read();
-        *settings_changed.write() = registry.ne(&get_settings().read())
+        *settings_changed.write() = registry.ne(get_global_settings().registry())
     });
-    use_effect(|| *CHANGEABLE_REGISTRY.write() = get_settings().cloned());
+    use_effect(|| *CHANGEABLE_REGISTRY.write() = get_global_settings().registry().clone());
     use_wry_event_handler(move |e, _| {
         let x: bool = match e {
             dioxus_desktop::tao::event::Event::WindowEvent {
@@ -188,7 +195,7 @@ pub fn SettingsWindow() -> Element {
         let _: _ = spawn(async move {
             if x {
                 let window = window();
-                if settings_changed.read().cloned() {
+                if settings_changed() {
                     if message_dialog_builder()
                         .set_title(t!("confirm"))
                         .set_text(t!("confirm_settings_not_applied"))
@@ -197,30 +204,13 @@ pub fn SettingsWindow() -> Element {
                         .unwrap_or_default()
                     {
                         window.set_close_behavior(WindowCloseBehaviour::WindowHides);
-                        save_all_settings(CHANGEABLE_REGISTRY.read().cloned())
-                            .await
-                            .ok_or_log();
+                        save_global_settings(CHANGEABLE_REGISTRY()).await;
                         window.set_close_behavior(WindowCloseBehaviour::WindowCloses);
                         window.close();
                     }
                 };
             }
         });
-    });
-    use_setting_loader();
-    let theme_sig = crate::app::settings::THEME.signal();
-    use_effect(move || {
-        let theme1 = theme_sig.read().cloned();
-        let theme2 = theme1.clone();
-        spawn(async move {
-            eval(&format!(
-                "document.documentElement.setAttribute(\"data-theme\", \"{}\");",
-                theme1.clone()
-            ))
-            .await
-            .ok_or_log();
-        });
-        window().set_theme(Some(theme2.into()));
     });
     rsx! {
         GlobalStyle {}
@@ -252,10 +242,11 @@ pub fn SettingsWindow() -> Element {
                 align_content: "center",
                 Button {
                     variant: ButtonVariant::Outline,
-                    disabled: !settings_changed.read().cloned(),
+                    disabled: !settings_changed(),
                     onclick: move |_| async move {
-                        if *settings_changed.read() {
-                            save_all_settings(CHANGEABLE_REGISTRY.read().cloned()).await.ok_or_log();
+                        if settings_changed() {
+                            info!("{:?}", CHANGEABLE_REGISTRY);
+                            save_global_settings(CHANGEABLE_REGISTRY()).await;
                             *settings_changed.write() = false;
                         }
                     },

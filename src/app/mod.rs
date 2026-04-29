@@ -1,4 +1,4 @@
 pub mod book;
 pub mod db;
+pub mod window;
 pub mod settings;
-pub mod i18n;
