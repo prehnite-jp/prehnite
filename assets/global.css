@@ -11,3 +11,7 @@ html {
     background-color: var(--light, var(--primary-color)) var(--dark, var(--primary-color-7));
     color: var(--secondary-color);
 }
+
+.hidden-scrollbar::-webkit-scrollbar {
+    display: none;
+}

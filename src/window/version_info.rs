@@ -73,6 +73,7 @@ pub fn VersionInfoWindow() -> Element {
                 font_size: "15px",
                 overflow_x: "scroll",
                 text_wrap: "nowrap",
+                class: "hidden-scrollbar",
                 { format!("{}.{}{}", app_build_profile(), app_build_target(), feature_decoration(app_build_features())) }
             }
         }
