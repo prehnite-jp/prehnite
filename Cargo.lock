@@ -2003,24 +2003,23 @@ checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
 
 [[package]]
 name = "easy-settings"
-version = "0.2.2"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7feaabd1144fc749b573f165e58c23b838da16c763187e04fda9ba501bc62534"
+checksum = "ac02155ef1951290eea4f3efbdeb7f23ea19167631698029e0461a6284ac5a1b"
 dependencies = [
  "derive_builder",
  "easy-settings-derive",
  "serde",
  "serde_json",
- "sqlx",
  "tracing",
  "tracing-unwrap",
 ]
 
 [[package]]
 name = "easy-settings-derive"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6de8c491b47824ca1418c1393546b3ccfd3daf799af3b691817f3d2a26f41fc"
+checksum = "28de6c999a860650e15fa93c718fda34f8f0763699293764ce043b6cdc64e437"
 dependencies = [
  "fallible-iterator",
  "proc-macro2",
