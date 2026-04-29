@@ -28,8 +28,6 @@ pub fn SettingEditPane() -> Element {
                 display: "flex",
                 flex_direction: "column",
                 row_gap: "0.5em",
-                overflow_x: "scroll",
-                overflow_y: "scroll",
                 max_height: "50em",
                 div {
                     margin: "0.5em 0 0 2em",
