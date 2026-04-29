@@ -8,6 +8,11 @@ use std::time::Duration;
 
 static LOADED_VERSION_GLOBAL_SETTINGS: GlobalSignal<u64> = GlobalSignal::new(|| 0);
 
+pub fn use_settings() {
+    use_setting_updator();
+    use_global_setting();
+}
+
 pub fn use_setting_updator() -> UseFuture {
     use_future(move || async move {
         loop {

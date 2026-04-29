@@ -1,4 +1,4 @@
-use crate::app::settings::hooks::{use_global_setting, use_setting_updator};
+use crate::app::settings::hooks::use_settings;
 use crate::app::window::show_modal;
 use crate::assets::PREHNITE_LOGO;
 use crate::style::GlobalStyle;
@@ -48,8 +48,7 @@ pub async fn show_version_info_window() -> DesktopContext {
 
 #[component]
 pub fn VersionInfoWindow() -> Element {
-    use_setting_updator();
-    use_global_setting();
+    use_settings();
     rsx! {
         GlobalStyle {}
         div {

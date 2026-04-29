@@ -1,5 +1,6 @@
 use crate::app::book::open_new_book;
 use crate::app::db::{close_book_db_pool, is_book_opened, open_book_db_pool};
+use crate::app::settings::hooks::use_settings;
 use crate::app::settings::supported_languages::SupportedLanguages;
 use crate::app::settings::{get_global_settings, load_global_settings, save_global_settings};
 use crate::style::GlobalStyle;
@@ -11,7 +12,6 @@ use dioxus_i18n::prelude::*;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 use tracing_unwrap::ResultExt;
-use crate::app::settings::hooks::{use_global_setting, use_setting_updator};
 
 pub mod menu;
 pub mod pages;
@@ -53,8 +53,7 @@ pub fn PrehniteApp() -> Element {
     use_future(move || async {
         load_global_settings().await;
     });
-    use_setting_updator();
-    use_global_setting();
+    use_settings();
     use_init_i18n(|| {
         I18nConfig::new(get_global_settings().registry().get_locale().into())
             .with_locale((

@@ -1,5 +1,5 @@
 use crate::app::settings::global_settings::GlobalSettings;
-use crate::app::settings::hooks::{use_global_setting, use_setting_updator};
+use crate::app::settings::hooks::use_settings;
 use crate::app::settings::supported_languages::SupportedLanguages;
 use crate::app::settings::theme::Theme;
 use crate::app::settings::{get_global_settings, save_global_settings};
@@ -11,7 +11,6 @@ use crate::components::select::{
 use crate::components::switch::{Switch, SwitchThumb};
 use crate::style::{GlobalStyle, Height100};
 use crate::util::alert::message_dialog_builder;
-use dioxus::document::eval;
 use dioxus::prelude::*;
 use dioxus_desktop::{
     use_wry_event_handler, window, Config, DesktopContext, WindowBuilder,
@@ -19,9 +18,7 @@ use dioxus_desktop::{
 };
 use dioxus_i18n::t;
 use easy_settings::{Registry, RegistryNode};
-use std::ops::Deref;
 use strum::VariantArray;
-use tracing_unwrap::ResultExt;
 
 const HIDDEN_SETTING_KEYS: &[&str] = &["last_opened_file"];
 
@@ -175,8 +172,7 @@ fn SettingNode(node: &'static RegistryNode) -> Element {
 
 #[component]
 pub fn SettingsWindow() -> Element {
-    use_setting_updator();
-    use_global_setting();
+    use_settings();
     let mut settings_changed = use_signal(|| false);
     let registry_sig = CHANGEABLE_REGISTRY.signal();
     use_effect(move || {
