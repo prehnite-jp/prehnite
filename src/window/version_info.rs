@@ -1,11 +1,13 @@
 use crate::app::settings::hooks::use_settings;
 use crate::app::window::show_modal;
 use crate::assets::PREHNITE_LOGO;
+use crate::components::scroll_area::ScrollArea;
 use crate::style::GlobalStyle;
 use dioxus::desktop::{Config, DesktopContext, WindowBuilder};
 use dioxus::prelude::*;
 use dioxus_desktop::LogicalSize;
 use dioxus_i18n::t;
+use dioxus_primitives::scroll_area::ScrollDirection;
 
 fn app_version_info() -> String {
     t!("version_info_detail", app_name: {env!("CARGO_PKG_NAME")}, version: {env!("CARGO_PKG_VERSION")})
@@ -69,12 +71,14 @@ pub fn VersionInfoWindow() -> Element {
                 font_size: "24px",
                 {app_version_info()}
             }
-            p {
-                font_size: "15px",
-                overflow_x: "scroll",
-                text_wrap: "nowrap",
-                class: "hidden-scrollbar",
-                { format!("{}.{}{}", app_build_profile(), app_build_target(), feature_decoration(app_build_features())) }
+            ScrollArea{
+                direction: ScrollDirection::Horizontal,
+                p {
+                    font_size: "15px",
+                    text_wrap: "nowrap",
+                    class: "hidden-scrollbar",
+                    { format!("{}.{}{}", app_build_profile(), app_build_target(), feature_decoration(app_build_features())) }
+                }
             }
         }
     }
