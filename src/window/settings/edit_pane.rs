@@ -27,7 +27,7 @@ pub fn SettingEditPane() -> Element {
                 }
             }
             ScrollArea {
-                height: "calc(100vh - 6em)",
+                height: "calc(100vh - 7em)",
                 direction: ScrollDirection::Both,
                 div {
                     display: "flex",

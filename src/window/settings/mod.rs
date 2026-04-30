@@ -92,7 +92,7 @@ pub fn SettingsWindow() -> Element {
         div {
             display: "grid",
             grid_template_columns: "30% 70%",
-            grid_template_rows: "1fr 4em",
+            grid_template_rows: "1fr 5em",
             height: "100%",
             div {
                 grid_column: "1",
@@ -109,12 +109,13 @@ pub fn SettingsWindow() -> Element {
             }
             div {
                 grid_column: "2",
-                margin: "10px",
+                margin_bottom: "10px",
                 display: "flex",
                 flex_direction: "row",
                 justify_content: "right",
                 align_content: "center",
                 Button {
+                    margin: "10px",
                     variant: ButtonVariant::Outline,
                     disabled: !settings_changed(),
                     onclick: move |_| async move {
