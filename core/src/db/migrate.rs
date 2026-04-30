@@ -13,7 +13,7 @@ pub mod prehnite_book {
     /// # Parameters
     /// - `pool` マイグレーションを実行するDB接続
     pub async fn migrate(pool: &SqlitePool) -> Result<(), sqlx::migrate::MigrateError> {
-        crate::db::migrate::app_global::MIGRATOR.run(pool).await
+        MIGRATOR.run(pool).await
     }
 }
 
