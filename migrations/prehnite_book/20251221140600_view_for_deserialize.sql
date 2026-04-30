@@ -3,6 +3,7 @@ SELECT paragraph.*,
        headlines.id               AS h_id,
        headlines.item_id          AS h_item_id,
        headlines.parent_id        AS h_parent_id,
+       headlines.prev_headline_id AS h_prev_headline_id,
        headlines.next_headline_id AS h_next_headline_id,
        draft.id                   AS d_id,
        draft.paragraph_id         AS d_paragraph_id,
@@ -12,11 +13,12 @@ SELECT paragraph.*,
        draft.body                 AS d_body,
        draft.created_at           AS d_created_at,
        draft.updated_at           AS d_updated_at
-FROM paragraph
-         LEFT OUTER JOIN headlines
+FROM orderable_paragraph paragraph
+         LEFT OUTER JOIN orderable_headlines headlines
                          ON paragraph.headline_id = headlines.id
-         LEFT OUTER JOIN draft
-                         ON paragraph.accepted_draft_id = draft.id;
+         LEFT OUTER JOIN orderable_draft draft
+                         ON paragraph.accepted_draft_id = draft.id
+ORDER BY headlines.pos  NULLS LAST, paragraph.pos  NULLS LAST, draft.pos  NULLS LAST;
 
 CREATE VIEW view_deserializable_item AS
 SELECT items.*,
@@ -42,11 +44,12 @@ SELECT items.*,
 FROM items
          LEFT OUTER JOIN view_deserializable_paragraph
                          ON items.id = view_deserializable_paragraph.item_id
-         LEFT OUTER JOIN headlines
+         LEFT OUTER JOIN orderable_headlines headlines
                          ON (items.item_type = 'headline' AND items.id = headlines.item_id)
                              OR
                             (items.item_type = 'paragraph' AND
-                             view_deserializable_paragraph.h_id = headlines.id);
+                             view_deserializable_paragraph.h_id = headlines.id)
+ORDER BY headlines.pos  NULLS LAST;
 
 CREATE VIEW view_deserializable_bibliographies AS
 SELECT bibliographies.*,
@@ -107,9 +110,10 @@ SELECT tasks.*,
        task_categories.id                          AS tc_id,
        task_categories.name                        AS tc_name,
        task_categories.autocomplete_paragraph_link AS tc_autocomplete_paragraph_link
-FROM tasks
+FROM main.orderable_tasks tasks
          LEFT OUTER JOIN task_categories
-                         ON tasks.task_category_id = task_categories.id;
+                         ON tasks.task_category_id = task_categories.id
+ORDER BY tasks.pos  NULLS LAST;
 
 CREATE VIEW view_deserializable_paragraph_link AS
 SELECT paragraph_link.*,
