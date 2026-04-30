@@ -49,7 +49,7 @@ fn license_collector() -> anyhow::Result<LicenseBundle> {
     .gather(
         &crates,
         &license_config,
-        Some(reqwest::blocking::ClientBuilder::new().build()?),
+        Some(ureq::agent()),
     );
 
     let crate_names: BTreeSet<String> = license.iter().map(|v| v.krate.name.clone()).collect();
