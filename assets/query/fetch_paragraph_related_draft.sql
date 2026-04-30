@@ -1,4 +1,6 @@
-SELECT *
+SELECT draft.*
 FROM draft
-WHERE paragraph_id = ?
-ORDER BY draft_pos NULLS LAST;
+         LEFT OUTER JOIN orderable_draft
+                         ON draft.id = orderable_draft.id
+WHERE draft.paragraph_id = ?
+ORDER BY pos NULLS LAST;

@@ -1,4 +1,6 @@
-SELECT *
+SELECT view_deserializable_task.*
 FROM view_deserializable_task
-WHERE item_id = ?
-ORDER BY task_pos NULLS LAST;
+         LEFT OUTER JOIN orderable_tasks
+                         ON view_deserializable_task.id = orderable_tasks.id
+WHERE view_deserializable_task.item_id = ?
+ORDER BY pos NULLS LAST;

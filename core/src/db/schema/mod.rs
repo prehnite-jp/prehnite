@@ -279,7 +279,8 @@ pub struct Headline {
     #[prehnite_db(skip_update)]
     pub item_id: i64,
     pub parent_id: Option<i64>,
-    pub headline_pos: Option<i64>,
+    pub prev_headline_id: Option<i64>,
+    pub next_headline_id: Option<i64>,
     #[sqlx(skip)]
     #[eq(skip)]
     #[prehnite_db(skip)]
@@ -313,7 +314,8 @@ pub struct HeadlineChildren {
 pub struct Draft {
     pub id: i64,
     pub paragraph_id: i64,
-    pub draft_pos: Option<i64>,
+    pub prev_draft_id: Option<i64>,
+    pub next_draft_id: Option<i64>,
     pub title: String,
     pub body: String,
     #[eq(skip)]
@@ -348,7 +350,8 @@ pub struct Paragraph {
     pub headline: Headline,
     #[prehnite_db(use_id, name = "accepted_draft_id")]
     pub accepted_draft: Option<Draft>,
-    pub paragraph_pos: Option<i64>,
+    pub prev_paragraph_id: Option<i64>,
+    pub next_paragraph_id: Option<i64>,
     #[eq(skip)]
     #[prehnite_db(skip)]
     pub draft: Option<Vec<Draft>>,
@@ -380,7 +383,8 @@ pub struct ParagraphSummary {
     pub paragraph_id: i64,
     pub title: String,
     pub detail: String,
-    pub summary_pos: Option<i64>,
+    pub prev_summary_id: Option<i64>,
+    pub next_summary_id: Option<i64>,
     #[eq(skip)]
     #[prehnite_db(skip)]
     pub created_at: DateTime<Utc>,
@@ -511,7 +515,8 @@ pub struct Task {
     pub task_category: Option<TaskCategory>,
     pub title: String,
     pub detail: Option<String>,
-    pub task_pos: Option<i64>,
+    pub prev_task_id: Option<i64>,
+    pub next_task_id: Option<i64>,
     pub is_finished: bool,
 }
 

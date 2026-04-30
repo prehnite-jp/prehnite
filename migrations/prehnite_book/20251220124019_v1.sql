@@ -98,10 +98,11 @@ END;
 -- 見出し
 CREATE TABLE headlines
 (
-    id           INTEGER PRIMARY KEY AUTOINCREMENT,
-    item_id      INTEGER NOT NULL REFERENCES items (id) ON DELETE CASCADE,
-    parent_id    INTEGER REFERENCES headlines (id) ON DELETE RESTRICT,
-    headline_pos INTEGER, -- 同一の親間での子見出し同士での順序。小さいほど上、大きいほど下。 NULLの場合は最上。
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_id          INTEGER NOT NULL REFERENCES items (id) ON DELETE CASCADE,
+    parent_id        INTEGER REFERENCES headlines (id) ON DELETE RESTRICT,
+    prev_headline_id INTEGER REFERENCES headlines (id) ON DELETE SET NULL, -- 同一親見出し内での次の子見出しを表す。NULLの場合は最下位として扱われる。
+    next_headline_id INTEGER REFERENCES headlines (id) ON DELETE SET NULL, -- 同一親見出し内での次の子見出しを表す。NULLの場合は最下位として扱われる。
     UNIQUE (item_id)
 );
 
@@ -127,25 +128,26 @@ END;
 -- 段落
 CREATE TABLE paragraph
 (
-    id            INTEGER PRIMARY KEY AUTOINCREMENT,
-    item_id       INTEGER NOT NULL REFERENCES items (id) ON DELETE CASCADE,
-    headline_id   INTEGER NOT NULL REFERENCES headlines (id) ON DELETE CASCADE,
-    paragraph_pos INTEGER, -- 段落の見出し内での位置。小さいほど上、大きいほど下。 NULLの場合は最上。
-    UNIQUE (item_id),
-    UNIQUE (headline_id, paragraph_pos)
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_id           INTEGER NOT NULL REFERENCES items (id) ON DELETE CASCADE,
+    headline_id       INTEGER NOT NULL REFERENCES headlines (id) ON DELETE CASCADE,
+    prev_paragraph_id INTEGER REFERENCES paragraph (id) ON DELETE SET NULL, -- 見出し内での次の段落。NULLの場合は最下位として扱われる。
+    next_paragraph_id INTEGER REFERENCES paragraph (id) ON DELETE SET NULL, -- 見出し内での次の段落。NULLの場合は最下位として扱われる。
+    UNIQUE (item_id)
 );
 
 -- 段落の下書き
 CREATE TABLE draft
 (
-    id           INTEGER PRIMARY KEY AUTOINCREMENT,
-    paragraph_id INTEGER NOT NULL REFERENCES paragraph (id) ON DELETE CASCADE,
-    draft_pos    INTEGER, -- 段落の中での下書きの位置。小さいほど左、大きいほど右。 NULLの場合は最左。
-    title        TEXT    NOT NULL,
-    body         TEXT    NOT NULL,
-    created_at   INTEGER NOT NULL DEFAULT (unixepoch()),
-    updated_at   INTEGER NOT NULL DEFAULT (unixepoch()),
-    UNIQUE (paragraph_id, draft_pos)
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    paragraph_id  INTEGER NOT NULL REFERENCES paragraph (id) ON DELETE CASCADE,
+    prev_draft_id INTEGER REFERENCES draft (id) ON DELETE SET NULL,
+    next_draft_id INTEGER REFERENCES draft (id) ON DELETE SET NULL,
+    title         TEXT    NOT NULL,
+    body          TEXT    NOT NULL,
+    created_at    INTEGER NOT NULL DEFAULT (unixepoch()),
+    updated_at    INTEGER NOT NULL DEFAULT (unixepoch())
+
 );
 
 -- 下書きの最終更新時刻を更新
@@ -198,14 +200,14 @@ END;
 -- 段落の概要
 CREATE TABLE paragraph_summaries
 (
-    id           INTEGER PRIMARY KEY AUTOINCREMENT,
-    paragraph_id INTEGER NOT NULL REFERENCES paragraph (id) ON DELETE CASCADE,
-    title        TEXT    NOT NULL,
-    detail       TEXT    NOT NULL,
-    summary_pos  INTEGER,
-    created_at   INTEGER NOT NULL DEFAULT (unixepoch()),
-    updated_at   INTEGER NOT NULL DEFAULT (unixepoch()),
-    UNIQUE (paragraph_id, summary_pos)
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    paragraph_id    INTEGER NOT NULL REFERENCES paragraph (id) ON DELETE CASCADE,
+    title           TEXT    NOT NULL,
+    detail          TEXT    NOT NULL,
+    prev_summary_id INTEGER REFERENCES paragraph_summaries (id) ON DELETE SET NULL,
+    next_summary_id INTEGER REFERENCES paragraph_summaries (id) ON DELETE SET NULL,
+    created_at      INTEGER NOT NULL DEFAULT (unixepoch()),
+    updated_at      INTEGER NOT NULL DEFAULT (unixepoch())
 );
 
 -- 下書きの最終更新時刻を更新
@@ -279,9 +281,9 @@ CREATE TABLE tasks
     task_category_id INTEGER REFERENCES task_categories (id) ON DELETE SET NULL,
     title            TEXT    NOT NULL,
     detail           TEXT,
-    task_pos         INTEGER,
-    is_finished      INTEGER NOT NULL DEFAULT 0 CHECK ( is_finished = 0 /* false */ OR is_finished = 1 /* true */ ),
-    UNIQUE (item_id, task_pos)
+    prev_task_id     INTEGER REFERENCES tasks (id) ON DELETE SET NULL,
+    next_task_id     INTEGER REFERENCES tasks (id) ON DELETE SET NULL,
+    is_finished      INTEGER NOT NULL DEFAULT 0 CHECK ( is_finished = 0 /* false */ OR is_finished = 1 /* true */ )
 );
 
 -- 段落間に置くリンク

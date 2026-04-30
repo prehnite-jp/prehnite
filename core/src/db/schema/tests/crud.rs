@@ -285,11 +285,14 @@ impl Headline {
             .collect();
         let before_reg_root = Headline {
             item_id: items[0].id,
-            ..Headline::random_value()
+            ..Default::default()
         };
         let root = before_reg_root.register(conn, true).await?;
 
-        let mut headlines = Vec::<Headline>::random_n_values(n - 1);
+        let mut headlines = (0..n - 1)
+            .into_iter()
+            .map(|_| Default::default())
+            .collect::<Vec<Headline>>();
         if n > 1 {
             headlines.iter_mut().enumerate().for_each(|(i, v)| {
                 v.item_id = items[i + 1].id;
@@ -337,7 +340,10 @@ impl Paragraph {
             })
             .collect();
         let (root_headline, headlines) = p_headlines.clone().get();
-        let mut paragraph = Vec::<Paragraph>::random_n_values(n);
+        let mut paragraph = (0..n)
+            .into_iter()
+            .map(|_| Default::default())
+            .collect::<Vec<Paragraph>>();
         paragraph.chunks_mut(4).enumerate().for_each(|(i, v)| {
             v.iter_mut().enumerate().for_each(|(j, v)| {
                 v.item_id = items[i * 4 + j].id;
@@ -591,11 +597,7 @@ test_cr_prehnite_book!(
     TaskTemplate
 );
 
-test_cr_app_global!(
-    Bibliography,
-    TaskTemplate,
-    RelBibliographyAuthor
-);
+test_cr_app_global!(Bibliography, TaskTemplate, RelBibliographyAuthor);
 
 #[sqlx::test(migrator = "crate::db::migrate::prehnite_book::MIGRATOR")]
 async fn valid_create_read_random_item(pool: SqlitePool) {

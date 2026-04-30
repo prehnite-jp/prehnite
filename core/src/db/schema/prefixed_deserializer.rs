@@ -111,7 +111,8 @@ impl PrefixedDeserializer {
                 .ok_or(sqlx::Error::RowNotFound)?,
             item_id: row.try_get(p.prefix("item_id"))?,
             parent_id: row.try_get(p.prefix("parent_id"))?,
-            headline_pos: row.try_get(p.prefix("headline_pos"))?,
+            prev_headline_id: row.try_get(p.prefix("prev_headline_id"))?,
+            next_headline_id: row.try_get(p.prefix("next_headline_id"))?,
             paragraph: None,
         })
     }
@@ -124,7 +125,8 @@ impl PrefixedDeserializer {
                 .try_get::<Option<i64>, _>(p.prefix("id"))?
                 .ok_or(sqlx::Error::RowNotFound)?,
             paragraph_id: row.try_get(p.prefix("paragraph_id"))?,
-            draft_pos: row.try_get(p.prefix("draft_pos"))?,
+            prev_draft_id: row.try_get(p.prefix("prev_draft_id"))?,
+            next_draft_id: row.try_get(p.prefix("next_draft_id"))?,
             title: row.try_get(p.prefix("title"))?,
             body: row.try_get(p.prefix("body"))?,
             created_at: row.try_get(p.prefix("created_at"))?,
@@ -147,7 +149,8 @@ impl PrefixedDeserializer {
             item_id: row.try_get(p.prefix("item_id"))?,
             headline: Self::headline(row, prefix_headline)?,
             accepted_draft: Self::draft(row, prefix_draft).ok(),
-            paragraph_pos: row.try_get(p.prefix("paragraph_pos"))?,
+            prev_paragraph_id: row.try_get(p.prefix("prev_paragraph_id"))?,
+            next_paragraph_id: row.try_get(p.prefix("next_paragraph_id"))?,
             draft: None,
             summary: None,
         })
@@ -239,7 +242,8 @@ impl PrefixedDeserializer {
             task_category: Self::category(row, prefix_task_category).ok(),
             title: row.try_get(p.prefix("title"))?,
             detail: row.try_get(p.prefix("detail"))?,
-            task_pos: row.try_get(p.prefix("task_pos"))?,
+            prev_task_id: row.try_get(p.prefix("prev_task_id"))?,
+            next_task_id: row.try_get(p.prefix("next_task_id"))?,
             is_finished: row.try_get(p.prefix("is_finished"))?,
         })
     }

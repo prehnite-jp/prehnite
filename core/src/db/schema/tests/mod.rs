@@ -56,20 +56,9 @@ impl RandomValue for Draft {
         Draft {
             id: 0,
             paragraph_id: 0,
-            draft_pos: RandomValue::random_value(),
+            next_draft_id: None,
             title: RandomValue::random_value(),
             body: RandomValue::random_value(),
-            ..Default::default()
-        }
-    }
-}
-//noinspection RsSuperTraitIsNotImplemented: supress false positive
-impl RandomValue for Headline {
-    fn random_value() -> Self {
-        Headline {
-            id: 0,
-            item_id: 0,
-            headline_pos: RandomValue::random_value(),
             ..Default::default()
         }
     }
@@ -77,9 +66,9 @@ impl RandomValue for Headline {
 impl RandomValue for ItemType {
     fn random_value() -> Self {
         if RandomValue::random_value() {
-            ItemType::Headline(RandomValue::random_value())
+            ItemType::Headline(Default::default())
         } else {
-            ItemType::Paragraph(RandomValue::random_value())
+            ItemType::Paragraph(Default::default())
         }
     }
 }
@@ -106,17 +95,6 @@ impl RandomValue for ItemReference {
             id: 0,
             item_id: 0,
             location: RandomValue::random_value(),
-            ..Default::default()
-        }
-    }
-}
-//noinspection RsSuperTraitIsNotImplemented: supress false positive
-impl RandomValue for Paragraph {
-    fn random_value() -> Self {
-        Paragraph {
-            id: 0,
-            item_id: 0,
-            paragraph_pos: RandomValue::random_value(),
             ..Default::default()
         }
     }
