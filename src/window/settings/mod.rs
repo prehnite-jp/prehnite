@@ -91,8 +91,8 @@ pub fn SettingsWindow() -> Element {
         Height100 {}
         div {
             display: "grid",
-            grid_template_columns: "30% auto",
-            grid_template_rows: "auto 4em",
+            grid_template_columns: "30% 70%",
+            grid_template_rows: "1fr 4em",
             height: "100%",
             div {
                 grid_column: "1",

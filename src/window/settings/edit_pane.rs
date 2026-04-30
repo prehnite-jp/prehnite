@@ -3,6 +3,8 @@ use crate::window::settings::child_category_nodes::ChildCategoryNodes;
 use crate::window::settings::node::SettingNode;
 use dioxus::core::Element;
 use dioxus::core_macro::{component, rsx};
+use dioxus_primitives::scroll_area::ScrollDirection;
+use crate::components::scroll_area::ScrollArea;
 
 #[component]
 pub fn SettingEditPane() -> Element {
@@ -24,27 +26,30 @@ pub fn SettingEditPane() -> Element {
                     {CURRENT_CATEGORY.read().as_ref().map(|x| t!(&format!("settings_category_{}", x))).unwrap_or(t!("settings"))}
                 }
             }
-            div {
-                display: "flex",
-                flex_direction: "column",
-                row_gap: "0.5em",
-                max_height: "50em",
+            ScrollArea {
+                height: "calc(100vh - 6em)",
+                direction: ScrollDirection::Both,
                 div {
-                    margin: "0.5em 0 0 2em",
-                    for i in child_items
-                    {
-                        div {
-                            display: "flex",
-                            flex_direction: "row",
-                            justify_content: "left",
-                            column_gap: "1em",
-                            SettingNode { node: i }
+                    display: "flex",
+                    flex_direction: "column",
+                    row_gap: "0.5em",
+                    div {
+                        margin: "0.5em 0 0 2em",
+                        for i in child_items
+                        {
+                            div {
+                                display: "flex",
+                                flex_direction: "row",
+                                justify_content: "left",
+                                column_gap: "1em",
+                                SettingNode { node: i }
+                            }
                         }
                     }
-                }
-                for i in child_categories {
-                    ChildCategoryNodes {
-                        category: i.value()
+                    for i in child_categories {
+                        ChildCategoryNodes {
+                            category: i.value()
+                        }
                     }
                 }
             }
