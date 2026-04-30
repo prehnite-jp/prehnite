@@ -1,7 +1,7 @@
 use crate::db::schema::BookSearchApi;
 use crate::db::schema::*;
 use crate::test_util::{RandomValue, RandomValueVec};
-use sqlx::{SqliteConnection, SqlitePool};
+use sqlx::{query, SqliteConnection, SqlitePool};
 use std::cmp::max;
 
 const TEST_DATA_COUNT: usize = 100;
@@ -573,14 +573,14 @@ test_crd_prehnite_book!(
     Setting
 );
 
-test_crd_app_global!(
-    Publisher,
-    TaskCategory,
-    Tag,
-    BibliographyAuthor,
-    BookSearchApi
-);
+test_crd_app_global!(Publisher, TaskCategory, Tag, BibliographyAuthor);
 
+#[sqlx::test(migrator = "crate::db::migrate::app_global::MIGRATOR")]
+async fn valid_create_read_delete_random_app_global_book_search_api(pool: SqlitePool) {
+    let mut conn = pool.acquire().await.unwrap();
+    query("DELETE FROM book_search_api WHERE TRUE;").execute(&mut *conn).await.unwrap();
+    test_crd!(BookSearchApi, pool);
+}
 test_cr_prehnite_book!(
     BackgroundReference,
     Bibliography,
