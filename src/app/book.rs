@@ -15,7 +15,6 @@ pub enum OpenBookError {
 pub struct PrehniteBookFixtures {
     task_category: Vec<TaskCategory>,
     task_template: Vec<TaskTemplate>,
-    book_search_api: Vec<BookSearchApi>,
 }
 
 impl Default for PrehniteBookFixtures {
@@ -53,30 +52,6 @@ impl Default for PrehniteBookFixtures {
                     detail: Some(t!("task_template_will_explain_detail")),
                 },
             ],
-            book_search_api: vec![BookSearchApi {
-                id: 0,
-                name: t!("book_search_api_example_name"),
-                detail: t!("book_search_api_example_detail"),
-                isbn_url: "https://example.com/api/book?isbn=<isbn>".to_string(),
-                text_url: "https://example.com/api/book?search=<text>".to_string(),
-                mapping_script: r#"fn mapper(isbn, search_text, response){
-    let x = [];
-    for result in response.result {
-        x += new_res(
-            result.isbn, // isbn
-            "", // url
-            result.title, // title
-            result.detail, // detail
-            result.authors, // authors
-            (), // publisher (Option::None)
-            result.publication_date, // publication date
-        )
-    }
-    x
-}"#
-                .to_string(),
-                is_example: true,
-            }],
         }
     }
 }
@@ -91,7 +66,6 @@ pub async fn create_or_open_book(path: impl Into<PathBuf>) -> anyhow::Result<()>
     let PrehniteBookFixtures {
         task_category,
         task_template,
-        book_search_api,
     } = Default::default();
 
     for x in task_category {
@@ -106,7 +80,6 @@ pub async fn create_or_open_book(path: impl Into<PathBuf>) -> anyhow::Result<()>
     }
 
     TaskTemplate::register_many(task_template.as_slice(), &mut *tx, false).await?;
-    BookSearchApi::register_many(book_search_api.as_slice(), &mut *tx, false).await?;
 
     tx.commit().await?;
     Ok(())

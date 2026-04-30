@@ -1,5 +1,5 @@
 use crate::app::book::open_new_book;
-use crate::app::db::{close_book_db_pool, is_book_opened, open_book_db_pool};
+use crate::app::db::{acquire_global, close_book_db_pool, is_book_opened, open_book_db_pool};
 use crate::app::settings::hooks::use_settings;
 use crate::app::settings::supported_languages::SupportedLanguages;
 use crate::app::settings::{get_global_settings, load_global_settings, save_global_settings};
@@ -9,6 +9,8 @@ use crate::window::main_window::pages::Route;
 use dioxus::prelude::*;
 use dioxus_desktop::{use_wry_event_handler, window, DesktopContext, WindowEvent};
 use dioxus_i18n::prelude::*;
+use dioxus_i18n::t;
+use prehnite_core::db::schema::BookSearchApi;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 use tracing_unwrap::ResultExt;
@@ -48,8 +50,25 @@ pub fn get_main_window_context() -> Option<DesktopContext> {
     MAIN_WINDOW_CONTEXT.with(|x| x.get().cloned())
 }
 
+fn use_bsr_example_initializer() {
+    use_future(move || async {
+        async fn f() -> Option<()> {
+            let mut conn = acquire_global().await.ok_or_log()?;
+            let bsr = BookSearchApi::from_id(&mut *conn, 1).await.ok_or_log()?;
+            if let Some(mut bsr) = bsr {
+                bsr.name = t!("book_search_api_example_name");
+                bsr.detail = t!("book_search_api_example_detail");
+                bsr.update(&mut *conn).await.ok_or_log()?;
+            }
+            Some(())
+        }
+        f().await;
+    });
+}
+
 #[component]
 pub fn PrehniteApp() -> Element {
+    use_bsr_example_initializer();
     use_future(move || async {
         load_global_settings().await;
     });
