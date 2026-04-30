@@ -115,6 +115,8 @@ pub async fn create_or_open_book(path: impl Into<PathBuf>) -> anyhow::Result<()>
 /// 新しいPrehniteBookを開きます。既に存在する場合は上書きされます。
 pub async fn open_new_book(path: impl Into<PathBuf>) -> anyhow::Result<()> {
     let path = path.into();
-    tokio::fs::remove_file(path.clone()).await?;
+    if tokio::fs::try_exists(&path).await? {
+        tokio::fs::remove_file(&path).await?;
+    }
     create_or_open_book(path).await
 }
