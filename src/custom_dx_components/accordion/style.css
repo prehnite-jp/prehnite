@@ -32,7 +32,7 @@
 
 .dx-accordion-content {
   display: grid;
-  padding-left: 2.25em;
+  padding-left: 2em;
 }
 
 .dx-accordion-content > * {
@@ -83,7 +83,7 @@
   transition: rotate cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.dx-accordion-item[data-open="true"] .dx-accordion-expand-icon {
+.dx-accordion-item[data-open="true"] > button > .dx-accordion-expand-icon {
   transform-origin: center center;
   transform: rotate(90deg)  translateX(2px) translateY(2px);
 }
