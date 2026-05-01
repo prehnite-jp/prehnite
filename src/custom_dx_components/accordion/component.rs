@@ -8,12 +8,12 @@
 
 use dioxus::prelude::*;
 use dioxus_primitives::accordion::{
-    self, AccordionContentProps, AccordionItemProps, AccordionProps, AccordionTriggerProps,
+    self, AccordionProps, AccordionTriggerProps,
 };
 use dioxus_primitives::icon;
 
 #[component]
-pub fn Accordion(props: AccordionProps) -> Element {
+pub fn CustomAccordion(props: AccordionProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("./style.css") }
         accordion::Accordion {
@@ -31,23 +31,7 @@ pub fn Accordion(props: AccordionProps) -> Element {
 }
 
 #[component]
-pub fn AccordionItem(props: AccordionItemProps) -> Element {
-    rsx! {
-        accordion::AccordionItem {
-            class: "dx-accordion-item",
-            disabled: props.disabled,
-            default_open: props.default_open,
-            on_change: props.on_change,
-            on_trigger_click: props.on_trigger_click,
-            index: props.index,
-            attributes: props.attributes,
-            {props.children}
-        }
-    }
-}
-
-#[component]
-pub fn AccordionTrigger(props: AccordionTriggerProps) -> Element {
+pub fn CustomAccordionTrigger(props: AccordionTriggerProps) -> Element {
     rsx! {
         accordion::AccordionTrigger {
             class: "dx-accordion-trigger",
@@ -61,19 +45,6 @@ pub fn AccordionTrigger(props: AccordionTriggerProps) -> Element {
                 padding_right: "10px",
                 polyline { points: "12 5 18 11 12 17" }
             }
-            {props.children}
-        }
-    }
-}
-
-#[component]
-pub fn AccordionContent(props: AccordionContentProps) -> Element {
-    rsx! {
-        accordion::AccordionContent {
-            class: "dx-accordion-content",
-            style: "--collapsible-content-width: 140px",
-            id: props.id,
-            attributes: props.attributes,
             {props.children}
         }
     }
