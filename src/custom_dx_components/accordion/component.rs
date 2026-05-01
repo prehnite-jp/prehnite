@@ -18,7 +18,6 @@ pub fn CustomAccordion(props: AccordionProps) -> Element {
         document::Link { rel: "stylesheet", href: asset!("./style.css") }
         accordion::Accordion {
             class: "dx-accordion",
-            width: "15rem",
             id: props.id,
             allow_multiple_open: props.allow_multiple_open,
             disabled: props.disabled,
