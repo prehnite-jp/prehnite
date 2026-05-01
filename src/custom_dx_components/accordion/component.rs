@@ -53,14 +53,15 @@ pub fn AccordionTrigger(props: AccordionTriggerProps) -> Element {
             class: "dx-accordion-trigger",
             id: props.id,
             attributes: props.attributes,
-            {props.children}
             icon::Icon {
                 class: "dx-accordion-expand-icon",
-                width: "20px",
-                height: "20px",
+                width: "1em",
+                height: "1em",
                 stroke: "var(--secondary-color-4)",
-                polyline { points: "6 9 12 15 18 9" }
+                padding_right: "10px",
+                polyline { points: "12 5 18 11 12 17" }
             }
+            {props.children}
         }
     }
 }
