@@ -22,8 +22,7 @@ where
         SettingLabel { setting_key: setting_key.clone(), label }
         Select::<T> {
             id: "input_{setting_key}",
-            placeholder: "",
-            value: Option::<T>::from(selected),
+            default_value: Option::<T>::from(selected),
             on_value_change,
             SelectTrigger {
                 width: "12rem",
