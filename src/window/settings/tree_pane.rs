@@ -2,7 +2,9 @@ use crate::app::settings::setting_schema::GlobalSettings;
 use crate::components::accordion::{AccordionContent, AccordionItem};
 use crate::components::scroll_area::ScrollArea;
 use crate::custom_dx_components::accordion::{CustomAccordion, CustomAccordionTrigger};
-use crate::window::settings::{visible_children, visible_filter};
+use crate::window::settings::{
+    visible_children, visible_filter, CURRENT_CATEGORY, CURRENT_SETTING_ENTRY,
+};
 use dioxus::prelude::*;
 use dioxus_i18n::t;
 use dioxus_primitives::scroll_area::ScrollDirection;
@@ -17,6 +19,8 @@ fn SettingEntry(node: &'static str) -> Element {
             text_wrap: "nowrap",
             margin_right: "2em",
             font_size: "11px",
+            onfocusin: move |_| *CURRENT_SETTING_ENTRY.write() = Some(node),
+            onfocusout: move |_| *CURRENT_SETTING_ENTRY.write() = None,
             { t!(&format!("settings_entry_{}", node)) }
         }
     }
@@ -61,11 +65,14 @@ fn CategoryTree(index: usize, category: &'static str) -> Element {
     rsx! {
         AccordionItem {
             index,
-            CustomAccordionTrigger {
-                span {
-                    { t!(&format!("settings_category_{}", category)) }
-                }
-            },
+            div {
+                onfocusin: move |_| *CURRENT_CATEGORY.write() = Some(category),
+                CustomAccordionTrigger {
+                    span {
+                        { t!(&format!("settings_category_{}", category)) }
+                    }
+                },
+            }
             Nodes {
                 children_node
             }

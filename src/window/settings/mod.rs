@@ -1,4 +1,3 @@
-pub mod child_category_nodes;
 pub mod combo_selector;
 mod edit_pane;
 pub mod input;
@@ -7,7 +6,6 @@ pub mod setting_label;
 pub mod toggler;
 mod tree_pane;
 
-use std::iter::Filter;
 use crate::app::settings::hooks::use_settings;
 use crate::app::settings::setting_schema::GlobalSettings;
 use crate::app::settings::supported_languages::SupportedLanguages;
@@ -31,12 +29,17 @@ use dioxus_desktop::{
 };
 use dioxus_i18n::t;
 use easy_settings::{Registry, RegistryNode, SettingValue};
+use std::iter::Filter;
 
 const HIDDEN_SETTING_KEYS: &[&str] = &["last_opened_file"];
-static CURRENT_CATEGORY: GlobalSignal<Option<&'static str>> = Signal::global(|| None);
+static CURRENT_CATEGORY: GlobalSignal<Option<&'static str>> =
+    Signal::global(|| GlobalSettings::categories().first().cloned());
+static CURRENT_SETTING_ENTRY: GlobalSignal<Option<&'static str>> = Signal::global(|| None);
 static CHANGEABLE_REGISTRY: GlobalSignal<GlobalSettings> = Signal::global(GlobalSettings::default);
 
-fn visible_children(parent: Option<&'static str>) -> Filter<std::slice::Iter<'static, RegistryNode>, fn(&&'_ RegistryNode) -> bool> {
+fn visible_children(
+    parent: Option<&'static str>,
+) -> Filter<std::slice::Iter<'static, RegistryNode>, fn(&&'_ RegistryNode) -> bool> {
     GlobalSettings::child_nodes(parent)
         .iter()
         .filter(visible_filter)

@@ -1,16 +1,17 @@
 use super::*;
-use crate::window::settings::child_category_nodes::ChildCategoryNodes;
+use crate::components::scroll_area::ScrollArea;
 use crate::window::settings::node::SettingNode;
 use dioxus::core::Element;
 use dioxus::core_macro::{component, rsx};
 use dioxus_primitives::scroll_area::ScrollDirection;
-use crate::components::scroll_area::ScrollArea;
 
 #[component]
 pub fn SettingEditPane() -> Element {
     let children = visible_children(CURRENT_CATEGORY());
     let child_categories = children.clone().filter(|x| x.is_category());
-    let child_items = children.filter(|x| x.is_setting_item());
+    let children = children
+        .filter(|x| x.is_setting_item())
+        .chain(child_categories);
     rsx! {
         div {
             display: "flex",
@@ -33,7 +34,7 @@ pub fn SettingEditPane() -> Element {
                     row_gap: "0.5em",
                     div {
                         margin: "0.5em 0 0 2em",
-                        for i in child_items
+                        for i in children
                         {
                             div {
                                 display: "flex",
@@ -42,11 +43,6 @@ pub fn SettingEditPane() -> Element {
                                 column_gap: "1em",
                                 SettingNode { node: i }
                             }
-                        }
-                    }
-                    for i in child_categories {
-                        ChildCategoryNodes {
-                            category: i.value()
                         }
                     }
                 }
