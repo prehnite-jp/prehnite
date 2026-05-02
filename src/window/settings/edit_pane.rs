@@ -8,9 +8,7 @@ use crate::components::scroll_area::ScrollArea;
 
 #[component]
 pub fn SettingEditPane() -> Element {
-    let children = GlobalSettings::child_nodes(CURRENT_CATEGORY())
-        .iter()
-        .filter(|x| !HIDDEN_SETTING_KEYS.contains(&x.value()));
+    let children = visible_children(CURRENT_CATEGORY());
     let child_categories = children.clone().filter(|x| x.is_category());
     let child_items = children.filter(|x| x.is_setting_item());
     rsx! {

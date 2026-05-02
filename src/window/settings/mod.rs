@@ -7,6 +7,7 @@ pub mod setting_label;
 pub mod toggler;
 mod tree_pane;
 
+use std::iter::Filter;
 use crate::app::settings::hooks::use_settings;
 use crate::app::settings::setting_schema::GlobalSettings;
 use crate::app::settings::supported_languages::SupportedLanguages;
@@ -29,11 +30,21 @@ use dioxus_desktop::{
     WindowCloseBehaviour, WindowEvent,
 };
 use dioxus_i18n::t;
-use easy_settings::{Registry, SettingValue};
+use easy_settings::{Registry, RegistryNode, SettingValue};
 
 const HIDDEN_SETTING_KEYS: &[&str] = &["last_opened_file"];
 static CURRENT_CATEGORY: GlobalSignal<Option<&'static str>> = Signal::global(|| None);
 static CHANGEABLE_REGISTRY: GlobalSignal<GlobalSettings> = Signal::global(GlobalSettings::default);
+
+fn visible_children(parent: Option<&'static str>) -> Filter<std::slice::Iter<'static, RegistryNode>, fn(&&'_ RegistryNode) -> bool> {
+    GlobalSettings::child_nodes(parent)
+        .iter()
+        .filter(visible_filter)
+}
+
+fn visible_filter(node: &&RegistryNode) -> bool {
+    !HIDDEN_SETTING_KEYS.contains(&node.value())
+}
 
 pub async fn show_settings_window() -> DesktopContext {
     show_modal(
