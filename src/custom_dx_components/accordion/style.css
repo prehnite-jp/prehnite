@@ -5,6 +5,7 @@
 /* | LICENSE     | MIT OR Apache-2.0                        | */
 /* | AUTHORS     | ["Dioxus Labs", "DogeDark"]              | */
 /* | MODIFIED BY | saku shirakura<saku@sakushira.com>       | */
+
 .dx-accordion-trigger {
   display: flex;
   width: 100%;
