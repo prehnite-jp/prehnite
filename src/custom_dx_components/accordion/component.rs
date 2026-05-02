@@ -33,7 +33,7 @@ pub fn CustomAccordion(props: AccordionProps) -> Element {
 pub fn CustomAccordionTrigger(props: AccordionTriggerProps) -> Element {
     rsx! {
         accordion::AccordionTrigger {
-            class: "dx-accordion-trigger",
+            class: "dx-accordion-trigger custom-accordion-show-focus",
             id: props.id,
             attributes: props.attributes,
             icon::Icon {

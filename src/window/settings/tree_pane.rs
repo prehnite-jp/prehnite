@@ -13,7 +13,7 @@ fn SettingEntry(node: &'static str) -> Element {
     rsx! {
         span {
             tabindex: 0,
-            class: "show-focus",
+            class: "show-focus show-hover",
             text_wrap: "nowrap",
             margin_right: "2em",
             font_size: "11px",

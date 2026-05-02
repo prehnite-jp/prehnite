@@ -17,5 +17,9 @@ html {
 }
 
 .show-focus:focus {
-    border: thin solid var(--focused-border-color);
+    background-color: var(--primary-color-5);
+}
+
+.show-hover:hover {
+    text-decoration: underline;
 }

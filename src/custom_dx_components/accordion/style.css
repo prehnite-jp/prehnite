@@ -88,3 +88,7 @@
   transform-origin: center center;
   transform: rotate(90deg)  translateX(2px) translateY(2px);
 }
+
+.custom-accordion-show-focus:focus {
+    background-color: var(--primary-color-5);
+}
