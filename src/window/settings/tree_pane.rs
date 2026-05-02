@@ -10,8 +10,10 @@ use easy_settings::{Registry, RegistryNode};
 
 #[component]
 fn SettingEntry(node: &'static str) -> Element {
-    rsx!{
+    rsx! {
         span {
+            tabindex: 0,
+            class: "show-focus",
             text_wrap: "nowrap",
             margin_right: "2em",
             font_size: "11px",

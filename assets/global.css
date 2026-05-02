@@ -15,3 +15,7 @@ html {
 .hidden-scrollbar::-webkit-scrollbar {
     display: none;
 }
+
+.show-focus:focus {
+    border: thin solid var(--focused-border-color);
+}
