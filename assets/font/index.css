@@ -1,0 +1,7 @@
+@import "Material_Symbols/index.css";
+@import "Roboto/index.css";
+@import "Sawarabi_Gothic/index.css";
+
+:root {
+    font-family: "Hiragino Sans", "Yu Gothic", Roboto, "Segoe UI", "Sawarabi Gothic", sans-serif;
+}
