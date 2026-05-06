@@ -4,16 +4,108 @@ use crate::{build_process, BuildProcess};
 use cargo_about::licenses::KrateLicense;
 #[cfg(feature = "bundle_license")]
 use prehnite_core::license_bundle::LicenseBundle;
-use prehnite_core::license_bundle::Package;
+use prehnite_core::license_bundle::{License, Package};
+use serde::Deserialize;
 #[cfg(feature = "bundle_license")]
 use std::collections::BTreeSet;
-use std::fs::File;
+use std::collections::HashMap;
+use std::fs::{read_to_string, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use zip::write::SimpleFileOptions;
 use zip::ZipWriter;
 
 const FILE_NAME: &str = "content";
+
+// LicenseBundler.toml
+#[derive(Deserialize)]
+struct LicenseBundlerManifest {
+    dependencies: HashMap<String, Vec<String>>,
+}
+
+impl LicenseBundlerManifest {
+    fn read(manifest_path: impl AsRef<Path>) -> anyhow::Result<Self> {
+        println!("{:?}", manifest_path.as_ref());
+        Ok(toml::from_str(&read_to_string(manifest_path)?)?)
+    }
+
+    fn fetch_all_packages(self) -> HashMap<String, Vec<Package>> {
+        let mut packages = HashMap::new();
+        for (key, deps) in self.dependencies.into_iter() {
+            packages.insert(
+                key,
+                deps.iter()
+                    .map(|x| {
+                        glob::glob(x)
+                            .into_iter()
+                            .map(|x| x.filter_map(|x| x.ok()))
+                            .flatten()
+                            .collect::<Vec<_>>()
+                    })
+                    .flatten()
+                    .filter_map(LicenseBundlerPackageManifest::from_package_path)
+                    .map(|x| x.build())
+                    .collect(),
+            );
+        }
+        packages
+    }
+}
+
+// LicenseBundlerPackage.toml
+#[derive(Deserialize)]
+struct LicenseBundlerPackageManifest {
+    package: LicenseBundlerPackage,
+}
+
+impl LicenseBundlerPackageManifest {
+    fn from_package_path(package_path: impl AsRef<Path>) -> Option<LicenseBundlerPackageManifest> {
+        let manifest_path = package_path.as_ref().join("LicenseBundlerPackage.toml");
+        let mut manifest: Option<LicenseBundlerPackageManifest> =
+            toml::from_str(&read_to_string(manifest_path).ok()?).ok();
+        if let Some(m) = manifest.as_mut() {
+            m.package.base_dir = package_path.as_ref().to_str()?.to_string();
+        }
+        manifest
+    }
+
+    fn build(self) -> Package {
+        let LicenseBundlerPackage {
+            base_dir,
+            name,
+            authors,
+            website,
+            license,
+            license_path,
+        } = self.package;
+        Package {
+            name,
+            authors: authors.unwrap_or_default(),
+            homepage: Some(website),
+            license_info: license,
+            licenses: vec![License {
+                full_text: read_to_string(
+                    PathBuf::from(base_dir).join(license_path.unwrap_or_default()),
+                )
+                .unwrap_or_default(),
+            }],
+            ..Default::default()
+        }
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "kebab-case")]
+struct LicenseBundlerPackage {
+    #[serde(skip)]
+    base_dir: String,
+    name: String,
+    authors: Option<Vec<String>>,
+    website: String,
+    license: String,
+    license_path: Option<String>,
+}
 
 fn license_zip_path() -> anyhow::Result<PathBuf> {
     Ok(Path::new(&std::env::var("OUT_DIR")?).join("license-bundle.zip"))
@@ -46,25 +138,19 @@ fn license_collector() -> anyhow::Result<LicenseBundle> {
     let license = cargo_about::licenses::Gatherer::with_store(
         cargo_about::licenses::store_from_cache()?.into(),
     )
-    .gather(
-        &crates,
-        &license_config,
-        Some(ureq::agent()),
-    );
+    .gather(&crates, &license_config, Some(ureq::agent()));
 
     let crate_names: BTreeSet<String> = license.iter().map(|v| v.krate.name.clone()).collect();
 
-    fn load_full_text(
-        v: &KrateLicense,
-    ) -> anyhow::Result<Vec<prehnite_core::license_bundle::License>> {
+    fn load_full_text(v: &KrateLicense) -> anyhow::Result<Vec<License>> {
         v.license_files
             .iter()
             .map(|v| {
-                Ok(prehnite_core::license_bundle::License {
-                    full_text: crate::util::read_string_from_file(v.path.canonicalize()?)?,
+                Ok(License {
+                    full_text: read_to_string(v.path.canonicalize()?)?,
                 })
             })
-            .collect::<anyhow::Result<Vec<prehnite_core::license_bundle::License>>>()
+            .collect::<anyhow::Result<Vec<License>>>()
     }
 
     fn dependencies(v: &KrateLicense, crate_names: &BTreeSet<String>) -> BTreeSet<String> {
@@ -113,8 +199,19 @@ impl BuildProcess for BundleLicense {
         let mut license: Vec<Package> = vec![];
         #[cfg(feature = "bundle_license")]
         license.extend(license_collector()?);
-        if license.iter_mut().find(|v| v.name == "prehnite").is_none() {
+        if license.iter().find(|v| v.name == "prehnite").is_none() {
             license.push(Package::prehnite())
+        }
+        let packages = LicenseBundlerManifest::read(
+            PathBuf::from_str(env!("CARGO_MANIFEST_DIR"))?.join("../LicenseBundler.toml"),
+        )?
+        .fetch_all_packages();
+        for (dep, pkg) in packages.into_iter() {
+            match license.iter_mut().find(|x| x.name == dep) {
+                None => {}
+                Some(x) => x.dependencies.extend(pkg.iter().map(|x| x.name.clone())),
+            }
+            license.extend(pkg);
         }
 
         let license_list_json = serde_json::to_string(&license)?;

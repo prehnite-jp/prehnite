@@ -1,0 +1,3 @@
+[dependencies]
+# package-name = [ ..dependencies glob.. ]
+prehnite = ["assets/font/*"]
