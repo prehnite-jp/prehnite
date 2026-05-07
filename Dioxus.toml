@@ -12,4 +12,4 @@ copyright = "Copyright (c) 2025 saku shirakura<saku@sakushira.com> All Rights Re
 
 [bundle.windows]
 
-icon_path = "./assets/platform/win/icon.ico"
+icon_path = "./resources/platform/win/icon.ico"
