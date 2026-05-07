@@ -1,14 +1,63 @@
 @font-face {
-    font-family: "Material Symbols Outlined";
-    src: url("MaterialSymbolsOutlined-VariableFont_FILL,GRAD,opsz,wght.ttf");
+    font-family: 'Material Symbols Outlined';
+    src: url('/assets/font/Material_Symbols/MaterialSymbolsOutlined-VariableFont_FILL,GRAD,opsz,wght.ttf');
 }
 
 @font-face {
-    font-family: "Material Symbols Rounded";
-    src: url("MaterialSymbolsRounded-VariableFont_FILL,GRAD,opsz,wght.ttf");
+    font-family: 'Material Symbols Rounded';
+    src: url('/assets/font/Material_Symbols/MaterialSymbolsRounded-VariableFont_FILL,GRAD,opsz,wght.ttf');
 }
 
 @font-face {
-    font-family: "Material Symbols Sharp";
-    src: url("MaterialSymbolsSharp-VariableFont_FILL,GRAD,opsz,wght.ttf");
+    font-family: 'Material Symbols Sharp';
+    src: url('/assets/font/Material_Symbols/MaterialSymbolsSharp-VariableFont_FILL,GRAD,opsz,wght.ttf');
+}
+
+/* from https://developers.google.com/fonts/docs/material_symbols */
+.material-symbols-outlined {
+    /* noinspection CssNoGenericFontName */
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    display: inline-block;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: normal;
+    white-space: nowrap;
+    direction: ltr;
+    user-select: none;
+}
+
+.material-symbols-rounded {
+    /* noinspection CssNoGenericFontName */
+    font-family: 'Material Symbols Rounded';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    display: inline-block;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: normal;
+    white-space: nowrap;
+    direction: ltr;
+    user-select: none;
+}
+
+.material-symbols-sharp {
+    /* noinspection CssNoGenericFontName */
+    font-family: 'Material Symbols Sharp';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    display: inline-block;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: normal;
+    white-space: nowrap;
+    direction: ltr;
+    user-select: none;
 }

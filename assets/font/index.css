@@ -1,6 +1,6 @@
-@import "Material_Symbols/index.css";
-@import "Roboto/index.css";
-@import "Sawarabi_Gothic/index.css";
+@import url("/assets/font/Material_Symbols/index.css");
+@import url("/assets/font/Roboto/index.css");
+@import url("/assets/font/Sawarabi_Gothic/index.css");
 
 :root {
     font-family: "Hiragino Sans", "Yu Gothic", Roboto, "Segoe UI", "Sawarabi Gothic", sans-serif;

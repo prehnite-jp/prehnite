@@ -3,7 +3,6 @@
 name = "Prehnite"
 asset_dir = "assets"
 
-
 [bundle]
 
 identifier = "jp.prehnite.prehnite"

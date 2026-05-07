@@ -1,4 +1,4 @@
-@import "font/index.css";
+@import url("/assets/font/index.css");
 
 a {
     color: var(--focused-border-color);

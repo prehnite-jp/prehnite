@@ -14,6 +14,7 @@ pub mod style;
 pub mod util;
 pub mod window;
 pub mod custom_dx_components;
+pub mod components_;
 
 #[tracing::instrument]
 fn initializer() -> anyhow::Result<()> {
