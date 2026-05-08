@@ -16,3 +16,4 @@ pub mod toggle_group;
 pub mod toggle;
 pub mod drag_and_drop_list;
 pub mod checkbox;
+pub mod toast;
