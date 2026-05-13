@@ -1,20 +1,22 @@
 #![cfg_attr(feature = "release", windows_subsystem = "windows")]
 
-use app::settings::setting_schema::GlobalSettings;
+use crate::app::settings::fetch::Fetch;
 use crate::util::alert::AlertResult;
 use crate::window::main_window::menu::main_window_menu_bar;
 use crate::window::main_window::PrehniteApp;
+use app::settings::setting_schema::GlobalSettings;
 use dioxus::desktop::{Config, WindowBuilder};
-use crate::app::settings::fetch::Fetch;
+use std::env;
+use std::path::Path;
 
 pub mod app;
 pub mod assets;
 pub mod components;
+pub mod components_;
+pub mod custom_dx_components;
 pub mod style;
 pub mod util;
 pub mod window;
-pub mod custom_dx_components;
-pub mod components_;
 
 #[tracing::instrument]
 fn initializer() -> anyhow::Result<()> {
@@ -39,12 +41,18 @@ fn fetch_global_settings() -> anyhow::Result<GlobalSettings> {
 fn main() -> anyhow::Result<()> {
     initializer().unwrap_or_alert();
 
+    let config = Config::new()
+        .with_menu(main_window_menu_bar().get_menu().clone())
+        .with_window(WindowBuilder::new().with_title("Prehnite"));
+
+    #[cfg(all(target_os = "windows", debug_assertions))]
+    let config = config.with_data_directory(
+        Path::new(&env::var("LOCALAPPDATA").expect("エラー: LOCALAPPDATAが取得できません。"))
+            .join("prehnite-dev"),
+    );
+
     dioxus::LaunchBuilder::new()
-        .with_cfg(
-            Config::default()
-                .with_menu(main_window_menu_bar().get_menu().clone())
-                .with_window(WindowBuilder::new().with_title("Prehnite")),
-        )
+        .with_cfg(config)
         .with_context(fetch_global_settings()?)
         .launch(PrehniteApp);
 
