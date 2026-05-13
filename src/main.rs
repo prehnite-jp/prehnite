@@ -8,6 +8,7 @@ use app::settings::setting_schema::GlobalSettings;
 use dioxus::desktop::{Config, WindowBuilder};
 use std::env;
 use std::path::Path;
+use dioxus_desktop::LogicalSize;
 
 pub mod app;
 pub mod assets;
@@ -43,7 +44,11 @@ fn main() -> anyhow::Result<()> {
 
     let config = Config::new()
         .with_menu(main_window_menu_bar().get_menu().clone())
-        .with_window(WindowBuilder::new().with_title("Prehnite"));
+        .with_window(
+            WindowBuilder::new()
+                .with_inner_size(LogicalSize::new(1024, 760))
+                .with_title("Prehnite"),
+        );
 
     #[cfg(all(target_os = "windows", debug_assertions))]
     let config = config.with_data_directory(
