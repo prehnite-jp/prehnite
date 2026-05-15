@@ -14,7 +14,6 @@ pub mod app;
 pub mod assets;
 pub mod components;
 pub mod components_;
-pub mod custom_dx_components;
 pub mod style;
 pub mod util;
 pub mod window;

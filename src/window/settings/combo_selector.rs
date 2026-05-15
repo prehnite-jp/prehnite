@@ -24,24 +24,17 @@ where
             id: "input_{setting_key}",
             default_value: Option::<T>::from(selected),
             on_value_change,
-            SelectTrigger {
-                width: "12rem",
-                SelectValue {}
-            }
-            SelectList {
-                SelectGroup {
-                    for (i, x) in T::VARIANTS.iter().enumerate() {
-                        {
-                            let lang_name = t!(&x.to_string());
-                            rsx!{
-                                SelectOption::<T> {
-                                    id: "option_{x.to_string()}",
-                                    index: i,
-                                    value: x.clone(),
-                                    text_value: lang_name.clone(),
-                                    "{lang_name}"
-                                    SelectItemIndicator {}
-                                }
+            SelectGroup {
+                for (i, x) in T::VARIANTS.iter().enumerate() {
+                    {
+                        let lang_name = t!(&x.to_string());
+                        rsx!{
+                            SelectOption::<T> {
+                                id: "option_{x.to_string()}",
+                                index: i,
+                                value: x.clone(),
+                                text_value: lang_name.clone(),
+                                "{lang_name}"
                             }
                         }
                     }

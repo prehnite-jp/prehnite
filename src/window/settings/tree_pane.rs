@@ -1,7 +1,7 @@
 use crate::app::settings::setting_schema::GlobalSettings;
 use crate::components::accordion::{AccordionContent, AccordionItem};
 use crate::components::scroll_area::ScrollArea;
-use crate::custom_dx_components::accordion::{CustomAccordion, CustomAccordionTrigger};
+use crate::components::accordion::{Accordion, AccordionTrigger};
 use crate::window::settings::{
     visible_children, visible_filter, CURRENT_CATEGORY, CURRENT_SETTING_ENTRY,
 };
@@ -43,7 +43,7 @@ fn Nodes(children_node: &'static [RegistryNode]) -> Element {
     rsx! {
         for (index, category) in children_node.clone().filter_map(|x| if x.is_category() { Some(x.value()) } else { None }).enumerate() {
             AccordionContent {
-                CustomAccordion {
+                Accordion {
                     CategoryTree {
                         index,
                         category
@@ -67,7 +67,7 @@ fn CategoryTree(index: usize, category: &'static str) -> Element {
             index,
             div {
                 onfocusin: move |_| *CURRENT_CATEGORY.write() = Some(category),
-                CustomAccordionTrigger {
+                AccordionTrigger {
                     span {
                         { t!(&format!("settings_category_{}", category)) }
                     }
@@ -103,7 +103,7 @@ pub fn SettingTreePane() -> Element {
                 direction: ScrollDirection::Both,
                 div {
                     for (index, category) in children_node.clone().filter_map(|x| if x.is_category() { Some(x.value()) } else { None }).enumerate() {
-                        CustomAccordion {
+                        Accordion {
                             CategoryTree {
                                 index,
                                 category

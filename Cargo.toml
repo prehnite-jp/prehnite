@@ -52,6 +52,7 @@ strum.workspace = true
 dark-light = "2.0.0"
 indexmap.workspace = true
 paste.workspace = true
+dioxus-icons = { version = "0.1.0", default-features = false }
 
 [workspace.dependencies]
 prehnite-core = { version = "0.1.0", path = "core" }
@@ -85,6 +86,9 @@ dioxus-i18n = "0.5"
 dioxus = { version = "0.7", features = ["router"] }
 dioxus-desktop = "0.7"
 fallible-iterator = "0.3.0"
+
+[dev-dependencies]
+dioxus-ssr = "0.7"
 
 [build-dependencies]
 prehnite-build-libs = { version = "0.1.0", path = "build-libs" }
