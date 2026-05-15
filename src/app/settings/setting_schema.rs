@@ -17,6 +17,9 @@ pub struct GlobalSettings {
     #[easy_settings(default = Theme::get_system_default())]
     #[easy_settings(categories("general"))]
     theme: Option<Theme>,
+    #[easy_settings(default = false)]
+    #[easy_settings(categories("general"))]
+    license_info_message_displayed: Option<bool>,
 }
 
 impl Fetch for GlobalSettings {}

@@ -31,7 +31,7 @@ use dioxus_i18n::t;
 use easy_settings::{Registry, RegistryNode, SettingValue};
 use std::iter::Filter;
 
-const HIDDEN_SETTING_KEYS: &[&str] = &["last_opened_file"];
+const HIDDEN_SETTING_KEYS: &[&str] = &["last_opened_file", "license_info_message_displayed"];
 static CURRENT_CATEGORY: GlobalSignal<Option<&'static str>> =
     Signal::global(|| GlobalSettings::categories().first().cloned());
 static CURRENT_SETTING_ENTRY: GlobalSignal<Option<&'static str>> = Signal::global(|| None);

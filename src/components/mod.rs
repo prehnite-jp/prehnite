@@ -17,3 +17,4 @@ pub mod select;
 pub mod sheet;
 pub mod checkbox;
 pub mod badge;
+pub mod dialog;
