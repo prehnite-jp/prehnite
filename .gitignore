@@ -47,7 +47,7 @@ target/
 !/scratch/README.MD
 *.log
 **/target/
-#Cargo.lock
+Cargo.lock
 .idea/db-forest-config.xml
 # what is this (look like sqlite file)
 true
