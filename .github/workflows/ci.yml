@@ -30,7 +30,7 @@ jobs:
             core -> target
             build-libs -> target
       - name: Install dioxus-cli
-        uses: taiki-e/install-action@v2
+        uses: taiki-e/install-action@v2.85.5
         with:
           tool: dioxus-cli@0.7.6
       - name: Dioxus Check
