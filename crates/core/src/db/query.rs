@@ -1,0 +1,258 @@
+use crate::db::schema::{
+    BackgroundInfo, BackgroundReference, BibliographyAuthor, Draft, Headline, HeadlineChildren,
+    Item, ItemReference, ItemType, Paragraph, ParagraphSummary, Tag, Task,
+};
+use crate::to_hash_map_key_id;
+use indexmap::IndexMap;
+use sqlx::SqliteConnection;
+
+const FETCH_BACKGROUND_INFO_FROM_ITEM_ID_SQL: &str =
+    include_str!("../../../../resources/query/fetch_background_info_from_item_id.sql");
+#[tracing::instrument]
+/// アイテムに紐づいた背景情報をアイテムIDから取得します。
+/// ```sql
+#[doc = include_str!("../../../../resources/query/fetch_background_info_from_item_id.sql")]
+/// ```
+pub async fn fetch_background_info_from_item_id(
+    conn: &mut SqliteConnection,
+    item_id: i64,
+) -> Result<Vec<BackgroundInfo>, sqlx::Error> {
+    sqlx::query_as::<_, BackgroundInfo>(FETCH_BACKGROUND_INFO_FROM_ITEM_ID_SQL)
+        .bind(item_id)
+        .fetch_all(conn)
+        .await
+}
+
+const FETCH_HEADLINE_CHILDREN_RECURSE_SQL: &str =
+    include_str!("../../../../resources/query/fetch_headline_children_recurse.sql");
+#[tracing::instrument]
+/// 再帰的に見出しアイテムの子孫を取得します。
+// TODO: 要確認 要変更
+/// ```sql
+#[doc = include_str!("../../../../resources/query/fetch_headline_children_recurse.sql")]
+/// ```
+pub async fn fetch_headline_children_recurse(
+    conn: &mut SqliteConnection,
+    headline_id: i64,
+) -> Result<Option<HeadlineChildren>, sqlx::Error> {
+    let query_result = sqlx::query_as::<_, Headline>(FETCH_HEADLINE_CHILDREN_RECURSE_SQL)
+        .bind(headline_id)
+        .fetch_all(conn)
+        .await?;
+    let headlines: IndexMap<i64, Headline> = to_hash_map_key_id!(query_result);
+    let parent = headlines.get(&headline_id).cloned();
+    if parent.is_none() {
+        return Ok(None);
+    }
+    let parent = parent.unwrap();
+
+    let mut children: IndexMap<i64, Vec<Headline>> = IndexMap::new();
+    for headline in headlines.values() {
+        let parent_id = headline.parent_id.as_ref();
+        if parent_id.is_none() {
+            continue;
+        }
+        let parent_id = parent_id.unwrap();
+        match children.get_mut(parent_id) {
+            None => {
+                children.insert(headline.parent_id.unwrap(), vec![headline.clone()]);
+            }
+            Some(v) => v.push(headline.clone()),
+        }
+    }
+    Ok(Some(HeadlineChildren { parent, children }))
+}
+
+const FETCH_BACKGROUND_REFERENCES_SQL: &str =
+    include_str!("../../../../resources/query/fetch_background_references.sql");
+#[tracing::instrument]
+/// 背景情報に紐づいた参考文献リストを背景情報idから取得します。
+/// ```sql
+#[doc = include_str!("../../../../resources/query/fetch_background_references.sql")]
+/// ```
+pub async fn fetch_background_references(
+    conn: &mut SqliteConnection,
+    background_info_id: i64,
+) -> Result<Vec<BackgroundReference>, sqlx::Error> {
+    sqlx::query_as::<_, BackgroundReference>(FETCH_BACKGROUND_REFERENCES_SQL)
+        .bind(background_info_id)
+        .fetch_all(conn)
+        .await
+}
+
+const FETCH_BIBLIOGRAPHY_AUTHORS_SQL: &str =
+    include_str!("../../../../resources/query/fetch_bibliography_authors.sql");
+#[tracing::instrument]
+/// 参考文献の著者リストを参考文献idから取得します。
+/// ```sql
+#[doc = include_str!("../../../../resources/query/fetch_bibliography_authors.sql")]
+/// ```
+pub async fn fetch_bibliography_authors(
+    conn: &mut SqliteConnection,
+    bibliography_id: i64,
+) -> Result<Vec<BibliographyAuthor>, sqlx::Error> {
+    sqlx::query_as::<_, BibliographyAuthor>(FETCH_BIBLIOGRAPHY_AUTHORS_SQL)
+        .bind(bibliography_id)
+        .fetch_all(conn)
+        .await
+}
+
+const FETCH_ITEM_REFERENCES_SQL: &str =
+    include_str!("../../../../resources/query/fetch_item_references.sql");
+#[tracing::instrument]
+/// アイテムに紐づいた参考文献リストをアイテムidから取得します。
+/// ```sql
+#[doc = include_str!("../../../../resources/query/fetch_item_references.sql")]
+/// ```
+pub async fn fetch_item_references(
+    conn: &mut SqliteConnection,
+    item_id: i64,
+) -> Result<Vec<ItemReference>, sqlx::Error> {
+    sqlx::query_as::<_, ItemReference>(FETCH_ITEM_REFERENCES_SQL)
+        .bind(item_id)
+        .fetch_all(conn)
+        .await
+}
+
+const FETCH_ITEM_RELATED_TAGS_SQL: &str =
+    include_str!("../../../../resources/query/fetch_item_related_tags.sql");
+#[tracing::instrument]
+/// アイテムに紐づいたタグリストをアイテムidから取得します。
+/// ```sql
+#[doc = include_str!("../../../../resources/query/fetch_item_related_tags.sql")]
+/// ```
+pub async fn fetch_item_related_tags(
+    conn: &mut SqliteConnection,
+    item_id: i64,
+) -> Result<Vec<Tag>, sqlx::Error> {
+    sqlx::query_as::<_, Tag>(FETCH_ITEM_RELATED_TAGS_SQL)
+        .bind(item_id)
+        .fetch_all(conn)
+        .await
+}
+
+const FETCH_ITEM_RELATED_TASKS_SQL: &str =
+    include_str!("../../../../resources/query/fetch_item_related_tasks.sql");
+#[tracing::instrument]
+/// アイテムに紐づいたタスクをアイテムidから取得します。
+/// ```sql
+#[doc = include_str!("../../../../resources/query/fetch_item_related_tasks.sql")]
+/// ```
+pub async fn fetch_item_related_tasks(
+    conn: &mut SqliteConnection,
+    item_id: i64,
+) -> Result<Vec<Task>, sqlx::Error> {
+    sqlx::query_as::<_, Task>(FETCH_ITEM_RELATED_TASKS_SQL)
+        .bind(item_id)
+        .fetch_all(conn)
+        .await
+}
+
+const FETCH_HEADLINE_RELATED_PARAGRAPH_SQL: &str =
+    include_str!("../../../../resources/query/fetch_headline_related_paragraph.sql");
+#[tracing::instrument]
+/// 見出しに紐づいた段落リストを見出しidから取得します。
+/// ```sql
+#[doc = include_str!("../../../../resources/query/fetch_headline_related_paragraph.sql")]
+/// ```
+pub async fn fetch_headline_related_paragraph(
+    conn: &mut SqliteConnection,
+    headline_id: i64,
+) -> Result<Vec<Paragraph>, sqlx::Error> {
+    sqlx::query_as::<_, Paragraph>(FETCH_HEADLINE_RELATED_PARAGRAPH_SQL)
+        .bind(headline_id)
+        .fetch_all(conn)
+        .await
+}
+
+const FETCH_PARAGRAPH_RELATED_SUMMARIES_SQL: &str =
+    include_str!("../../../../resources/query/fetch_paragraph_related_summaries.sql");
+#[tracing::instrument]
+/// 段落に紐づいた要約を段落idから取得します。
+/// ```sql
+#[doc = include_str!("../../../../resources/query/fetch_paragraph_related_summaries.sql")]
+/// ```
+pub async fn fetch_paragraph_related_summaries(
+    conn: &mut SqliteConnection,
+    paragraph_id: i64,
+) -> Result<Vec<ParagraphSummary>, sqlx::Error> {
+    sqlx::query_as::<_, ParagraphSummary>(FETCH_PARAGRAPH_RELATED_SUMMARIES_SQL)
+        .bind(paragraph_id)
+        .fetch_all(conn)
+        .await
+}
+
+const FETCH_PARAGRAPH_RELATED_DRAFT_SQL: &str =
+    include_str!("../../../../resources/query/fetch_paragraph_related_draft.sql");
+#[tracing::instrument]
+/// 段落に紐づいた下書きを段落idから取得します。
+/// ```sql
+#[doc = include_str!("../../../../resources/query/fetch_paragraph_related_draft.sql")]
+/// ```
+pub async fn fetch_paragraph_related_draft(
+    conn: &mut SqliteConnection,
+    paragraph_id: i64,
+) -> Result<Vec<Draft>, sqlx::Error> {
+    sqlx::query_as::<_, Draft>(FETCH_PARAGRAPH_RELATED_DRAFT_SQL)
+        .bind(paragraph_id)
+        .fetch_all(conn)
+        .await
+}
+
+const FETCH_ROOT_HEADLINES_SQL: &str =
+    include_str!("../../../../resources/query/fetch_root_headline_query.sql");
+
+/// 親が存在しない見出しを取得します。
+/// ```sql
+#[doc = include_str!("../../../../resources/query/fetch_root_headline_query.sql")]
+/// ```
+pub async fn fetch_root_headline_items(
+    conn: &mut SqliteConnection,
+    per_page: u8,
+    page: u32,
+) -> Result<IndexMap<i64, Item>, sqlx::Error> {
+    Ok(sqlx::query_as::<_, Item>(FETCH_ROOT_HEADLINES_SQL)
+        .bind(per_page)
+        .bind(page * per_page as u32)
+        .fetch_all(conn)
+        .await?
+        .into_iter()
+        .map(|v| (v.id, v))
+        .collect())
+}
+
+const FETCH_ROOT_HEADLINE_RELATED_PARAGRAPH_SQL: &str =
+    include_str!("../../../../resources/query/fetch_root_headline_related_paragraph.sql");
+
+/// 親が存在しない見出しとそれらに紐づいた段落を取得します。
+/// ```sql
+#[doc = include_str!("../../../../resources/query/fetch_root_headline_related_paragraph.sql")]
+/// ```
+pub async fn fetch_root_headline_related_paragraph(
+    conn: &mut SqliteConnection,
+    headline_per_page: u8,
+    headline_page: u32,
+) -> Result<IndexMap<i64, IndexMap<i64, Item>>, sqlx::Error> {
+    let mut result: IndexMap<i64, IndexMap<i64, Item>> = IndexMap::new();
+    sqlx::query_as::<_, Item>(FETCH_ROOT_HEADLINE_RELATED_PARAGRAPH_SQL)
+        .bind(headline_per_page)
+        .bind(headline_page * headline_per_page as u32)
+        .fetch_all(conn)
+        .await?
+        .into_iter()
+        .for_each(|v| {
+            let p = match &v.item_type {
+                ItemType::Paragraph(Some(x)) => x,
+                _ => return,
+            };
+            let headline_itm_id = p.headline.id;
+            if result.contains_key(&headline_itm_id) {
+                result.get_mut(&headline_itm_id).unwrap().insert(v.id, v);
+            } else {
+                let mut tmp = IndexMap::new();
+                tmp.insert(v.id, v);
+                result.insert(headline_itm_id, tmp);
+            }
+        });
+    Ok(result)
+}

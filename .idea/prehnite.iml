@@ -2,16 +2,17 @@
 <module type="EMPTY_MODULE" version="4">
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
-      <sourceFolder url="file://$MODULE_DIR$/core/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/font-manager/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/builder/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/build-libs/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/license-bundle/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/core/proc-macros/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/build-libs/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/core/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/proc-macros/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src-tauri/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.idea/dataSources" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
-      <excludeFolder url="file://$MODULE_DIR$/core/target" />
+      <excludeFolder url="file://$MODULE_DIR$/crates/core/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
