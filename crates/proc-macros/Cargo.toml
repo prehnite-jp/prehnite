@@ -6,7 +6,6 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 homepage.workspace = true
-rust-version.workspace = true
 publish.workspace = true
 
 [lib]
@@ -18,4 +17,4 @@ syn.workspace = true
 proc-macro2.workspace = true
 quote.workspace = true
 structmeta.workspace = true
-convert_case = "0.11.0"
+convert_case = "0.12.0"
