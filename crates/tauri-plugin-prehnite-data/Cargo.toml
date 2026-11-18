@@ -1,0 +1,17 @@
+[package]
+name = "tauri-plugin-prehnite-data"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+exclude = ["/examples", "/dist-js", "/guest-js", "/node_modules"]
+links = "tauri-plugin-prehnite-data"
+publish.workspace = true
+
+[dependencies]
+tauri = { version = "2.12.3" }
+serde = "1.0"
+thiserror = "2"
+prehnite-data.workspace = true
+
+[build-dependencies]
+tauri-plugin = { version = "2.7.1", features = ["build"] }

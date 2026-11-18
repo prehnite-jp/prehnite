@@ -14,7 +14,7 @@ publish.workspace = true
 debug = []
 
 [dependencies]
-chrono.workspace = true
+time.workspace = true
 sqlx.workspace = true
 native-dialog.workspace = true
 serde.workspace = true

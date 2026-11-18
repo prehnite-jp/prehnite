@@ -22,7 +22,8 @@
     "react-dom": "^19.1.0",
     "react-icons": "^5.7.0",
     "react-router": "^7.18.4",
-    "swr": "^2.5.1"
+    "swr": "^2.5.1",
+    "tauri-plugin-prehnite-data-api": "file:./crates/tauri-plugin-prehnite-data"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2",

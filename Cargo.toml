@@ -14,14 +14,14 @@ publish = false
 
 [workspace.dependencies]
 prehnite-core = { version = "0.1.0", path = "crates/core" }
-chrono = { version = "0.4", features = ["serde"] }
-sqlx = { version = "0.9", features = ["runtime-tokio", "sqlite", "chrono", "macros"] }
+prehnite-time-bridge = { version = "0.1.0", path = "crates/time-bridge" }
+sqlx = { version = "0.9", features = ["runtime-tokio", "sqlite", "macros"] }
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "sync", "fs"] }
 native-dialog = { version = "0.9", features = ["async"] }
 serde = { version = "1", features = ["derive"] }
 rhai = { version = "1", features = ["serde"] }
 reqwest = { version = "0.13", features = ["json"] }
-tracing-subscriber = { version = "0.3", features = ["chrono", "env-filter"] }
+tracing-subscriber = { version = "0.3", features = ["local-time", "env-filter"] }
 paste = "1"
 derive_more = { version = "2", features = ["eq"] }
 sys-locale = "0.3"
@@ -41,6 +41,21 @@ structmeta = "0.4.0"
 convert_case = "0.12.0"
 easy-settings = "0.3.1"
 fallible-iterator = "0.3.0"
+tantivy = { version = "0.27" }
+lindera-tantivy = { version = "6", features = ["embed-ipadic"] }
+derive_builder = "0.20.2"
+lindera = "6"
+rgb = { version = "0.8", features = ["serde"] }
+rand = "0.10"
+random_color = { version = "1", features = ["rgb_support"] }
+zstd = "0.14"
+jiff = { version = "0.2", features = ["serde"] }
+jiff-sqlx = { version = "0.2", features = ["sqlite"] }
+time = { version = "0.3", features = [] }
+debug-ignore = "1"
+tauri-plugin-prehnite-data = { version = "0.1.0", path = "./crates/tauri-plugin-prehnite-data" }
+prehnite-data = { version = "1", path = "./crates/data" }
+uuid = { version = "1", features = ["serde"] }
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
 [profile.release]
