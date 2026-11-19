@@ -45,6 +45,69 @@ pub(crate) struct DbBoundDocument {
 }
 
 impl DbBoundDocument {
+    pub(crate) async fn add_document(
+        binder_id: BinderId,
+        document_id: DocumentId,
+        next: Option<BoundDocumentId>,
+        conn: &mut SqliteConnection,
+    ) -> crate::Result<Self> {
+        let mut tx = conn.begin().await?;
+        // 挿入する位置の次のページを取得する。
+        let next_row = if let Some(x) = next {
+            Self::fetch_by_id(x, &mut *tx).await?
+        } else {
+            // 最終ページを取得
+            Self::fetch_next_is_null(binder_id, &mut *tx).await?
+        };
+
+        // ページを挿入(c2)
+        let res: DbBoundDocument = query_as(
+            "INSERT INTO bound_documents(binder_id, document_id, next, prev) VALUES (?,?,?,?) ON CONFLICT DO NOTHING ",
+        )
+        .bind(binder_id)
+        .bind(document_id)
+        .bind(next)
+        .bind(next_row.prev) // 次のページの前のページを引継ぐ
+        .fetch_one(&mut *tx)
+        .await?;
+
+        // 前のページにページを登録する。c1
+        query("UPDATE bound_documents SET next = ? WHERE id = ?")
+            .bind(res.id)
+            .bind(res.prev)
+            .execute(&mut *tx)
+            .await?;
+
+        // 次のページにページを登録する。c1
+        query("UPDATE bound_documents SET prev = ? WHERE id = ?")
+            .bind(res.id)
+            .bind(res.next)
+            .execute(&mut *tx)
+            .await?;
+        tx.commit().await?;
+        Ok(res)
+    }
+
+    /// 指定したドキュメント(new_next)の一つ前にページを移動します。
+    pub(crate) async fn move_page(
+        self,
+        new_next: Option<BoundDocumentId>,
+        conn: &mut SqliteConnection,
+    ) -> crate::Result<Self> {
+        let mut tx = conn.begin().await?;
+        self.remove(&mut *tx).await?;
+        let res = Self::add_document(self.binder_id, self.document_id, new_next, &mut *tx).await?;
+        tx.commit().await?;
+        Ok(res)
+    }
+
+    async fn fetch_by_id(id: BoundDocumentId, conn: &mut SqliteConnection) -> crate::Result<Self> {
+        Ok(query_as("SELECT * FROM bound_documents WHERE id = ?")
+            .bind(id)
+            .fetch_one(conn)
+            .await?)
+    }
+
     /// バインダーに紐づいているドキュメントをすべて取得します。
     pub(crate) async fn fetch(
         binder_id: BinderId,
@@ -68,13 +131,6 @@ impl DbBoundDocument {
     pub(crate) async fn remove(&self, conn: &mut SqliteConnection) -> crate::Result<bool> {
         let mut tx = conn.begin().await?;
 
-        // 1つ前のドキュメントを取得する。
-        let prev = query("SELECT id FROM bound_documents WHERE next = ?")
-            .bind(self.id)
-            .fetch_optional(&mut *tx)
-            .await?
-            .map(|x| x.get::<i64, _>(0));
-
         // ドキュメントを削除する。
         if query("DELETE FROM bound_documents WHERE id = ?")
             .bind(self.id)
@@ -87,14 +143,33 @@ impl DbBoundDocument {
             return Ok(false);
         }
 
-        // ひとつ前のドキュメントが存在する場合、現在のドキュメントの次をそのドキュメントに設定する。
+        // ひとつ前のドキュメントが存在する場合、現在のドキュメントの次をそのドキュメントに設定する。 c1
         query("UPDATE bound_documents SET next = ? WHERE id = ?")
             .bind(self.next)
-            .bind(prev)
+            .bind(self.prev)
+            .execute(&mut *tx)
+            .await?;
+
+        // 次のドキュメントが存在する場合、現在のドキュメントの前をそのドキュメントに設定する。 c1
+        query("UPDATE bound_documents SET prev = ? WHERE id = ?")
+            .bind(self.prev)
+            .bind(self.next)
             .execute(&mut *tx)
             .await?;
 
         tx.commit().await?;
         Ok(true)
+    }
+
+    async fn fetch_next_is_null(
+        binder_id: BinderId,
+        conn: &mut SqliteConnection,
+    ) -> crate::Result<Self> {
+        Ok(
+            query_as("SELECT * FROM bound_documents WHERE next IS NULL AND binder_id = ?")
+                .bind(binder_id)
+                .fetch_one(conn)
+                .await?,
+        )
     }
 }

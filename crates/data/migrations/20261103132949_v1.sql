@@ -90,6 +90,7 @@ CREATE TABLE bound_documents
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     binder_id   INTEGER NOT NULL REFERENCES binders (id) ON DELETE CASCADE,
     document_id INTEGER NOT NULL REFERENCES documents (id) ON DELETE CASCADE,
-    next        INTEGER REFERENCES bound_documents (id) ON DELETE SET NULL UNIQUE,
-    prev        INTEGER REFERENCES bound_documents (id) ON DELETE SET NULL UNIQUE
+    next        INTEGER REFERENCES bound_documents (id) ON DELETE SET NULL,
+    prev        INTEGER REFERENCES bound_documents (id) ON DELETE SET NULL,
+    UNIQUE (binder_id, document_id)
 );

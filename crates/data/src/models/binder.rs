@@ -1,6 +1,7 @@
 use crate::binder::DbBinder;
+use crate::bound_document::DbBoundDocument;
 use crate::manager::managed::{PrehniteManaged, PrehniteManagedItem};
-use crate::{BinderId, DocumentId};
+use crate::{BinderId, BoundDocumentId, DocumentId};
 use prehnite_time_bridge::jiff;
 use serde::{Deserialize, Serialize};
 
@@ -36,6 +37,19 @@ pub enum BinderPagePosition {
     Back,
 }
 
+impl BinderPagePosition {
+    fn to_new_next(self, db_pages: &Vec<DbBoundDocument>) -> Option<BoundDocumentId> {
+        match self {
+            BinderPagePosition::First => Some(db_pages.first()?.id),
+            BinderPagePosition::InsertAndShiftPage(x) => {
+                let v = db_pages.get(x as usize)?;
+                Some(v.id)
+            }
+            BinderPagePosition::Back => None,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Binder {
     pub id: BinderId,
@@ -44,6 +58,13 @@ pub struct Binder {
     pub created_at: jiff::Timestamp,
     pub updated_at: jiff::Timestamp,
     pub pages: Vec<DocumentId>,
+    db_pages: Vec<DbBoundDocument>,
+}
+
+impl Binder {
+    pub(crate) fn sync_pages(&mut self) {
+        self.pages = self.db_pages.iter().map(|x| x.document_id).collect();
+    }
 }
 
 impl PrehniteManaged<Binder> {
@@ -52,31 +73,59 @@ impl PrehniteManaged<Binder> {
         DbBinder::from(self.item()).delete(conn).await
     }
 
-    pub async fn update_title(self, title: String) -> crate::Result<Self> {
-        todo!()
+    pub async fn update_title(mut self, title: String) -> crate::Result<Self> {
+        self.as_mut().title = title;
+        let conn = &mut self.manager().acquire().await?;
+        DbBinder::from(self.clone()).save(conn).await?;
+        Ok(self)
     }
 
-    pub async fn update_details(self, details: Option<String>) -> crate::Result<Self> {
-        todo!()
+    pub async fn update_details(mut self, details: Option<String>) -> crate::Result<Self> {
+        self.as_mut().details = details;
+        let conn = &mut self.manager().acquire().await?;
+        DbBinder::from(self.clone()).save(conn).await?;
+        Ok(self)
     }
 
-    /// ページを指定された場所に新しく追加します。既にドキュメントがページとして存在している場合は何もしません。
+    /// ページを指定された場所に新しく追加します。既にドキュメントがページとして存在している場合はエラーが発生します。
     pub async fn add_document(
-        self,
+        mut self,
         document_id: DocumentId,
         pos: BinderPagePosition,
     ) -> crate::Result<Self> {
-        todo!()
+        let mut conn = self.manager().acquire().await?;
+        DbBoundDocument::add_document(
+            self.id,
+            document_id,
+            pos.to_new_next(&self.db_pages),
+            &mut *conn,
+        )
+        .await?;
+        self.as_mut().db_pages = DbBoundDocument::fetch(self.id, &mut *conn).await?;
+        self.as_mut().sync_pages();
+        Ok(self)
     }
 
     /// 指定されたページを、posに移動します。ページが存在しない場合は何もしません。
-    pub async fn move_document(self, page: u64, pos: BinderPagePosition) -> crate::Result<Self> {
-        todo!()
+    pub async fn move_document(
+        mut self,
+        page: u64,
+        pos: BinderPagePosition,
+    ) -> crate::Result<Self> {
+        if (page as usize) < self.db_pages.len() {
+            let page = self.as_mut().db_pages.remove(page as usize);
+            let mut conn = self.manager().acquire().await?;
+            let pos = pos.to_new_next(&self.db_pages);
+            page.move_page(pos, &mut *conn).await?;
+            self.as_mut().db_pages = DbBoundDocument::fetch(self.id, &mut *conn).await?;
+            self.as_mut().sync_pages();
+        }
+        Ok(self)
     }
 
     /// 指定されたドキュメントをバインダーから取り除きます。ドキュメントがページとして存在しない場合は何もしません。
     pub async fn remove_document(self, document_id: DocumentId) -> crate::Result<Self> {
-        if let Some(page) = self.find_page(document_id)? {
+        if let Some(page) = self.find_page(document_id) {
             self.remove_page(page).await
         } else {
             Ok(self)
@@ -86,13 +135,23 @@ impl PrehniteManaged<Binder> {
     /// 指定されたページをバインダーから取り除きます。ページが存在しない場合は何もしません。
     ///
     /// 例: 0A,1B,2C,3D|(idxName) ここからidx2を取り除いた場合、ページは次のようになります。 0A,1B,2D
-    pub async fn remove_page(self, page: u64) -> crate::Result<Self> {
-        todo!()
+    pub async fn remove_page(mut self, page: u64) -> crate::Result<Self> {
+        if page < self.pages.len() as u64 {
+            let conn = &mut *self.manager().acquire().await?;
+            let page = self.as_mut().db_pages.remove(page as usize);
+            page.remove(conn).await?;
+            self.as_mut().sync_pages();
+        }
+        Ok(self)
     }
 
     /// ドキュメントのページ番号を探索します。
-    pub fn find_page(&self, document_id: DocumentId) -> crate::Result<Option<u64>> {
-        todo!()
+    pub fn find_page(&self, document_id: DocumentId) -> Option<u64> {
+        self.pages
+            .iter()
+            .enumerate()
+            .find(|(_, doc)| **doc == document_id)
+            .map(|x| x.0 as u64)
     }
 }
 
@@ -116,6 +175,7 @@ impl From<DbBinder> for Binder {
             created_at,
             updated_at,
             pages: vec![],
+            db_pages: vec![],
         }
     }
 }
