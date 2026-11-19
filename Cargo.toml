@@ -11,6 +11,10 @@ publish.workspace = true
 [dependencies]
 gpui-kit.workspace = true
 prehnite-data.workspace = true
+prehnite-core.workspace = true
+tracing.workspace = true
+tracing-unwrap.workspace = true
+anyhow.workspace = true
 
 [workspace]
 members = ["crates/*"]
@@ -32,12 +36,7 @@ sqlx = { version = "0.9", features = ["runtime-tokio", "sqlite", "macros"] }
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "sync", "fs"] }
 native-dialog = { version = "0.9", features = ["async"] }
 serde = { version = "1", features = ["derive"] }
-rhai = { version = "1", features = ["serde"] }
-reqwest = { version = "0.13", features = ["json"] }
 tracing-subscriber = { version = "0.3", features = ["local-time", "env-filter"] }
-paste = "1"
-derive_more = { version = "2", features = ["eq"] }
-sys-locale = "0.3"
 tracing = { version = "0.1", features = ["log"] }
 tracing-appender = "0.2"
 serde_json = "1"
@@ -47,19 +46,12 @@ thiserror = "2"
 tracing-unwrap = "1"
 strum = { version = "0.28", features = ["derive"] }
 indexmap = { version = "2", features = ["serde"] }
-syn = { version = "3", features = ["full", "extra-traits"] }
-proc-macro2 = "1"
-quote = "1"
-structmeta = "0.4.0"
-convert_case = "0.12.0"
-easy-settings = "0.3.1"
 fallible-iterator = "0.3.0"
 tantivy = { version = "0.27" }
 lindera-tantivy = { version = "6", features = ["embed-ipadic"] }
 derive_builder = "0.20.2"
 lindera = "6"
 rgb = { version = "0.8", features = ["serde"] }
-rand = "0.10"
 random_color = { version = "1", features = ["rgb_support"] }
 zstd = "0.14"
 jiff = { version = "0.2", features = ["serde"] }
