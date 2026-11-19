@@ -43,6 +43,7 @@ pub struct Binder {
     pub details: Option<String>,
     pub created_at: jiff::Timestamp,
     pub updated_at: jiff::Timestamp,
+    pub pages: Vec<DocumentId>,
 }
 
 impl PrehniteManaged<Binder> {
@@ -114,6 +115,7 @@ impl From<DbBinder> for Binder {
             details,
             created_at,
             updated_at,
+            pages: vec![],
         }
     }
 }
@@ -125,6 +127,7 @@ impl From<Binder> for DbBinder {
             details,
             created_at,
             updated_at,
+            ..
         } = value;
         let created_at = created_at.into();
         let updated_at = updated_at.into();

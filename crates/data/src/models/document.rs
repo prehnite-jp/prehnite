@@ -59,7 +59,7 @@ impl From<DocumentSchema> for tantivy::schema::Schema {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Document {
     pub document_id: DocumentId,
-    pub title: String,
+    pub title: Option<String>,
     pub content: String,
     pub deleted: bool,
     pub created_at: jiff::Timestamp,
@@ -72,7 +72,7 @@ impl Document {
     pub(crate) fn from_db(db_document: DbDocument) -> Self {
         Self {
             document_id: db_document.id,
-            title: db_document.title.text().to_string(),
+            title: db_document.title.map(|x| x.text().to_string()),
             content: db_document.content.text().to_string(),
             deleted: db_document.deleted,
             created_at: db_document.created_at.to_jiff(),
@@ -85,7 +85,7 @@ impl Document {
     pub(crate) fn try_into_tantivy(self) -> crate::Result<TantivyDocument> {
         let mut doc = TantivyDocument::new();
         doc.add_i64(DocumentFields::DOCUMENT_ID, *self.document_id);
-        doc.add_text(DocumentFields::TITLE, self.title);
+        doc.add_text(DocumentFields::TITLE, self.title.unwrap_or_default());
         doc.add_text(DocumentFields::CONTENT, self.content);
         doc.add_date(
             DocumentFields::UPDATED_AT,
@@ -143,9 +143,9 @@ impl PrehniteManaged<Document> {
         }
     }
 
-    pub async fn update_title(mut self, title: impl Into<String>) -> crate::Result<Self> {
+    pub async fn update_title(mut self, title: Option<impl Into<String>>) -> crate::Result<Self> {
         let mut conn = self.manager().acquire().await?;
-        self.as_mut().title = title.into();
+        self.as_mut().title = title.map(Into::into);
         Ok(self.save(&mut *conn).await?.1)
     }
 
@@ -220,7 +220,7 @@ impl From<Document> for DbDocument {
         } = value;
         DbDocument {
             id,
-            title: ZstdCompressedBlob::from(title.as_bytes().to_vec()),
+            title: title.map(|title| ZstdCompressedBlob::from(title.as_bytes().to_vec())),
             content: ZstdCompressedBlob::from(content.as_bytes().to_vec()),
             deleted,
             created_at: created_at.to_sqlx(),
@@ -239,7 +239,7 @@ impl From<DbDocument> for Document {
             created_at,
             updated_at,
         } = value;
-        let title = title.text().to_string();
+        let title = title.map(|x| x.text().to_string());
         let content = content.text().to_string();
         let created_at = created_at.to_jiff();
         let updated_at = updated_at.to_jiff();

@@ -1,6 +1,39 @@
-use serde::{Deserialize, Serialize};
 use crate::database::schema::{BinderId, BoundDocumentId, DocumentId};
+use serde::{Deserialize, Serialize};
 use sqlx::{Acquire, FromRow, Row, SqliteConnection, query, query_as};
+use std::collections::BTreeMap;
+
+struct BoundDocumentIntoIter {
+    ptr_next: Option<BoundDocumentId>,
+    inner: BTreeMap<BoundDocumentId, DbBoundDocument>,
+}
+
+impl BoundDocumentIntoIter {
+    fn new(inner: BTreeMap<BoundDocumentId, DbBoundDocument>) -> Self {
+        let ptr_next = inner.values().find(|x| x.prev.is_none());
+        let ptr_next = ptr_next.and_then(|x| x.next.as_ref()).copied();
+        Self { ptr_next, inner }
+    }
+}
+
+impl Drop for BoundDocumentIntoIter {
+    fn drop(&mut self) {
+        if self.ptr_next.is_some() {
+            // 残っている要素を全てドロップします
+            for _ in &mut *self {}
+        }
+    }
+}
+
+impl Iterator for BoundDocumentIntoIter {
+    type Item = DbBoundDocument;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let x = self.inner.remove(&self.ptr_next?)?;
+        self.ptr_next = x.next;
+        Some(x)
+    }
+}
 
 #[derive(FromRow, Debug, Clone, Deserialize, Serialize)]
 pub(crate) struct DbBoundDocument {
@@ -8,6 +41,7 @@ pub(crate) struct DbBoundDocument {
     pub binder_id: BinderId,
     pub document_id: DocumentId,
     pub next: Option<BoundDocumentId>,
+    pub prev: Option<BoundDocumentId>,
 }
 
 impl DbBoundDocument {
@@ -16,12 +50,16 @@ impl DbBoundDocument {
         binder_id: BinderId,
         conn: &mut SqliteConnection,
     ) -> crate::Result<Vec<DbBoundDocument>> {
-        Ok(
-            query_as("SELECT * FROM bound_documents WHERE binder_id = ?")
+        Ok(BoundDocumentIntoIter::new(
+            query_as::<_, DbBoundDocument>("SELECT * FROM bound_documents WHERE binder_id = ?")
                 .bind(binder_id)
                 .fetch_all(conn)
-                .await?,
+                .await?
+                .into_iter()
+                .map(|x| (x.id, x))
+                .collect(),
         )
+        .collect())
     }
 
     /// ドキュメントをバインダーから取り除きます。

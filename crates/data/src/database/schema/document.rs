@@ -7,7 +7,7 @@ use sqlx::{FromRow, SqliteConnection, query, query_as};
 #[derive(FromRow, Debug, Clone)]
 pub(crate) struct DbDocument {
     pub id: DocumentId,
-    pub title: ZstdCompressedBlob,
+    pub title: Option<ZstdCompressedBlob>,
     pub content: ZstdCompressedBlob,
     pub deleted: bool,
     pub created_at: jiff_sqlx::Timestamp,

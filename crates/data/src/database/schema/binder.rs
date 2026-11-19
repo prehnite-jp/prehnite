@@ -1,4 +1,5 @@
 use crate::database::schema::BinderId;
+use jiff_sqlx::ToSqlx;
 use prehnite_time_bridge::jiff;
 use sqlx::{FromRow, SqliteConnection, query};
 
@@ -25,7 +26,7 @@ impl DbBinder {
         query("UPDATE binders SET title = ?, details = ?, updated_at = ? WHERE id = ?")
             .bind(&self.title)
             .bind(&self.details)
-            .bind(jiff_sqlx::Timestamp::from(jiff::Timestamp::now()))
+            .bind(jiff::Timestamp::now().to_sqlx())
             .bind(self.id)
             .execute(conn)
             .await?;
