@@ -1,4 +1,4 @@
-use crate::database::schema::DocumentId;
+use crate::DocumentId;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, SqliteConnection, query, query_as};
 
@@ -8,6 +8,7 @@ pub(crate) struct DbRelDocsAndBackgroundInfo {
     pub bg_info_document_id: DocumentId,
 }
 
+#[allow(unused)]
 impl DbRelDocsAndBackgroundInfo {
     pub(crate) async fn create(
         document_id: DocumentId,

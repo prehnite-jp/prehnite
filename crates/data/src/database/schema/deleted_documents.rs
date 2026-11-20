@@ -3,6 +3,7 @@ use jiff_sqlx::ToSqlx;
 use prehnite_time_bridge::jiff;
 use sqlx::{FromRow, SqliteConnection, query_as};
 
+#[allow(unused)]
 #[derive(FromRow, Debug, Clone)]
 pub(crate) struct DbDeletedDocument {
     pub document_id: DocumentId,

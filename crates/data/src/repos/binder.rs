@@ -1,8 +1,7 @@
-use crate::BinderId;
-use crate::binder::DbBinder;
+use crate::{Binder, BinderId};
+use crate::database::schema::binder::DbBinder;
 use crate::manager::DataManager;
 use crate::manager::managed::PrehniteManaged;
-use crate::models::binder::Binder;
 
 pub struct BinderRepository {
     manager: DataManager,

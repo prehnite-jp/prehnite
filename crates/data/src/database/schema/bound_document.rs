@@ -1,6 +1,6 @@
-use crate::database::schema::{BinderId, BoundDocumentId, DocumentId};
+use crate::{BinderId, BoundDocumentId, DocumentId};
 use serde::{Deserialize, Serialize};
-use sqlx::{Acquire, FromRow, Row, SqliteConnection, query, query_as};
+use sqlx::{Acquire, FromRow, SqliteConnection, query, query_as};
 use std::collections::BTreeMap;
 
 struct BoundDocumentIntoIter {
@@ -19,7 +19,6 @@ impl BoundDocumentIntoIter {
 impl Drop for BoundDocumentIntoIter {
     fn drop(&mut self) {
         if self.ptr_next.is_some() {
-            // 残っている要素を全てドロップします
             for _ in &mut *self {}
         }
     }

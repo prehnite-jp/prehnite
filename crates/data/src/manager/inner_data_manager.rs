@@ -1,10 +1,10 @@
 use crate::data_options::PrehniteDataOptions;
 use crate::manager::document_index::DocumentIndex;
-use crate::metadata::DbMetadata;
 use sqlx::pool::PoolConnection;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use sqlx::{Sqlite, SqlitePool};
 use std::path::{Path, PathBuf};
+use crate::database::schema::metadata::DbMetadata;
 
 async fn connect_database(path: impl AsRef<Path>) -> crate::Result<SqlitePool> {
     // DBへの接続を確立
@@ -43,7 +43,7 @@ impl InnerDataManager {
         let database_pool = connect_database(&db_path).await?;
         let data_options = data_options.unwrap_or_default();
         let document_index =
-            DocumentIndex::new(&data_options, &mut *database_pool.acquire().await?).await?;
+            DocumentIndex::open_or_create(&data_options, &mut *database_pool.acquire().await?).await?;
 
         Ok(InnerDataManager {
             database_path,

@@ -105,7 +105,6 @@ impl PrehniteManaged<Tag> {
 
     pub async fn update_title(mut self, title: String) -> crate::Result<Self> {
         self.as_mut().title = title;
-        let new = Tag { ..self.clone() };
         self.save().await
     }
 

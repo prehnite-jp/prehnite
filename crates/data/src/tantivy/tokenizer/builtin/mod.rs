@@ -1,12 +1,13 @@
-pub mod lang_ja;
+mod lang_ja;
 
 use crate::tantivy::tokenizer::TantivyTokenizer;
 use crate::tantivy::tokenizer::boxable::BoxableTantivyTokenizer;
-use crate::tantivy::tokenizer::builtin::lang_ja::TokenizerLangJa;
 use debug_ignore::DebugIgnore;
 use std::fmt::Debug;
 use std::sync::Arc;
 use tantivy::tokenizer::TextAnalyzer;
+
+pub use lang_ja::*;
 
 #[derive(Default, Clone, Debug)]
 pub enum TantivyTokenizers {

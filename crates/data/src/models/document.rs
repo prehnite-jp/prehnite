@@ -1,12 +1,10 @@
-use crate::TagId;
-use crate::boxable::BoxableTantivyTokenizer;
 use crate::data_options::PrehniteDataOptions;
-use crate::database::schema::DocumentId;
 use crate::database::schema::document::DbDocument;
+use crate::database::schema::rel_doc_and_background_info::DbRelDocsAndBackgroundInfo;
+use crate::database::schema::rel_doc_and_tag::DbRelDocsAndTags;
 use crate::database::zstd_compressed_blob::ZstdCompressedBlob;
 use crate::manager::managed::{PrehniteManaged, PrehniteManagedItem};
-use crate::rel_doc_and_background_info::DbRelDocsAndBackgroundInfo;
-use crate::rel_doc_and_tag::DbRelDocsAndTags;
+use crate::{BoxableTantivyTokenizer, DocumentId, TagId};
 use jiff_sqlx::ToSqlx;
 use prehnite_time_bridge::{TryIntoTantivyDate, jiff};
 use serde::{Deserialize, Serialize};
@@ -26,7 +24,7 @@ impl DocumentFields {
 }
 
 #[derive(Clone, Debug)]
-pub struct DocumentSchema(tantivy::schema::Schema);
+pub(crate) struct DocumentSchema(tantivy::schema::Schema);
 
 impl DocumentSchema {
     pub fn new(options: &PrehniteDataOptions) -> Self {

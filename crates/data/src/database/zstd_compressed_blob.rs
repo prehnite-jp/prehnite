@@ -16,6 +16,7 @@ impl Type<Sqlite> for ZstdCompressedBlob {
     }
 }
 
+#[allow(unused)]
 impl ZstdCompressedBlob {
     pub fn to_vec(&self) -> Vec<u8> {
         self.0.clone()

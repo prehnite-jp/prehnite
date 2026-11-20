@@ -1,4 +1,4 @@
-use crate::database::schema::BinderId;
+use crate::BinderId;
 use jiff_sqlx::ToSqlx;
 use prehnite_time_bridge::jiff;
 use prehnite_time_bridge::jiff::Timestamp;

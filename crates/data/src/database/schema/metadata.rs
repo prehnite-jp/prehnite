@@ -29,12 +29,14 @@ impl DbMetadataKey {
     }
 }
 
+#[allow(unused)]
 #[derive(FromRow, Debug, Clone)]
 pub(crate) struct DbMetadata {
     pub name: Json<DbMetadataKey>,
     pub value: Option<String>,
 }
 
+#[allow(unused)]
 impl DbMetadata {
     pub(crate) async fn init_metadata(conn: &mut SqliteConnection) -> sqlx::Result<bool> {
         if Self::exists(DbMetadataKey::DataFormatVersion, conn).await? {

@@ -1,4 +1,4 @@
-use crate::database::schema::{DocumentId, TagId};
+use crate::{DocumentId, TagId};
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, SqliteConnection, query, query_as};
 

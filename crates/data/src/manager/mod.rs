@@ -1,12 +1,9 @@
 use crate::data_options::PrehniteDataOptions;
-use crate::deleted_documents::DbDeletedDocument;
-use crate::document::DbDocument;
+use crate::database::schema::deleted_documents::DbDeletedDocument;
+use crate::database::schema::document::DbDocument;
 use crate::manager::inner_data_manager::InnerDataManager;
-use crate::manager::managed::{PrehniteManaged, PrehniteManagedItem};
 use crate::manager::registry::ManagerRegistry;
-use crate::repos::binder::BinderRepository;
-use crate::repos::document::DocumentRepository;
-use crate::repos::tag::TagRepository;
+use crate::{BinderRepository, DocumentRepository, TagRepository};
 use prehnite_time_bridge::jiff::Timestamp;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -20,9 +17,12 @@ use tantivy::aggregation::{AggContextParams, AggregationCollector};
 use tracing::warn;
 
 pub mod document_index;
-pub mod inner_data_manager;
+mod inner_data_manager;
 pub mod managed;
-pub mod registry;
+mod registry;
+
+pub use document_index::*;
+pub use managed::*;
 
 #[derive(Deserialize, Serialize, Clone, Copy, Ord, PartialOrd, Eq, PartialEq)]
 pub enum SyncStep {
@@ -91,8 +91,7 @@ impl DataManager {
         PrehniteManaged::new(*self, item)
     }
 
-    // TODO: ファイルが複製された場合、インデックスが不整合となる。それを回避する方法を考える
-    // 案1: グローバルにSqliteDbを作成。最終更新レコードの日時を持ったテーブルをグローバルに持っておき、Idとそれが一致する場合、同一ファイルとみなす。異なればIdを再生成し、新たにインデックスを作成する。
+    // TODO: ファイルが複製されたとき、インデックスが不整合となる場合がある。これはインデックスを再生成することで解決できる。
     #[tracing::instrument]
     pub async fn sync_document_index(&self) -> crate::Result<()> {
         let mgr = self.get_manager()?;

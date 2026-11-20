@@ -2,7 +2,7 @@ use crate::manager::DataManager;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
 
-/// PrehniteManaged<T> で扱えることを表すマーカートレイト
+/// `PrehniteManaged<T>` で扱えることを表すマーカートレイト
 pub trait PrehniteManagedItem: for<'de> Deserialize<'de> + Serialize {}
 
 #[derive(Serialize, Deserialize, Debug)]

@@ -1,5 +1,4 @@
-use crate::database::schema::TagId;
-use crate::models::tag::TagMetadata;
+use crate::{TagId, TagMetadata};
 use serde::{Deserialize, Serialize};
 use sqlx::types::Json;
 use sqlx::{FromRow, SqliteConnection, query, query_as};
@@ -44,8 +43,14 @@ impl DbTag {
             .await?)
     }
 
-    pub(crate) async fn fetch_by_id(id: TagId, conn: &mut SqliteConnection) -> crate::Result<Option<Self>> {
-        Ok(query_as("SELECT * FROM tags WHERE id = ?").bind(id).fetch_optional(conn).await?)
+    pub(crate) async fn fetch_by_id(
+        id: TagId,
+        conn: &mut SqliteConnection,
+    ) -> crate::Result<Option<Self>> {
+        Ok(query_as("SELECT * FROM tags WHERE id = ?")
+            .bind(id)
+            .fetch_optional(conn)
+            .await?)
     }
 
     pub(crate) async fn fetch_all(conn: &mut SqliteConnection) -> crate::Result<Vec<Self>> {

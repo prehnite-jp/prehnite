@@ -1,14 +1,14 @@
-use crate::DocumentId;
+use crate::{Document, DocumentId};
 use crate::database::schema::document::DbDocument;
+use crate::database::schema::rel_doc_and_background_info::DbRelDocsAndBackgroundInfo;
+use crate::database::schema::rel_doc_and_tag::DbRelDocsAndTags;
 use crate::manager::DataManager;
 use crate::manager::managed::PrehniteManaged;
-use crate::models::document::{Document, DocumentFields};
-use crate::rel_doc_and_background_info::DbRelDocsAndBackgroundInfo;
-use crate::rel_doc_and_tag::DbRelDocsAndTags;
 use sqlx::{Acquire, SqliteConnection};
 use tantivy::TantivyDocument;
 use tantivy::collector::TopDocs;
 use tantivy::schema::Value;
+use crate::models::DocumentFields;
 
 pub struct DocumentRepository {
     manager: DataManager,

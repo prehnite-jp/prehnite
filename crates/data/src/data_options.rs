@@ -1,4 +1,4 @@
-use crate::builtin::TantivyTokenizers;
+use crate::TantivyTokenizers;
 use derive_builder::Builder;
 use std::env::current_dir;
 use std::path::PathBuf;

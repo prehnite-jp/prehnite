@@ -1,8 +1,7 @@
-use crate::TagId;
+use crate::database::schema::tag::DbTag;
 use crate::manager::DataManager;
 use crate::manager::managed::PrehniteManaged;
-use crate::models::tag::{Tag, TagMetadata};
-use crate::tag::DbTag;
+use crate::{Tag, TagId, TagMetadata};
 use sqlx::Acquire;
 
 pub struct TagRepository {

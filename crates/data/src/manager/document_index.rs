@@ -1,8 +1,5 @@
-use crate::DocumentId;
+use crate::{Document, DocumentId, DocumentSchema};
 use crate::data_options::PrehniteDataOptions;
-use crate::metadata::{DbMetadata, DbMetadataKey};
-use crate::models::document::{Document, DocumentFields, DocumentSchema};
-use crate::rel_doc_and_tag::DbRelDocsAndTags;
 use debug_ignore::DebugIgnore;
 use sqlx::SqliteConnection;
 use std::ops::Deref;
@@ -13,7 +10,11 @@ use tantivy::query::{Query, QueryParser};
 use tantivy::query_grammar::{UserInputAst, UserInputLeaf, parse_query};
 use tantivy::{Index, IndexWriter, Term};
 use tokio::fs::create_dir_all;
+use crate::database::schema::metadata::{DbMetadata, DbMetadataKey};
+use crate::database::schema::rel_doc_and_tag::DbRelDocsAndTags;
+use crate::models::DocumentFields;
 
+#[allow(unused)]
 #[derive(Debug)]
 pub struct DocumentIndex {
     pub(crate) assigned_dir: PathBuf,
@@ -31,7 +32,7 @@ impl Deref for DocumentIndex {
 }
 
 impl DocumentIndex {
-    pub(crate) async fn new(
+    pub(crate) async fn open_or_create(
         data_options: &PrehniteDataOptions,
         conn: &mut SqliteConnection,
     ) -> crate::Result<Self> {

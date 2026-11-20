@@ -1,4 +1,4 @@
-use crate::database::schema::DocumentId;
+use crate::DocumentId;
 use crate::database::zstd_compressed_blob::ZstdCompressedBlob;
 use jiff_sqlx::ToSqlx;
 use prehnite_time_bridge::jiff::Timestamp;

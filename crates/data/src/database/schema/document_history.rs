@@ -1,8 +1,8 @@
 use crate::database::zstd_compressed_blob::ZstdCompressedBlob;
-use crate::database::schema::DocumentId;
-use crate::models::document::Document;
+use crate::{Document, DocumentId};
 use sqlx::{FromRow, SqliteConnection, query_as};
 
+#[allow(unused)]
 #[derive(FromRow, Debug, Clone)]
 pub(crate) struct DbDocumentHistory {
     pub id: i64,
@@ -13,6 +13,7 @@ pub(crate) struct DbDocumentHistory {
     pub updated_at: jiff_sqlx::Timestamp,
 }
 
+#[allow(unused)]
 impl DbDocumentHistory {
     pub(crate) async fn create(
         document: Document,
