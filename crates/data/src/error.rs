@@ -30,4 +30,6 @@ pub enum Error {
     MissingTag(String),
     #[error("jiff error: {0}")]
     JiffError(#[from] prehnite_time_bridge::jiff::Error),
+    #[error("managed item is already deleted")]
+    ManagedItemDeleted,
 }

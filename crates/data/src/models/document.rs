@@ -95,13 +95,13 @@ impl Document {
 
 #[derive(Debug)]
 pub enum DeleteStatus {
-    Trashed(PrehniteManaged<Document>),
+    Trashed,
     Deleted,
     NotFound,
 }
 
 impl PrehniteManaged<Document> {
-    pub async fn delete(mut self) -> crate::Result<DeleteStatus> {
+    pub async fn delete(&mut self) -> crate::Result<DeleteStatus> {
         self.manager()
             .get_manager()?
             .document_index
@@ -117,47 +117,43 @@ impl PrehniteManaged<Document> {
             }
         } else {
             self.as_mut().deleted = true;
-            if let (true, saved) = self.save(&mut *tx).await? {
+            if self.save(&mut *tx).await? {
                 tx.commit().await?;
-                Ok(DeleteStatus::Trashed(saved))
+                Ok(DeleteStatus::Trashed)
             } else {
                 Ok(DeleteStatus::NotFound)
             }
         }
     }
 
-    pub async fn restore(mut self) -> crate::Result<Self> {
+    pub async fn restore(&mut self) -> crate::Result<()> {
         if self.deleted {
             self.as_mut().deleted = false;
             let mut conn = self.manager().acquire().await?;
-            let v = self.save(&mut *conn).await?.1;
-            v.manager()
-                .get_manager()?
-                .document_index
-                .upsert(v.clone())?;
-            Ok(v)
-        } else {
-            Ok(self)
+            self.save(&mut *conn).await?;
         }
+        Ok(())
     }
 
-    pub async fn update_title(mut self, title: Option<impl Into<String>>) -> crate::Result<Self> {
+    pub async fn update_title(&mut self, title: Option<impl Into<String>>) -> crate::Result<()> {
         let mut conn = self.manager().acquire().await?;
         self.as_mut().title = title.map(Into::into);
-        Ok(self.save(&mut *conn).await?.1)
+        self.save(&mut *conn).await?;
+        Ok(())
     }
 
-    pub async fn update_content(mut self, content: impl Into<String>) -> crate::Result<Self> {
+    pub async fn update_content(mut self, content: impl Into<String>) -> crate::Result<()> {
         let mut conn = self.manager().acquire().await?;
         self.as_mut().content = content.into();
-        Ok(self.save(&mut *conn).await?.1)
+        self.save(&mut *conn).await?;
+        Ok(())
     }
 
-    async fn save(self, conn: &mut SqliteConnection) -> crate::Result<(bool, Self)> {
-        Ok((DbDocument::from(self.clone()).save(conn).await?, self))
+    async fn save(&mut self, conn: &mut SqliteConnection) -> crate::Result<bool> {
+        Ok(DbDocument::from(self.clone()).save(conn).await?)
     }
 
-    pub async fn add_tag(mut self, tag_id: TagId) -> crate::Result<Self> {
+    pub async fn add_tag(&mut self, tag_id: TagId) -> crate::Result<()> {
         let mut conn = self.manager().acquire().await?;
         if DbRelDocsAndTags::create(self.document_id, tag_id, &mut *conn)
             .await?
@@ -165,20 +161,20 @@ impl PrehniteManaged<Document> {
         {
             self.as_mut().tags.push(tag_id);
         }
-        Ok(self)
+        Ok(())
     }
 
-    pub async fn remove_tag(mut self, tag_id: TagId) -> crate::Result<Self> {
+    pub async fn remove_tag(&mut self, tag_id: TagId) -> crate::Result<()> {
         let mut conn = self.manager().acquire().await?;
         DbRelDocsAndTags::delete(self.document_id, tag_id, &mut *conn).await?;
         self.as_mut().tags.retain(|x| *x != tag_id);
-        Ok(self)
+        Ok(())
     }
 
     pub async fn add_background_info(
-        mut self,
+        &mut self,
         bg_info_document_id: DocumentId,
-    ) -> crate::Result<Self> {
+    ) -> crate::Result<()> {
         let mut conn = self.manager().acquire().await?;
         if DbRelDocsAndBackgroundInfo::create(self.document_id, bg_info_document_id, &mut *conn)
             .await?
@@ -186,20 +182,20 @@ impl PrehniteManaged<Document> {
         {
             self.as_mut().background_info.push(bg_info_document_id);
         }
-        Ok(self)
+        Ok(())
     }
 
     pub async fn remove_background_info(
-        mut self,
+        &mut self,
         bg_info_document_id: DocumentId,
-    ) -> crate::Result<Self> {
+    ) -> crate::Result<()> {
         let mut conn = self.manager().acquire().await?;
         DbRelDocsAndBackgroundInfo::delete(self.document_id, bg_info_document_id, &mut *conn)
             .await?;
         self.as_mut()
             .background_info
             .retain(|x| *x != bg_info_document_id);
-        Ok(self)
+        Ok(())
     }
 }
 

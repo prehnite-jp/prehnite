@@ -90,30 +90,30 @@ impl Tag {
 }
 
 impl PrehniteManaged<Tag> {
-    async fn save(self) -> crate::Result<Self> {
+    async fn save(&mut self) -> crate::Result<()> {
         self.clone()
             .to_db()
             .save(&mut *self.manager().acquire().await?)
             .await?;
-        Ok(self)
+        Ok(())
     }
 
-    pub async fn delete(self) -> crate::Result<bool> {
+    pub async fn delete(&mut self) -> crate::Result<bool> {
         let mut conn = self.manager().acquire().await?;
-        self.item().to_db().delete(&mut *conn).await
+        self.clone().to_db().delete(&mut *conn).await
     }
 
-    pub async fn update_title(mut self, title: String) -> crate::Result<Self> {
+    pub async fn update_title(&mut self, title: String) -> crate::Result<()> {
         self.as_mut().title = title;
         self.save().await
     }
 
-    pub async fn update_details(mut self, details: Option<String>) -> crate::Result<Self> {
+    pub async fn update_details(&mut self, details: Option<String>) -> crate::Result<()> {
         self.as_mut().details = details;
         self.save().await
     }
 
-    pub async fn update_metadata(mut self, metadata: TagMetadata) -> crate::Result<Self> {
+    pub async fn update_metadata(&mut self, metadata: TagMetadata) -> crate::Result<()> {
         self.as_mut().metadata = metadata;
         self.save().await
     }
