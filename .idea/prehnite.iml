@@ -7,16 +7,18 @@
       <sourceFolder url="file://$MODULE_DIR$/builder/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/license-bundle/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/build-libs/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/crates/core/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/proc-macros/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src-tauri/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/data-manager/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/time-bridge/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/tauri-plugin-prehnite-data/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/data/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/i18n/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/prehnite/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/shared/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.idea/dataSources" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
-      <excludeFolder url="file://$MODULE_DIR$/crates/core/target" />
+      <excludeFolder url="file://$MODULE_DIR$/crates/shared/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

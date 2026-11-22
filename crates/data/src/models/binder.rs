@@ -2,7 +2,6 @@ use crate::database::schema::binder::DbBinder;
 use crate::database::schema::bound_document::DbBoundDocument;
 use crate::manager::managed::{PrehniteManaged, PrehniteManagedItem};
 use crate::{BinderId, BoundDocumentId, DocumentId};
-use prehnite_time_bridge::jiff;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug)]

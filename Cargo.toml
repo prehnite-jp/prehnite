@@ -1,22 +1,3 @@
-[package]
-name = "prehnite"
-version = "0.1.0"
-edition.workspace = true
-license.workspace = true
-authors.workspace = true
-repository.workspace = true
-homepage.workspace = true
-publish.workspace = true
-
-[dependencies]
-gpui-kit.workspace = true
-prehnite-data.workspace = true
-prehnite-core.workspace = true
-tracing.workspace = true
-tracing-unwrap.workspace = true
-anyhow.workspace = true
-rgb.workspace = true
-
 [workspace]
 members = ["crates/*"]
 resolver = "3"
@@ -31,7 +12,7 @@ homepage = "https://prehnite.jp/"
 publish = false
 
 [workspace.dependencies]
-prehnite-core = { version = "0.1.0", path = "crates/core" }
+prehnite-shared = { version = "0.1.0", path = "crates/shared" }
 prehnite-time-bridge = { version = "0.1.0", path = "crates/time-bridge" }
 sqlx = { version = "0.9", features = ["runtime-tokio", "sqlite", "macros", "uuid"] }
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "sync", "fs"] }
@@ -51,8 +32,8 @@ tantivy = { version = "0.27" }
 lindera-tantivy = { version = "6", features = ["embed-ipadic"] }
 derive_builder = "0.20.2"
 lindera = "6"
-rgb = { version = "0.8", features = ["serde"] }
-random_color = { version = "1", features = ["rgb_support"] }
+random_color = { version = "1", features = ["palette_support"] }
+palette = { version = "0.7", features = ["serializing"] }
 zstd = "0.14"
 jiff = { version = "0.2", features = ["serde"] }
 jiff-sqlx = { version = "0.2", features = ["sqlite"] }
@@ -60,7 +41,8 @@ time = { version = "0.3", features = [] }
 debug-ignore = "1"
 prehnite-data = { version = "1", path = "./crates/data" }
 uuid = { version = "1", features = ["serde"] }
-gpui-kit = { version = "*" }
+gpui-kit = { version = "0.9" }
+rust-i18n = "4"
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
 [profile.release]

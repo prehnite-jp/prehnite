@@ -1,5 +1,5 @@
 [package]
-name = "prehnite-time-bridge"
+name = "prehnite-shared"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -9,7 +9,11 @@ homepage.workspace = true
 publish.workspace = true
 
 [dependencies]
+tracing.workspace = true
+tracing-unwrap.workspace = true
+gpui-kit.workspace = true
+palette.workspace = true
 tantivy.workspace = true
-jiff.workspace = true
 time.workspace = true
+jiff.workspace = true
 thiserror.workspace = true

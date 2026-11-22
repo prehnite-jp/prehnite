@@ -1,0 +1,6 @@
+_version: 2
+app:
+  # 仮テキスト TODO: 後で消す
+  greeting:
+    en: Hello
+    ja-JP: こんにちゃ！

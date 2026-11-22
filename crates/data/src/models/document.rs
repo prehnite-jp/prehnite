@@ -6,7 +6,7 @@ use crate::database::zstd_compressed_blob::ZstdCompressedBlob;
 use crate::manager::managed::{PrehniteManaged, PrehniteManagedItem};
 use crate::{BoxableTantivyTokenizer, DocumentId, TagId};
 use jiff_sqlx::ToSqlx;
-use prehnite_time_bridge::{TryIntoTantivyDate, jiff};
+use prehnite_shared::time::TryIntoTantivyDate;
 use serde::{Deserialize, Serialize};
 use sqlx::{Acquire, SqliteConnection};
 use std::ops::Deref;

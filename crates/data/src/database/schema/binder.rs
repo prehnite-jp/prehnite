@@ -1,7 +1,6 @@
 use crate::BinderId;
 use jiff_sqlx::ToSqlx;
-use prehnite_time_bridge::jiff;
-use prehnite_time_bridge::jiff::Timestamp;
+use jiff::Timestamp;
 use sqlx::{FromRow, QueryBuilder, SqliteConnection, query, query_as};
 
 #[derive(FromRow, Debug, Clone)]

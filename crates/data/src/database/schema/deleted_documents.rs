@@ -1,6 +1,5 @@
 use crate::DocumentId;
 use jiff_sqlx::ToSqlx;
-use prehnite_time_bridge::jiff;
 use sqlx::{FromRow, SqliteConnection, query_as};
 
 #[allow(unused)]

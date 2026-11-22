@@ -4,7 +4,7 @@ use crate::database::schema::document::DbDocument;
 use crate::manager::inner_data_manager::InnerDataManager;
 use crate::manager::registry::ManagerRegistry;
 use crate::{BinderRepository, DocumentRepository, TagRepository};
-use prehnite_time_bridge::jiff::Timestamp;
+use jiff::Timestamp;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sqlx::pool::PoolConnection;

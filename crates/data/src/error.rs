@@ -17,7 +17,7 @@ pub enum Error {
     #[error("prehnite id was missing on metadata table")]
     PrehniteIdMissing,
     #[error("TimeBridgeError: {0}")]
-    TimeBridgeError(#[from] prehnite_time_bridge::TimeBridgeError),
+    TimeBridgeError(#[from] prehnite_shared::time::TimeBridgeError),
     #[error("FailedToParseTantivyQuery: {0}")]
     TantivyQueryParseError(#[from] tantivy::query::QueryParserError),
     #[error("FailedToParseTantivyQuery: {0}")]
@@ -29,7 +29,7 @@ pub enum Error {
     #[error("Tag {0} is missing.")]
     MissingTag(String),
     #[error("jiff error: {0}")]
-    JiffError(#[from] prehnite_time_bridge::jiff::Error),
+    JiffError(#[from] jiff::Error),
     #[error("managed item is already deleted")]
     ManagedItemDeleted,
 }

@@ -1,21 +1,18 @@
-#![doc = "ロギングの実装"]
-use crate::constants::global_dir;
-use crate::env::ENV_KEY_LOG;
+use prehnite_shared::constants::global_dir;
+use prehnite_shared::env::ENV_KEY_LOG;
 use std::path::{Path, PathBuf};
 use tracing::Level;
 use tracing_appender::rolling;
+use tracing_subscriber::EnvFilter;
 use tracing_subscriber::filter::Directive;
 use tracing_subscriber::fmt::writer::MakeWriterExt;
-use tracing_subscriber::EnvFilter;
 
 pub use rolling::InitError;
 
 const DEFAULT_LOG_LEVEL: &str = "info";
 
 #[cfg(debug_assertions)]
-const DEFAULT_LOG_FILTER: &[&str] = &[
-    "sqlx::query=trace",
-];
+const DEFAULT_LOG_FILTER: &[&str] = &["sqlx::query=trace"];
 #[cfg(not(debug_assertions))]
 const DEFAULT_LOG_FILTER: &[&str] = &[];
 
@@ -69,18 +66,10 @@ fn add_directive(env_filter: EnvFilter, directive: Directive) -> EnvFilter {
     env_filter.add_directive(directive)
 }
 
-#[derive(thiserror::Error, Debug)]
-pub enum Error {
-    #[error("Logger initializing failed.")]
-    InitError(#[from] InitError),
-    #[error("Logger dir not set.")]
-    FailedToGetLogDir,
-}
-
 /// ロガーを初期化します。
-pub fn initialize_logger() -> Result<(), Error> {
+pub fn initialize_logger() -> anyhow::Result<()> {
     let log_dir = match log_dir() {
-        None => return Err(Error::FailedToGetLogDir),
+        None => return Err(anyhow::anyhow!("Logger dir not set.")),
         Some(x) => x,
     };
     let default_log_filter: EnvFilter = DEFAULT_LOG_FILTER

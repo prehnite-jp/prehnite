@@ -1,46 +1,43 @@
 use crate::TagId;
 use crate::database::schema::tag::DbTag;
 use crate::manager::managed::{PrehniteManaged, PrehniteManagedItem};
-use random_color::options::Luminosity;
-use rgb::RGB8;
+use crate::util::{FgBg, find_random_fb_color_pair};
+use palette::Hsla;
 use serde::{Deserialize, Serialize};
 use sqlx::types::Json;
 
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 pub struct TagMetadata {
-    pub foreground_color: RGB8,
-    pub background_color: RGB8,
+    pub foreground_color: Hsla,
+    pub background_color: Hsla,
 }
 
 impl TagMetadata {
-    pub fn set_random_color(self) -> Self {
+    pub fn set_random_color(&mut self) {
         let Self {
             foreground_color,
             background_color,
             ..
         } = Self::default();
-        Self {
-            foreground_color,
-            background_color,
-            ..self
-        }
+        self.foreground_color = foreground_color;
+        self.background_color = background_color;
     }
 }
 
 impl Default for TagMetadata {
     fn default() -> Self {
+        let FgBg {
+            foreground_color,
+            background_color,
+        } = find_random_fb_color_pair::<Hsla>();
         TagMetadata {
-            foreground_color: random_color::RandomColor::new()
-                .luminosity(Luminosity::Light)
-                .to_rgb(),
-            background_color: random_color::RandomColor::new()
-                .luminosity(Luminosity::Dark)
-                .to_rgb(),
+            foreground_color,
+            background_color,
         }
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub struct Tag {
     pub id: TagId,
     pub title: String,
