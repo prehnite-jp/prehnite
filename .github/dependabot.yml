@@ -8,6 +8,12 @@ updates:
   - package-ecosystem: "github-actions" # See documentation for possible values
     directory: "/" # Location of package manifests
     schedule:
-      interval: "daily"
-      timezone: "Asia/Tokyo"
-      time: "10:00"
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+  - package-ecosystem: "cargo" # See documentation for possible values
+    directory: "/" # Location of package manifests
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
