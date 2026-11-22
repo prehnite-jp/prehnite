@@ -13,7 +13,7 @@ bundle_license = ["dep:cargo-about", "dep:krates", "dep:ureq"]
 
 [dependencies]
 cargo-about = { version = "0.9", optional = true }
-krates = { version = "0.21", optional = true }
+krates = { version = "0.22", optional = true }
 serde_json.workspace = true
 ureq = { version = "3", optional = true }
 zip.workspace = true
