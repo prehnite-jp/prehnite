@@ -1,8 +1,9 @@
+use strum::EnumIs;
 use thiserror::Error;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, EnumIs)]
 pub enum Error {
     #[error("DatabaseError: {0}")]
     DatabaseError(#[from] sqlx::Error),

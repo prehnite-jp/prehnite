@@ -1,4 +1,4 @@
-use crate::manager::DataManager;
+use crate::weak_inner_data_manager::WeakInnerDataManager;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
 
@@ -8,7 +8,8 @@ pub trait PrehniteManagedItem: for<'de> Deserialize<'de> + Serialize {}
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(bound(deserialize = "T: PrehniteManagedItem"))]
 pub struct PrehniteManaged<T> {
-    manager: DataManager,
+    #[serde(skip)]
+    manager: WeakInnerDataManager,
     item: T,
 }
 
@@ -27,12 +28,12 @@ impl<T> AsRef<T> for PrehniteManaged<T> {
 }
 
 impl<T: PrehniteManagedItem> PrehniteManaged<T> {
-    pub(crate) fn new(manager: DataManager, item: T) -> Self {
+    pub(crate) fn new(manager: WeakInnerDataManager, item: T) -> Self {
         Self { manager, item }
     }
 
-    pub(crate) fn manager(&self) -> DataManager {
-        self.manager
+    pub(crate) fn manager(&self) -> &WeakInnerDataManager {
+        &self.manager
     }
 
     pub(crate) fn as_mut(&mut self) -> &mut T {

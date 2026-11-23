@@ -1,15 +1,15 @@
 use crate::database::schema::tag::DbTag;
-use crate::manager::DataManager;
 use crate::manager::managed::PrehniteManaged;
+use crate::weak_inner_data_manager::WeakInnerDataManager;
 use crate::{Tag, TagId, TagMetadata};
 use sqlx::Acquire;
 
 pub struct TagRepository {
-    manager: DataManager,
+    manager: WeakInnerDataManager,
 }
 
 impl TagRepository {
-    pub fn new(manager: DataManager) -> Self {
+    pub(crate) fn new(manager: WeakInnerDataManager) -> Self {
         Self { manager }
     }
 

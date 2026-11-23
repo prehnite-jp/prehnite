@@ -100,8 +100,7 @@ impl PrehniteManaged<Tag> {
     }
 
     pub async fn delete(&mut self) -> crate::Result<bool> {
-        let mut conn = self.manager().acquire().await?;
-        self.clone().to_db().delete(&mut *conn).await
+        self.clone().to_db().delete(&mut *self.manager().acquire().await?).await
     }
 
     pub async fn update_title(&mut self, title: &str) -> crate::Result<()> {

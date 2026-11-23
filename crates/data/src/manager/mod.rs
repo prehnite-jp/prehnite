@@ -2,25 +2,24 @@ use crate::data_options::PrehniteDataOptions;
 use crate::database::schema::deleted_documents::DbDeletedDocument;
 use crate::database::schema::document::DbDocument;
 use crate::manager::inner_data_manager::InnerDataManager;
-use crate::manager::registry::ManagerRegistry;
 use crate::{BinderRepository, DocumentRepository, TagRepository};
 use jiff::Timestamp;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sqlx::pool::PoolConnection;
 use sqlx::{Acquire, Sqlite};
-use std::ops::AddAssign;
+use std::ops::Deref;
 use std::path::Path;
-use std::sync::{Arc, LazyLock, Mutex};
+use std::sync::Arc;
 use tantivy::aggregation::agg_result::{AggregationResult, MetricResult};
 use tantivy::aggregation::{AggContextParams, AggregationCollector};
-use tracing::warn;
 
 pub mod document_index;
-mod inner_data_manager;
+pub mod inner_data_manager;
 pub mod managed;
-mod registry;
+pub mod weak_inner_data_manager;
 
+use crate::weak_inner_data_manager::WeakInnerDataManager;
 pub use document_index::*;
 pub use managed::*;
 
@@ -30,38 +29,24 @@ pub enum SyncStep {
     Upsert,
 }
 
-#[derive(Deserialize, Serialize, Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
-pub struct DataManager(u64);
+#[derive(Clone, Debug)]
+pub struct DataManager(Arc<InnerDataManager>);
+
+impl Deref for DataManager {
+    type Target = InnerDataManager;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 impl DataManager {
-    pub(in crate::manager) fn issue() -> DataManager {
-        static NEXT: LazyLock<Mutex<u64>> = LazyLock::new(Default::default);
-        let mut locked = NEXT.lock().unwrap();
-        let id = *locked;
-        locked.add_assign(1);
-        DataManager(id)
-    }
-
-    pub(crate) fn get_manager(&self) -> crate::Result<Arc<InnerDataManager>> {
-        if let Some(mgr) = ManagerRegistry::get(self) {
-            Ok(mgr)
-        } else {
-            // データマネージャは既に閉じられています。
-            warn!("The data manager has already been closed.");
-            Err(crate::Error::DataManagerClosed)
-        }
+    pub(crate) fn get_manager(&self) -> Arc<InnerDataManager> {
+        self.0.clone()
     }
 
     pub(crate) async fn acquire(&self) -> crate::Result<PoolConnection<Sqlite>> {
-        self.get_manager()?.acquire().await
-    }
-
-    pub fn close(&self) -> bool {
-        ManagerRegistry::close(self)
-    }
-
-    pub fn is_closed(&self) -> bool {
-        ManagerRegistry::is_closed(self)
+        self.get_manager().acquire().await
     }
 
     pub async fn open_or_create(
@@ -69,32 +54,36 @@ impl DataManager {
         data_options: Option<PrehniteDataOptions>,
     ) -> crate::Result<Self> {
         let inner = Arc::new(InnerDataManager::open_or_create(db_path, data_options).await?);
-        Ok(ManagerRegistry::open(inner))
+        Ok(Self(inner))
+    }
+
+    fn weak_manager(&self) -> WeakInnerDataManager {
+        Arc::downgrade(&self.0).into()
     }
 
     #[tracing::instrument]
     pub fn binders(&self) -> BinderRepository {
-        BinderRepository::new(*self)
+        BinderRepository::new(self.weak_manager())
     }
 
     #[tracing::instrument]
     pub fn documents(&self) -> DocumentRepository {
-        DocumentRepository::new(*self)
+        DocumentRepository::new(self.weak_manager())
     }
 
     #[tracing::instrument]
     pub fn tags(&self) -> TagRepository {
-        TagRepository::new(*self)
+        TagRepository::new(self.weak_manager())
     }
 
     pub(crate) fn manage<T: PrehniteManagedItem>(&self, item: T) -> PrehniteManaged<T> {
-        PrehniteManaged::new(*self, item)
+        PrehniteManaged::new(self.weak_manager(), item)
     }
 
     // TODO: ファイルが複製されたとき、インデックスが不整合となる場合がある。これはインデックスを再生成することで解決できる。
     #[tracing::instrument]
     pub async fn sync_document_index(&self) -> crate::Result<()> {
-        let mgr = self.get_manager()?;
+        let mgr = self.get_manager();
         let reader = mgr.document_index.reader()?;
         let searcher = reader.searcher();
         let docs = searcher.search(
@@ -117,7 +106,7 @@ impl DataManager {
         )?;
         let mut conn = self.acquire().await?;
         let mut tx = conn.begin().await?;
-        let idx = &self.get_manager()?.document_index;
+        let idx = &self.get_manager().document_index;
         let deleted_documents =
             DbDeletedDocument::fetch_diff_all(last_updated_at, &mut *tx).await?;
         for i in deleted_documents {

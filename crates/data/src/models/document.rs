@@ -102,12 +102,12 @@ pub enum DeleteStatus {
 
 impl PrehniteManaged<Document> {
     pub async fn delete(&mut self) -> crate::Result<DeleteStatus> {
-        self.manager()
-            .get_manager()?
+        let mut manager_conn = self.manager().acquire().await?;
+        manager_conn
+            .manager()
             .document_index
             .delete(self.document_id)?;
-        let mut conn = self.manager().acquire().await?;
-        let mut tx = conn.begin().await?;
+        let mut tx = manager_conn.begin().await?;
         if self.deleted {
             if DbDocument::delete(self.document_id, &mut *tx).await? {
                 tx.commit().await?;
@@ -189,7 +189,8 @@ impl PrehniteManaged<Document> {
         &mut self,
         bg_info_document_id: DocumentId,
     ) -> crate::Result<()> {
-        let mut conn = self.manager().acquire().await?;
+        let manager = self.manager().get()?;
+        let mut conn = manager.acquire().await?;
         DbRelDocsAndBackgroundInfo::delete(self.document_id, bg_info_document_id, &mut *conn)
             .await?;
         self.as_mut()

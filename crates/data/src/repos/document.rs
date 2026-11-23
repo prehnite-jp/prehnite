@@ -1,23 +1,23 @@
-use crate::{Document, DocumentId};
 use crate::database::schema::document::DbDocument;
 use crate::database::schema::rel_doc_and_background_info::DbRelDocsAndBackgroundInfo;
 use crate::database::schema::rel_doc_and_tag::DbRelDocsAndTags;
-use crate::manager::DataManager;
 use crate::manager::managed::PrehniteManaged;
+use crate::models::DocumentFields;
+use crate::weak_inner_data_manager::WeakInnerDataManager;
+use crate::{Document, DocumentId};
 use sqlx::{Acquire, SqliteConnection};
 use tantivy::TantivyDocument;
 use tantivy::collector::TopDocs;
 use tantivy::schema::Value;
-use crate::models::DocumentFields;
 
 pub struct DocumentRepository {
-    manager: DataManager,
+    manager: WeakInnerDataManager,
 }
 
 const DEFAULT_PAGE_SIZE: u64 = 50;
 
 impl DocumentRepository {
-    pub fn new(manager: DataManager) -> Self {
+    pub(crate) fn new(manager: WeakInnerDataManager) -> Self {
         Self { manager }
     }
 
@@ -29,8 +29,7 @@ impl DocumentRepository {
         query: &str,
         tags: Vec<&str>, // タグはAND条件
     ) -> crate::Result<Vec<PrehniteManaged<Document>>> {
-        let manager = self.manager.get_manager()?;
-
+        let manager = self.manager.get()?;
         let reader = manager.document_index.reader()?;
         let searcher = reader.searcher();
         let page_size = page_size.unwrap_or(DEFAULT_PAGE_SIZE);
@@ -78,7 +77,8 @@ impl DocumentRepository {
     }
 
     pub async fn fetch(&self, document_id: DocumentId) -> crate::Result<PrehniteManaged<Document>> {
-        let mut conn = self.manager.acquire().await?;
+        let mgr = self.manager.get()?;
+        let mut conn = mgr.acquire().await?;
         let mut tx = conn.begin().await?;
         self.fetch_inner(document_id, &mut *tx).await
     }
@@ -88,7 +88,7 @@ impl DocumentRepository {
         title: &str,
         content: &str,
     ) -> crate::Result<PrehniteManaged<Document>> {
-        let manager = self.manager.get_manager()?;
+        let manager = self.manager.get()?;
         let mut writer = manager.document_index.writer.lock().unwrap();
         let mut conn = manager.acquire().await?;
         let mut tx = conn.begin().await?;

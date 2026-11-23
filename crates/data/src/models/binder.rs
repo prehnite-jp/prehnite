@@ -68,21 +68,18 @@ impl Binder {
 
 impl PrehniteManaged<Binder> {
     pub async fn delete(&mut self) -> crate::Result<bool> {
-        let conn = &mut *self.manager().acquire().await?;
-        DbBinder::from(self.clone()).delete(conn).await
+        DbBinder::from(self.clone()).delete(&mut *self.manager().acquire().await?).await
     }
 
     pub async fn update_title(&mut self, title: &str) -> crate::Result<()> {
         self.as_mut().title = title.into();
-        let conn = &mut self.manager().acquire().await?;
-        DbBinder::from(self.clone()).save(conn).await?;
+        DbBinder::from(self.clone()).save(&mut *self.manager().acquire().await?).await?;
         Ok(())
     }
 
     pub async fn update_details(&mut self, details: Option<&str>) -> crate::Result<()> {
         self.as_mut().details = details.map(Into::into);
-        let conn = &mut self.manager().acquire().await?;
-        DbBinder::from(self.clone()).save(conn).await?;
+        DbBinder::from(self.clone()).save(&mut *self.manager().acquire().await?).await?;
         Ok(())
     }
 
@@ -97,10 +94,10 @@ impl PrehniteManaged<Binder> {
             self.id,
             document_id,
             pos.to_new_next(&self.db_pages),
-            &mut *conn,
+            &mut conn,
         )
         .await?;
-        self.as_mut().db_pages = DbBoundDocument::fetch(self.id, &mut *conn).await?;
+        self.as_mut().db_pages = DbBoundDocument::fetch(self.id, &mut conn).await?;
         self.as_mut().sync_pages();
         Ok(())
     }
@@ -111,8 +108,8 @@ impl PrehniteManaged<Binder> {
             let page = self.as_mut().db_pages.remove(page as usize);
             let mut conn = self.manager().acquire().await?;
             let pos = pos.to_new_next(&self.db_pages);
-            page.move_page(pos, &mut *conn).await?;
-            self.as_mut().db_pages = DbBoundDocument::fetch(self.id, &mut *conn).await?;
+            page.move_page(pos, &mut conn).await?;
+            self.as_mut().db_pages = DbBoundDocument::fetch(self.id, &mut conn).await?;
             self.as_mut().sync_pages();
         }
         Ok(())
@@ -131,9 +128,9 @@ impl PrehniteManaged<Binder> {
     /// 例: 0A,1B,2C,3D|(idxName) ここからidx2を取り除いた場合、ページは次のようになります。 0A,1B,2D
     pub async fn remove_page(&mut self, page: u64) -> crate::Result<()> {
         if page < self.pages.len() as u64 {
-            let conn = &mut *self.manager().acquire().await?;
+            let mut conn = self.manager().acquire().await?;
             let page = self.as_mut().db_pages.remove(page as usize);
-            page.remove(conn).await?;
+            page.remove(&mut conn).await?;
             self.as_mut().sync_pages();
         }
         Ok(())

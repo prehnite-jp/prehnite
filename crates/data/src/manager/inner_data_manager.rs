@@ -27,7 +27,7 @@ async fn connect_database(path: impl AsRef<Path>) -> crate::Result<SqlitePool> {
 
 #[derive(Debug)]
 #[allow(unused)]
-pub(crate) struct InnerDataManager {
+pub struct InnerDataManager {
     pub(crate) database_path: PathBuf,
     pub(crate) database_pool: SqlitePool,
     pub(crate) data_options: PrehniteDataOptions,
