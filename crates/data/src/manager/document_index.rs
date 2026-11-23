@@ -90,7 +90,7 @@ impl DocumentIndex {
     pub(crate) async fn parse_query_with_tags(
         &self,
         query: &str,
-        tags: Vec<String>,
+        tags: Vec<&str>,
         conn: &mut SqliteConnection,
     ) -> crate::Result<Box<dyn Query>> {
         let parsed = parse_query(&query)

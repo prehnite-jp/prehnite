@@ -16,3 +16,8 @@ pub use manager::*;
 pub use models::*;
 pub use repos::*;
 pub use tantivy::tokenizer::*;
+
+#[cfg(not(feature = "gpui"))]
+pub type TString = String;
+#[cfg(feature = "gpui")]
+pub type TString = gpui_kit::SharedString;

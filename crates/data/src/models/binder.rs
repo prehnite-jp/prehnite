@@ -1,7 +1,7 @@
 use crate::database::schema::binder::DbBinder;
 use crate::database::schema::bound_document::DbBoundDocument;
 use crate::manager::managed::{PrehniteManaged, PrehniteManagedItem};
-use crate::{BinderId, BoundDocumentId, DocumentId};
+use crate::{BinderId, BoundDocumentId, DocumentId, TString};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug)]
@@ -52,8 +52,8 @@ impl BinderPagePosition {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Binder {
     pub id: BinderId,
-    pub title: String,
-    pub details: Option<String>,
+    pub title: TString,
+    pub details: Option<TString>,
     pub created_at: jiff::Timestamp,
     pub updated_at: jiff::Timestamp,
     pub pages: Vec<DocumentId>,
@@ -72,15 +72,15 @@ impl PrehniteManaged<Binder> {
         DbBinder::from(self.clone()).delete(conn).await
     }
 
-    pub async fn update_title(&mut self, title: String) -> crate::Result<()> {
-        self.as_mut().title = title;
+    pub async fn update_title(&mut self, title: &str) -> crate::Result<()> {
+        self.as_mut().title = title.into();
         let conn = &mut self.manager().acquire().await?;
         DbBinder::from(self.clone()).save(conn).await?;
         Ok(())
     }
 
-    pub async fn update_details(&mut self, details: Option<String>) -> crate::Result<()> {
-        self.as_mut().details = details;
+    pub async fn update_details(&mut self, details: Option<&str>) -> crate::Result<()> {
+        self.as_mut().details = details.map(Into::into);
         let conn = &mut self.manager().acquire().await?;
         DbBinder::from(self.clone()).save(conn).await?;
         Ok(())
@@ -162,6 +162,8 @@ impl From<DbBinder> for Binder {
         } = value;
         let created_at = created_at.to_jiff();
         let updated_at = updated_at.to_jiff();
+        let title = title.into();
+        let details = details.map(Into::into);
         Binder {
             id,
             title,
@@ -185,6 +187,8 @@ impl From<Binder> for DbBinder {
         } = value;
         let created_at = created_at.into();
         let updated_at = updated_at.into();
+        let title = title.into();
+        let details = details.map(Into::into);
         DbBinder {
             id,
             title,

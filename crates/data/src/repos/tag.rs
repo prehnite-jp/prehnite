@@ -15,8 +15,8 @@ impl TagRepository {
 
     pub async fn create(
         &self,
-        title: String,
-        details: Option<String>,
+        title: &str,
+        details: Option<&str>,
         metadata: Option<TagMetadata>,
     ) -> crate::Result<PrehniteManaged<Tag>> {
         let mut conn = self.manager.acquire().await?;
@@ -45,12 +45,12 @@ impl TagRepository {
         ))
     }
 
-    pub async fn fetch_by_title(&self, title: String) -> crate::Result<PrehniteManaged<Tag>> {
+    pub async fn fetch_by_title(&self, title: &str) -> crate::Result<PrehniteManaged<Tag>> {
         let mut conn = self.manager.acquire().await?;
         Ok(self.manager.manage(
             DbTag::fetch(&title, &mut *conn)
                 .await?
-                .ok_or(crate::Error::MissingTag(title))?
+                .ok_or(crate::Error::MissingTag(title.into()))?
                 .into(),
         ))
     }

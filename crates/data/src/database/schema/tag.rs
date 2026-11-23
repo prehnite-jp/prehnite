@@ -13,13 +13,11 @@ pub struct DbTag {
 
 impl DbTag {
     pub(crate) async fn fetch_or_create(
-        title: impl Into<String>,
-        details: Option<impl Into<String>>,
+        title: &str,
+        details: Option<&str>,
         metadata: Option<impl Into<TagMetadata>>,
         conn: &mut SqliteConnection,
     ) -> crate::Result<Self> {
-        let title = title.into();
-        let details = details.map(Into::into);
         let metadata = metadata.map(Into::into).unwrap_or_default();
         Ok(if let Some(v) = Self::fetch(&title, conn).await? {
             v
@@ -34,11 +32,11 @@ impl DbTag {
     }
 
     pub(crate) async fn fetch(
-        title: impl Into<String>,
+        title: &str,
         conn: &mut SqliteConnection,
     ) -> crate::Result<Option<Self>> {
         Ok(query_as("SELECT * FROM tags WHERE title = ?")
-            .bind(title.into())
+            .bind(title)
             .fetch_optional(conn)
             .await?)
     }

@@ -1,7 +1,7 @@
-use crate::TagId;
 use crate::database::schema::tag::DbTag;
 use crate::manager::managed::{PrehniteManaged, PrehniteManagedItem};
 use crate::util::{FgBg, find_random_fb_color_pair};
+use crate::{TString, TagId};
 use palette::Hsla;
 use serde::{Deserialize, Serialize};
 use sqlx::types::Json;
@@ -40,8 +40,8 @@ impl Default for TagMetadata {
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub struct Tag {
     pub id: TagId,
-    pub title: String,
-    pub details: Option<String>,
+    pub title: TString,
+    pub details: Option<TString>,
     pub metadata: TagMetadata,
 }
 
@@ -53,6 +53,8 @@ impl From<DbTag> for Tag {
             details,
             metadata: Json(metadata),
         } = value;
+        let title = title.into();
+        let details = details.map(Into::into);
         Self {
             id,
             title,
@@ -70,6 +72,8 @@ impl From<Tag> for DbTag {
             details,
             metadata,
         } = value;
+        let title = title.into();
+        let details = details.map(Into::into);
         let metadata = Json(metadata);
         DbTag {
             id,
@@ -100,13 +104,13 @@ impl PrehniteManaged<Tag> {
         self.clone().to_db().delete(&mut *conn).await
     }
 
-    pub async fn update_title(&mut self, title: String) -> crate::Result<()> {
-        self.as_mut().title = title;
+    pub async fn update_title(&mut self, title: &str) -> crate::Result<()> {
+        self.as_mut().title = title.into();
         self.save().await
     }
 
-    pub async fn update_details(&mut self, details: Option<String>) -> crate::Result<()> {
-        self.as_mut().details = details;
+    pub async fn update_details(&mut self, details: Option<&str>) -> crate::Result<()> {
+        self.as_mut().details = details.map(|x| x.into());
         self.save().await
     }
 

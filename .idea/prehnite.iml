@@ -14,6 +14,7 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/tauri-plugin-prehnite-data/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/data/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/i18n/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/prehnite-data-gpui-bridge/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/prehnite/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/shared/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.idea/dataSources" />

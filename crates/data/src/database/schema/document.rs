@@ -27,8 +27,8 @@ impl DbDocument {
 
     pub(crate) async fn create(
         conn: &mut SqliteConnection,
-        title: String,
-        content: String,
+        title: &str,
+        content: &str,
     ) -> crate::Result<Self> {
         let now = jiff_sqlx::Timestamp::from(Timestamp::now());
         Ok(query_as("INSERT INTO documents(title, content, deleted, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?4) RETURNING *")

@@ -26,8 +26,8 @@ impl DocumentRepository {
         &self,
         page: Option<u64>,
         page_size: Option<u64>,
-        query: String,
-        tags: Vec<String>, // タグはAND条件
+        query: &str,
+        tags: Vec<&str>, // タグはAND条件
     ) -> crate::Result<Vec<PrehniteManaged<Document>>> {
         let manager = self.manager.get_manager()?;
 
@@ -40,7 +40,7 @@ impl DocumentRepository {
         let mut tx = conn.begin().await?;
         let query = manager
             .document_index
-            .parse_query_with_tags(&query, tags, &mut *tx)
+            .parse_query_with_tags(query, tags, &mut *tx)
             .await?;
         // TODO: ソート方法は検討中
         let docs = searcher.search(
@@ -85,8 +85,8 @@ impl DocumentRepository {
 
     pub async fn create(
         &self,
-        title: String,
-        content: String,
+        title: &str,
+        content: &str,
     ) -> crate::Result<PrehniteManaged<Document>> {
         let manager = self.manager.get_manager()?;
         let mut writer = manager.document_index.writer.lock().unwrap();

@@ -21,8 +21,8 @@ impl DbDocumentHistory {
     ) -> crate::Result<Self> {
         Ok(query_as("INSERT INTO document_histories(document_id, title, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?) RETURNING *")
             .bind(document.document_id)
-            .bind(document.title)
-            .bind(document.content)
+            .bind(document.title.as_ref().map(|x|x.as_str()))
+            .bind(document.content.as_str())
             .bind(jiff_sqlx::Timestamp::from(document.created_at))
             .bind(jiff_sqlx::Timestamp::from(document.updated_at))
             .fetch_one(conn).await?)

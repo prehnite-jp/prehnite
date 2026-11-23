@@ -13,7 +13,6 @@ publish = false
 
 [workspace.dependencies]
 prehnite-shared = { version = "0.1.0", path = "crates/shared" }
-prehnite-time-bridge = { version = "0.1.0", path = "crates/time-bridge" }
 sqlx = { version = "0.9", features = ["runtime-tokio", "sqlite", "macros", "uuid"] }
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "sync", "fs"] }
 serde = { version = "1", features = ["derive"] }
@@ -39,7 +38,7 @@ jiff = { version = "0.2", features = ["serde"] }
 jiff-sqlx = { version = "0.2", features = ["sqlite"] }
 time = { version = "0.3", features = [] }
 debug-ignore = "1"
-prehnite-data = { version = "1", path = "./crates/data" }
+prehnite-data = { version = "1", path = "./crates/data", features = ["gpui"] }
 uuid = { version = "1", features = ["serde"] }
 gpui-kit = { version = "0.9" }
 rust-i18n = "4"

@@ -14,8 +14,8 @@ pub(crate) struct DbBinder {
 
 impl DbBinder {
     pub(crate) async fn create(
-        title: String,
-        details: Option<String>,
+        title: &str,
+        details: Option<&str>,
         conn: &mut SqliteConnection,
     ) -> crate::Result<Self> {
         Ok(query_as(
@@ -59,8 +59,8 @@ impl DbBinder {
     }
 
     pub(crate) async fn search(
-        title: Option<String>,
-        details: Option<String>,
+        title: Option<&str>,
+        details: Option<&str>,
         conn: &mut SqliteConnection,
     ) -> crate::Result<Vec<Self>> {
         let mut builder = QueryBuilder::new("SELECT * FROM binders WHERE ");

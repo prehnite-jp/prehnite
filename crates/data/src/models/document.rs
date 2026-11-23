@@ -4,7 +4,7 @@ use crate::database::schema::rel_doc_and_background_info::DbRelDocsAndBackground
 use crate::database::schema::rel_doc_and_tag::DbRelDocsAndTags;
 use crate::database::zstd_compressed_blob::ZstdCompressedBlob;
 use crate::manager::managed::{PrehniteManaged, PrehniteManagedItem};
-use crate::{BoxableTantivyTokenizer, DocumentId, TagId};
+use crate::{BoxableTantivyTokenizer, DocumentId, TString, TagId};
 use jiff_sqlx::ToSqlx;
 use prehnite_shared::time::TryIntoTantivyDate;
 use serde::{Deserialize, Serialize};
@@ -57,8 +57,8 @@ impl From<DocumentSchema> for tantivy::schema::Schema {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Document {
     pub document_id: DocumentId,
-    pub title: Option<String>,
-    pub content: String,
+    pub title: Option<TString>,
+    pub content: TString,
     pub deleted: bool,
     pub created_at: jiff::Timestamp,
     pub updated_at: jiff::Timestamp,
@@ -70,8 +70,8 @@ impl Document {
     pub(crate) fn from_db(db_document: DbDocument) -> Self {
         Self {
             document_id: db_document.id,
-            title: db_document.title.map(|x| x.text().to_string()),
-            content: db_document.content.text().to_string(),
+            title: db_document.title.map(|x| x.text().into()),
+            content: db_document.content.text().into(),
             deleted: db_document.deleted,
             created_at: db_document.created_at.to_jiff(),
             updated_at: db_document.updated_at.to_jiff(),
@@ -135,14 +135,14 @@ impl PrehniteManaged<Document> {
         Ok(())
     }
 
-    pub async fn update_title(&mut self, title: Option<impl Into<String>>) -> crate::Result<()> {
+    pub async fn update_title(&mut self, title: Option<&str>) -> crate::Result<()> {
         let mut conn = self.manager().acquire().await?;
         self.as_mut().title = title.map(Into::into);
         self.save(&mut *conn).await?;
         Ok(())
     }
 
-    pub async fn update_content(mut self, content: impl Into<String>) -> crate::Result<()> {
+    pub async fn update_content(mut self, content: &str) -> crate::Result<()> {
         let mut conn = self.manager().acquire().await?;
         self.as_mut().content = content.into();
         self.save(&mut *conn).await?;
@@ -233,8 +233,8 @@ impl From<DbDocument> for Document {
             created_at,
             updated_at,
         } = value;
-        let title = title.map(|x| x.text().to_string());
-        let content = content.text().to_string();
+        let title = title.map(|x| x.text().into());
+        let content = content.text().into();
         let created_at = created_at.to_jiff();
         let updated_at = updated_at.to_jiff();
         Self {

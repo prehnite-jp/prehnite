@@ -8,6 +8,9 @@ repository.workspace = true
 homepage.workspace = true
 publish.workspace = true
 
+[features]
+gpui = ["gpui-kit"]
+
 [dependencies]
 thiserror.workspace = true
 strum.workspace = true
@@ -28,3 +31,4 @@ uuid.workspace = true
 palette.workspace = true
 random_color.workspace = true
 jiff.workspace = true
+gpui-kit = { workspace = true, optional = true }
