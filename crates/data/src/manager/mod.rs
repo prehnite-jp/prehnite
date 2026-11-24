@@ -29,7 +29,7 @@ pub enum SyncStep {
     Upsert,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct DataManager(Arc<InnerDataManager>);
 
 impl Deref for DataManager {
