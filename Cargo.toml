@@ -35,7 +35,7 @@ random_color = { version = "1", features = ["palette_support"] }
 palette = { version = "0.7", features = ["serializing"] }
 zstd = "0.14"
 jiff = { version = "1.0", features = ["serde"] }
-jiff-sqlx = { version = "0.2", features = ["sqlite"] }
+jiff-sqlx = { version = "1.0", features = ["sqlite"] }
 time = { version = "0.3", features = [] }
 debug-ignore = "1"
 prehnite-data = { version = "1", path = "./crates/data", features = ["gpui"] }
