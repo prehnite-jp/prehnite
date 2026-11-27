@@ -67,6 +67,16 @@ impl DbDocument {
             > 0)
     }
 
+    pub(crate) async fn fetch_all(
+        conn: &mut SqliteConnection,
+    ) -> crate::Result<Vec<Self>> {
+        Ok(
+            query_as("SELECT * FROM documents WHERE NOT deleted")
+                .fetch_all(conn)
+                .await?,
+        )
+    }
+
     pub(crate) async fn fetch_diff_all(
         last_updated_at: Timestamp,
         conn: &mut SqliteConnection,

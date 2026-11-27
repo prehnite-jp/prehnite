@@ -1,26 +1,24 @@
 use crate::data_options::PrehniteDataOptions;
-use crate::database::schema::deleted_documents::DbDeletedDocument;
 use crate::database::schema::document::DbDocument;
 use crate::manager::inner_data_manager::InnerDataManager;
 use crate::{BinderRepository, DocumentRepository, TagRepository};
-use jiff::Timestamp;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use sqlx::pool::PoolConnection;
 use sqlx::{Acquire, Sqlite};
+use std::cmp::Ordering;
 use std::ops::Deref;
 use std::path::Path;
 use std::sync::Arc;
-use tantivy::aggregation::agg_result::{AggregationResult, MetricResult};
-use tantivy::aggregation::{AggContextParams, AggregationCollector};
 
 pub mod document_index;
 pub mod inner_data_manager;
 pub mod managed;
 pub mod weak_inner_data_manager;
 
-use crate::weak_inner_data_manager::WeakInnerDataManager;
+use crate::manager::weak_inner_data_manager::WeakInnerDataManager;
 pub use document_index::*;
+#[cfg(feature = "gpui")]
+pub use _gpui_impl::DataManagerStore;
 pub use managed::*;
 
 #[derive(Deserialize, Serialize, Clone, Copy, Ord, PartialOrd, Eq, PartialEq)]
@@ -29,7 +27,7 @@ pub enum SyncStep {
     Upsert,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct DataManager(Arc<InnerDataManager>);
 
 impl Deref for DataManager {
@@ -76,46 +74,76 @@ impl DataManager {
         TagRepository::new(self.weak_manager())
     }
 
-    pub(crate) fn manage<T: PrehniteManagedItem>(&self, item: T) -> PrehniteManaged<T> {
-        PrehniteManaged::new(self.weak_manager(), item)
+    fn drop_document_index(&self) -> crate::Result<()> {
+        let mut w = self.document_index.writer.lock().unwrap();
+        w.delete_all_documents()?;
+        w.commit()?;
+        Ok(())
     }
 
-    // TODO: ファイルが複製されたとき、インデックスが不整合となる場合がある。これはインデックスを再生成することで解決できる。
+    /// インデックスを再生成します。
     #[tracing::instrument]
-    pub async fn sync_document_index(&self) -> crate::Result<()> {
-        let mgr = self.get_manager();
-        let reader = mgr.document_index.reader()?;
-        let searcher = reader.searcher();
-        let docs = searcher.search(
-            &mgr.document_index.parse_query("")?,
-            &AggregationCollector::from_aggs(
-                serde_json::from_value(
-                    json!({"aggs":{"max_updated_at": { "max": { "field": "updated_at" }}}}),
-                )?,
-                AggContextParams::default(),
-            ),
-        )?;
-        let last_updated_at = Timestamp::from_second(
-            if let Some(AggregationResult::MetricResult(MetricResult::Max(updated_at))) =
-                docs.0.get("max_updated_at")
-            {
-                updated_at.value.unwrap_or_default() as i64
-            } else {
-                0
-            },
-        )?;
+    pub async fn regenerate_document_index(&self) -> crate::Result<()> {
         let mut conn = self.acquire().await?;
         let mut tx = conn.begin().await?;
-        let idx = &self.get_manager().document_index;
-        let deleted_documents =
-            DbDeletedDocument::fetch_diff_all(last_updated_at, &mut *tx).await?;
-        for i in deleted_documents {
-            idx.delete(i.document_id)?;
-        }
-        let updated_documents = DbDocument::fetch_diff_all(last_updated_at, &mut *tx).await?;
+        let idx = &self.document_index;
+        self.drop_document_index()?;
+        let updated_documents = DbDocument::fetch_all(&mut *tx).await?;
         for i in updated_documents {
             idx.upsert(i.into())?;
         }
         Ok(())
     }
+}
+#[cfg(feature = "gpui")]
+mod _gpui_impl {
+    use crate::TagStore;
+    use crate::manager::DataManager;
+    use gpui_kit::Global;
+    use std::ops::Deref;
+    use std::sync::Arc;
+    use tracing_unwrap::ResultExt;
+
+    #[derive(Debug, Default)]
+    pub struct DataManagerStore(Option<Arc<DataManager>>);
+    impl DataManagerStore {
+        pub(crate) fn global(cx: &mut gpui_kit::App) -> &DataManagerStore {
+            cx.global()
+        }
+
+        pub(crate) fn init(cx: &mut gpui_kit::App) {
+            cx.set_global(Self::default());
+            cx.observe_global::<Self>(move |cx| {
+                TagStore::reload(cx).ok_or_log();
+            })
+            .detach();
+        }
+
+        pub fn update(cx: &mut gpui_kit::App, manager: DataManager) -> crate::Result<()> {
+            cx.set_global(Self(Some(Arc::new(manager))));
+            Ok(())
+        }
+
+        pub fn close(cx: &mut gpui_kit::App) {
+            cx.set_global(Self::default());
+            TagStore::clear(cx);
+        }
+
+        pub fn get(cx: &mut gpui_kit::App) -> crate::Result<&DataManager> {
+            Self::global(cx)
+                .0
+                .as_ref()
+                .map(Deref::deref)
+                .ok_or(crate::Error::GlobalDataManagerNotOpened)
+        }
+
+        pub(crate) fn get_owned(cx: &mut gpui_kit::App) -> crate::Result<Arc<DataManager>> {
+            Self::global(cx)
+                .0
+                .clone()
+                .ok_or(crate::Error::GlobalDataManagerNotOpened)
+        }
+    }
+
+    impl Global for DataManagerStore {}
 }

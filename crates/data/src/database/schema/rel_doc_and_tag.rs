@@ -56,7 +56,7 @@ impl DbRelDocsAndTags {
         .collect())
     }
     pub(crate) async fn fetch_docs(
-        tags: Vec<&str>,
+        tags: Vec<impl AsRef<str>>,
         conn: &mut SqliteConnection,
     ) -> crate::Result<Vec<DocumentId>> {
         let mut sql_query = sqlx::QueryBuilder::new(
@@ -64,7 +64,7 @@ impl DbRelDocsAndTags {
         );
         let mut sep = sql_query.separated(", ");
         for tag in tags.iter() {
-            sep.push_bind(tag);
+            sep.push_bind(tag.as_ref());
         }
         sep.push_unseparated(") ");
         sql_query

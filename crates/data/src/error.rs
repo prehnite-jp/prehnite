@@ -33,4 +33,7 @@ pub enum Error {
     JiffError(#[from] jiff::Error),
     #[error("managed item is already deleted")]
     ManagedItemDeleted,
+    // データマネージャは開かれていません。
+    #[error("global data manager is not opened")]
+    GlobalDataManagerNotOpened,
 }

@@ -32,3 +32,4 @@ palette.workspace = true
 random_color.workspace = true
 jiff.workspace = true
 gpui-kit = { workspace = true, optional = true }
+tracing-unwrap.workspace = true

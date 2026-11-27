@@ -1,5 +1,5 @@
-use crate::inner_data_manager::InnerDataManager;
-use crate::{PrehniteManaged, PrehniteManagedItem};
+use crate::manager::inner_data_manager::InnerDataManager;
+use crate::manager::{PrehniteManaged, PrehniteManagedItem};
 use sqlx::pool::PoolConnection;
 use sqlx::{Sqlite, SqliteConnection};
 use std::ops::{Deref, DerefMut};
@@ -46,6 +46,10 @@ impl WeakInnerDataManager {
             warn!("The data manager has already been closed.");
             Err(crate::Error::DataManagerClosed)
         }
+    }
+
+    pub(crate) fn manager_id(&self) -> crate::Result<jiff::Timestamp> {
+        Ok(self.get()?.data_manager_id)
     }
 
     pub(crate) fn manage<T: PrehniteManagedItem>(&self, item: T) -> PrehniteManaged<T> {

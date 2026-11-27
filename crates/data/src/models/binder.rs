@@ -57,6 +57,7 @@ pub struct Binder {
     pub created_at: jiff::Timestamp,
     pub updated_at: jiff::Timestamp,
     pub pages: Vec<DocumentId>,
+    #[serde(skip)]
     db_pages: Vec<DbBoundDocument>,
 }
 
@@ -68,18 +69,24 @@ impl Binder {
 
 impl PrehniteManaged<Binder> {
     pub async fn delete(&mut self) -> crate::Result<bool> {
-        DbBinder::from(self.clone()).delete(&mut *self.manager().acquire().await?).await
+        DbBinder::from(self.clone_item())
+            .delete(&mut *self.manager().acquire().await?)
+            .await
     }
 
     pub async fn update_title(&mut self, title: &str) -> crate::Result<()> {
         self.as_mut().title = title.into();
-        DbBinder::from(self.clone()).save(&mut *self.manager().acquire().await?).await?;
+        DbBinder::from(self.clone_item())
+            .save(&mut *self.manager().acquire().await?)
+            .await?;
         Ok(())
     }
 
     pub async fn update_details(&mut self, details: Option<&str>) -> crate::Result<()> {
         self.as_mut().details = details.map(Into::into);
-        DbBinder::from(self.clone()).save(&mut *self.manager().acquire().await?).await?;
+        DbBinder::from(self.clone_item())
+            .save(&mut *self.manager().acquire().await?)
+            .await?;
         Ok(())
     }
 
@@ -192,6 +199,174 @@ impl From<Binder> for DbBinder {
             details,
             created_at,
             updated_at,
+        }
+    }
+}
+
+#[cfg(feature = "gpui")]
+mod _gpui_impl {
+    use crate::Result;
+    use crate::database::schema::binder::DbBinder;
+    use crate::database::schema::bound_document::DbBoundDocument;
+    use crate::manager::PrehniteManagedEntity;
+    use crate::{Binder, BinderPagePosition, DocumentId};
+    use gpui_kit::{App, AppContext, Task};
+
+    impl PrehniteManagedEntity<Binder> {
+        pub fn delete(&self, cx: &mut App) -> Task<Result<bool>> {
+            let entity = self.clone();
+            cx.spawn(async move |cx| {
+                let item = entity.clone_inner(cx);
+                let res = cx
+                    .background_spawn(async move {
+                        let mut conn = item.manager().acquire().await?;
+                        DbBinder::from(item.unmanage()).delete(&mut conn).await
+                    })
+                    .await?;
+                entity.set_deleted(cx, true);
+                Ok(res)
+            })
+        }
+
+        pub fn update_title(&self, cx: &mut App, title: &str) -> Task<Result<()>> {
+            let entity = self.clone();
+            let title = title.into();
+            cx.spawn(async move |cx| {
+                let mut managed = entity.clone_inner(cx);
+                managed.as_mut().title = title;
+                let item = managed.clone_item();
+                let mut conn = managed.manager().acquire().await?;
+                cx.background_spawn(async move { DbBinder::from(item).save(&mut *conn).await })
+                    .await?;
+                entity.update(cx, move |item, cx| {
+                    *item = managed;
+                    cx.notify();
+                });
+                Ok(())
+            })
+        }
+
+        pub fn update_details(&self, cx: &mut App, details: Option<&str>) -> Task<Result<()>> {
+            let entity = self.clone();
+            let details = details.map(Into::into);
+            cx.spawn(async move |cx| {
+                let mut managed = entity.clone_inner(cx);
+                managed.as_mut().details = details;
+                let item = managed.clone_item();
+                let mut conn = managed.manager().acquire().await?;
+                cx.background_spawn(async move { DbBinder::from(item).save(&mut *conn).await })
+                    .await?;
+                entity.update(cx, move |item, cx| {
+                    *item = managed;
+                    cx.notify();
+                });
+                Ok(())
+            })
+        }
+
+        /// ページを指定された場所に新しく追加します。既にドキュメントがページとして存在している場合はエラーが発生します。
+        pub fn add_document(
+            &self,
+            cx: &mut App,
+            document_id: DocumentId,
+            pos: BinderPagePosition,
+        ) -> Task<Result<()>> {
+            let entity = self.clone();
+            cx.spawn(async move |cx| {
+                let mut conn = entity.manager(cx).acquire().await?;
+                let managed = entity.clone_inner(cx);
+                let pages = cx
+                    .background_spawn(async move {
+                        DbBoundDocument::add_document(
+                            managed.id,
+                            document_id,
+                            pos.to_new_next(&managed.db_pages),
+                            &mut conn,
+                        )
+                        .await?;
+                        DbBoundDocument::fetch(managed.id, &mut conn).await
+                    })
+                    .await?;
+                entity.update(cx, |v, cx| {
+                    v.as_mut().db_pages = pages;
+                    v.as_mut().sync_pages();
+                    cx.notify()
+                });
+
+                Ok(())
+            })
+        }
+
+        /// 指定されたページを、posに移動します。ページが存在しない場合は何もしません。
+        pub fn move_document(
+            &self,
+            cx: &mut App,
+            page: u64,
+            pos: BinderPagePosition,
+        ) -> Task<Result<()>> {
+            let entity = self.clone();
+            cx.spawn(async move |cx| {
+                let mut managed = entity.clone_inner(cx);
+                if (page as usize) < managed.db_pages.len() {
+                    let page = managed.as_mut().db_pages.remove(page as usize);
+                    let mut conn = managed.manager().acquire().await?;
+                    let pos = pos.to_new_next(&managed.db_pages);
+                    page.move_page(pos, &mut conn).await?;
+                    let binder_id = managed.id;
+                    managed.as_mut().db_pages = cx
+                        .background_spawn(async move {
+                            DbBoundDocument::fetch(binder_id, &mut conn).await
+                        })
+                        .await?;
+                    managed.as_mut().sync_pages();
+                    entity.update(cx, |e, cx| {
+                        *e = managed;
+                        cx.notify();
+                    });
+                }
+                Ok(())
+            })
+        }
+
+        /// 指定されたドキュメントをバインダーから取り除きます。ドキュメントがページとして存在しない場合は何もしません。
+        pub fn remove_document(&self, cx: &mut App, document_id: DocumentId) -> Task<Result<()>> {
+            if let Some(page) = self.find_page(cx, document_id) {
+                self.remove_page(cx, page)
+            } else {
+                Task::ready(Ok(()))
+            }
+        }
+
+        /// 指定されたページをバインダーから取り除きます。ページが存在しない場合は何もしません。
+        ///
+        /// 例: 0A,1B,2C,3D|(idxName) ここからidx2を取り除いた場合、ページは次のようになります。 0A,1B,2D
+        pub fn remove_page(&self, cx: &mut App, page: u64) -> Task<Result<()>> {
+            let entity = self.clone();
+            cx.spawn(async move |cx| {
+                let mut managed = entity.clone_inner(cx);
+                if page < managed.pages.len() as u64 {
+                    let mut conn = managed.manager().acquire().await?;
+                    let page = managed.as_mut().db_pages.remove(page as usize);
+                    cx.background_spawn(async move { page.remove(&mut conn).await })
+                        .await?;
+                    managed.as_mut().sync_pages();
+                    entity.update(cx, move |v, cx| {
+                        *v = managed;
+                        cx.notify();
+                    });
+                }
+                Ok(())
+            })
+        }
+
+        /// ドキュメントのページ番号を探索します。
+        pub fn find_page(&self, cx: &mut App, document_id: DocumentId) -> Option<u64> {
+            self.read(cx)
+                .pages
+                .iter()
+                .enumerate()
+                .find(|(_, doc)| **doc == document_id)
+                .map(|x| x.0 as u64)
         }
     }
 }

@@ -1,5 +1,8 @@
-use crate::{Document, DocumentId, DocumentSchema};
 use crate::data_options::PrehniteDataOptions;
+use crate::database::schema::metadata::{DbMetadata, DbMetadataKey};
+use crate::database::schema::rel_doc_and_tag::DbRelDocsAndTags;
+use crate::models::DocumentFields;
+use crate::{Document, DocumentId, DocumentSchema};
 use debug_ignore::DebugIgnore;
 use sqlx::SqliteConnection;
 use std::ops::Deref;
@@ -10,9 +13,6 @@ use tantivy::query::{Query, QueryParser};
 use tantivy::query_grammar::{UserInputAst, UserInputLeaf, parse_query};
 use tantivy::{Index, IndexWriter, Term};
 use tokio::fs::create_dir_all;
-use crate::database::schema::metadata::{DbMetadata, DbMetadataKey};
-use crate::database::schema::rel_doc_and_tag::DbRelDocsAndTags;
-use crate::models::DocumentFields;
 
 #[allow(unused)]
 #[derive(Debug)]
@@ -89,11 +89,11 @@ impl DocumentIndex {
 
     pub(crate) async fn parse_query_with_tags(
         &self,
-        query: &str,
-        tags: Vec<&str>,
+        query: impl AsRef<str>,
+        tags: Vec<impl AsRef<str>>,
         conn: &mut SqliteConnection,
     ) -> crate::Result<Box<dyn Query>> {
-        let parsed = parse_query(&query)
+        let parsed = parse_query(query.as_ref())
             .map_err(|e| crate::Error::TantivyQueryParseErrorQueryGrammar(format!("{:?}", e)))?;
         let tag_filter_query = UserInputAst::Leaf(Box::new(UserInputLeaf::Set {
             field: Some("document_id".into()),

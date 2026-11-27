@@ -5,6 +5,7 @@ use crate::database::schema::rel_doc_and_tag::DbRelDocsAndTags;
 use crate::database::zstd_compressed_blob::ZstdCompressedBlob;
 use crate::manager::managed::{PrehniteManaged, PrehniteManagedItem};
 use crate::{BoxableTantivyTokenizer, DocumentId, TString, TagId};
+use gpui_kit::{App, IntoElement, RenderOnce, Window};
 use jiff_sqlx::ToSqlx;
 use prehnite_shared::time::TryIntoTantivyDate;
 use serde::{Deserialize, Serialize};
@@ -54,6 +55,45 @@ impl From<DocumentSchema> for tantivy::schema::Schema {
     }
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize, gpui_kit::IntoElement)]
+pub struct DocumentTitle {
+    text: TString,
+    is_none: bool,
+}
+
+impl Deref for DocumentTitle {
+    type Target = TString;
+
+    fn deref(&self) -> &Self::Target {
+        &self.text
+    }
+}
+
+impl DocumentTitle {
+    pub fn new(text: Option<TString>, created_at: jiff::Timestamp) -> Self {
+        let is_none = text.is_none();
+        Self {
+            text: text.unwrap_or_else(|| format!("無題-{}", created_at).into()),
+            is_none,
+        }
+    }
+
+    pub fn get(&self) -> &str {
+        self.text.as_str()
+    }
+
+    pub fn is_none(&self) -> bool {
+        self.is_none
+    }
+}
+
+impl RenderOnce for DocumentTitle {
+    fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
+        self.text
+    }
+}
+
+#[cfg_attr(feature = "gpui", derive(gpui_kit::IntoElement))]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Document {
     pub document_id: DocumentId,
@@ -90,6 +130,10 @@ impl Document {
             self.updated_at.try_into_tantivy_date()?,
         );
         Ok(doc)
+    }
+
+    pub fn get_title(&self) -> DocumentTitle {
+        DocumentTitle::new(self.title.clone(), self.created_at)
     }
 }
 
@@ -150,7 +194,7 @@ impl PrehniteManaged<Document> {
     }
 
     async fn save(&mut self, conn: &mut SqliteConnection) -> crate::Result<bool> {
-        Ok(DbDocument::from(self.clone()).save(conn).await?)
+        Ok(DbDocument::from(self.clone_item()).save(conn).await?)
     }
 
     pub async fn add_tag(&mut self, tag_id: TagId) -> crate::Result<()> {
@@ -247,6 +291,280 @@ impl From<DbDocument> for Document {
             updated_at,
             tags: vec![],
             background_info: vec![],
+        }
+    }
+}
+
+#[cfg(feature = "gpui")]
+mod _gpui_impl {
+    use crate::database::schema::document::DbDocument;
+    use crate::database::schema::rel_doc_and_background_info::DbRelDocsAndBackgroundInfo;
+    use crate::database::schema::rel_doc_and_tag::DbRelDocsAndTags;
+    use crate::manager::PrehniteManagedEntity;
+    use crate::{DeleteStatus, Document, DocumentId, TagId, TagList};
+    use gpui_kit::component::StyledExt;
+    use gpui_kit::*;
+    use sqlx::{Acquire, SqliteConnection};
+
+    impl RenderOnce for Document {
+        fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
+            div()
+                .id(("document", *self.document_id as usize))
+                .flex_col()
+                .child(
+                    div()
+                        .id("title")
+                        .text_lg()
+                        .overflow_hidden()
+                        .text_ellipsis()
+                        .font_bold()
+                        .whitespace_nowrap()
+                        .child(self.get_title()),
+                )
+                .child(
+                    div()
+                        .id("content")
+                        .text_xs()
+                        .overflow_hidden()
+                        .text_ellipsis()
+                        .line_clamp(2)
+                        .child(self.content),
+                )
+                .child(TagList::new(self.tags))
+                .p(px(2.))
+                .m(px(2.))
+                .debug()
+        }
+    }
+
+    impl PrehniteManagedEntity<Document> {
+        pub fn delete(&self, cx: &mut App) -> Task<crate::Result<DeleteStatus>> {
+            let entity = self.clone();
+            cx.spawn(async move |cx| {
+                let mut managed = entity.clone_inner(cx);
+                let mut manager_conn = managed.manager().acquire().await?;
+                manager_conn
+                    .manager()
+                    .document_index
+                    .delete(managed.document_id)?;
+                if managed.deleted {
+                    if cx
+                        .background_spawn(async move {
+                            let mut tx = manager_conn.begin().await?;
+                            if DbDocument::delete(managed.document_id, &mut *tx).await? {
+                                tx.commit().await?;
+                                Ok::<_, crate::Error>(true)
+                            } else {
+                                Ok(false)
+                            }
+                        })
+                        .await?
+                    {
+                        entity.set_deleted(cx, true);
+                        Ok(DeleteStatus::Deleted)
+                    } else {
+                        Ok(DeleteStatus::NotFound)
+                    }
+                } else {
+                    managed.as_mut().deleted = true;
+                    let item = managed.clone_item();
+                    if cx
+                        .background_spawn(async move {
+                            let mut tx = manager_conn.begin().await?;
+                            if Self::save(item, &mut *tx).await? {
+                                tx.commit().await?;
+                                Ok::<_, crate::Error>(true)
+                            } else {
+                                Ok(false)
+                            }
+                        })
+                        .await?
+                    {
+                        entity.update(cx, move |v, cx| {
+                            *v = managed;
+                            cx.notify();
+                        });
+                        Ok(DeleteStatus::Trashed)
+                    } else {
+                        Ok(DeleteStatus::NotFound)
+                    }
+                }
+            })
+        }
+
+        pub fn restore(&self, cx: &mut App) -> Task<crate::Result<()>> {
+            let entity = self.clone();
+            cx.spawn(async move |cx| {
+                let mut managed = entity.clone_inner(cx);
+                if managed.deleted {
+                    managed.as_mut().deleted = false;
+                    let mut conn = managed.manager().acquire().await?;
+                    let item = managed.clone_item();
+                    if cx
+                        .background_spawn(async move { Self::save(item, &mut *conn).await })
+                        .await?
+                    {
+                        entity.update(cx, move |v, cx| {
+                            *v = managed;
+                            cx.notify();
+                        });
+                    }
+                }
+                Ok(())
+            })
+        }
+
+        pub fn update_title(&self, cx: &mut App, title: Option<&str>) -> Task<crate::Result<()>> {
+            let entity = self.clone();
+            let title = title.map(Into::into);
+            cx.spawn(async move |cx| {
+                let mut managed = entity.clone_inner(cx);
+                let mut conn = managed.manager().acquire().await?;
+                managed.as_mut().title = title;
+                let item = managed.clone_item();
+                if cx
+                    .background_spawn(async move { Self::save(item, &mut *conn).await })
+                    .await?
+                {
+                    entity.update(cx, move |v, cx| {
+                        *v = managed;
+                        cx.notify();
+                    });
+                }
+                Ok(())
+            })
+        }
+
+        pub fn update_content(&self, cx: &mut App, content: &str) -> Task<crate::Result<()>> {
+            let entity = self.clone();
+            let content = content.into();
+            cx.spawn(async move |cx| {
+                let mut managed = entity.clone_inner(cx);
+                let mut conn = managed.manager().acquire().await?;
+                managed.as_mut().content = content;
+                let item = managed.clone_item();
+                if cx
+                    .background_spawn(async move { Self::save(item, &mut *conn).await })
+                    .await?
+                {
+                    entity.update(cx, move |v, cx| {
+                        *v = managed;
+                        cx.notify();
+                    });
+                }
+                Ok(())
+            })
+        }
+
+        async fn save(document: Document, conn: &mut SqliteConnection) -> crate::Result<bool> {
+            Ok(DbDocument::from(document).save(conn).await?)
+        }
+
+        pub fn add_tag(&self, cx: &mut App, tag_id: TagId) -> Task<crate::Result<()>> {
+            let entity = self.clone();
+            cx.spawn(async move |cx| {
+                let mut managed = entity.clone_inner(cx);
+                let mut conn = managed.manager().acquire().await?;
+                let document_id = managed.document_id;
+                if cx
+                    .background_spawn(async move {
+                        Ok::<_, crate::Error>(
+                            DbRelDocsAndTags::create(document_id, tag_id, &mut *conn)
+                                .await?
+                                .is_some(),
+                        )
+                    })
+                    .await?
+                {
+                    managed.as_mut().tags.push(tag_id);
+                    entity.update(cx, |v, cx| {
+                        *v = managed;
+                        cx.notify();
+                    });
+                }
+                Ok(())
+            })
+        }
+
+        pub fn remove_tag(&self, cx: &mut App, tag_id: TagId) -> Task<crate::Result<()>> {
+            let entity = self.clone();
+            cx.spawn(async move |cx| {
+                let mut managed = entity.clone_inner(cx);
+                let mut conn = managed.manager().acquire().await?;
+                let document_id = managed.document_id;
+                cx.background_spawn(async move {
+                    DbRelDocsAndTags::delete(document_id, tag_id, &mut *conn).await
+                })
+                .await?;
+                managed.as_mut().tags.retain(|x| *x != tag_id);
+                entity.update(cx, move |v, cx| {
+                    *v = managed;
+                    cx.notify();
+                });
+                Ok(())
+            })
+        }
+
+        pub fn add_background_info(
+            &self,
+            cx: &mut App,
+            bg_info_document_id: DocumentId,
+        ) -> Task<crate::Result<()>> {
+            let entity = self.clone();
+            cx.spawn(async move |cx| {
+                let mut managed = entity.clone_inner(cx);
+                let mut conn = managed.manager().acquire().await?;
+                let document_id = managed.document_id;
+                if cx
+                    .background_spawn(async move {
+                        Ok::<_, crate::Error>(
+                            DbRelDocsAndBackgroundInfo::create(
+                                document_id,
+                                bg_info_document_id,
+                                &mut *conn,
+                            )
+                            .await?
+                            .is_some(),
+                        )
+                    })
+                    .await?
+                {
+                    managed.as_mut().background_info.push(bg_info_document_id);
+                    entity.update(cx, |v, cx| {
+                        *v = managed;
+                        cx.notify();
+                    });
+                }
+                Ok(())
+            })
+        }
+
+        pub fn remove_background_info(
+            &self,
+            cx: &mut App,
+            bg_info_document_id: DocumentId,
+        ) -> Task<crate::Result<()>> {
+            let entity = self.clone();
+            cx.spawn(async move |cx| {
+                let mut managed = entity.clone_inner(cx);
+                let manager = managed.manager().get()?;
+                let mut conn = manager.acquire().await?;
+                let document_id = managed.document_id;
+                cx.background_spawn(async move {
+                    DbRelDocsAndBackgroundInfo::delete(document_id, bg_info_document_id, &mut *conn)
+                        .await
+                })
+                .await?;
+                managed
+                    .as_mut()
+                    .background_info
+                    .retain(|x| *x != bg_info_document_id);
+                entity.update(cx, |v, cx| {
+                    *v = managed;
+                    cx.notify();
+                });
+                Ok(())
+            })
         }
     }
 }
