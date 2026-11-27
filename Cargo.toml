@@ -40,7 +40,7 @@ time = { version = "0.3", features = [] }
 debug-ignore = "1"
 prehnite-data = { version = "1", path = "./crates/data", features = ["gpui"] }
 uuid = { version = "1", features = ["serde"] }
-gpui-kit = { version = "0.9" }
+gpui-kit = { version = "0.10" }
 rust-i18n = "4"
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
